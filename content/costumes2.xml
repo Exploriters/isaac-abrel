@@ -1,0 +1,5 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<costumes anm2root="gfx/characters/">
+  <costume anm2path="HexanowHair.anm2" type="none" />
+  <costume anm2path="Hexanow_fate.anm2" hasSkinAlt="true" isFlying="true" type="none"></costume>
+</costumes>
