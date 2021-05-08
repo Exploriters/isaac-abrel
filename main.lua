@@ -14,6 +14,18 @@ local hexanowObjectives = {
 ["damageIncrease"] = 0.0
 }
 
+require("apioverride")
+
+--[[
+APIOverride.OverrideClassFunction(EntityPlayer, "GetMaxHearts", function()
+    return 123456789
+end)
+
+APIOverride.OverrideClassFunction(EntityPlayer, "GetPlayerType", function()
+    return PlayerType.PLAYER_AZAZEL 
+end)
+]]
+
 -- 为每个玩家执行目标函数
 function CallForEveryPlayer(func)
 	local numPlayers = Game():GetNumPlayers()
@@ -335,6 +347,7 @@ function TickEventHexanow(player)
 		
 		if not player:HasCollectible(CollectibleType.COLLECTIBLE_ANALOG_STICK) then
 			player:AddCollectible(CollectibleType.COLLECTIBLE_ANALOG_STICK, 0, false)
+			UpdateCostumes(player)
 		end
 		
 		
@@ -624,11 +637,15 @@ function hexanowMod:EvaluateCache(player, cacheFlag, tear)
 			end
 			
 			EnsureFamiliars(player)
+		elseif cacheFlag == CacheFlag.CACHE_TEARCOLOR then
+			player.TearColor = Color(1, 1, 1, 1, 0, 0, 0)
 		end
+		
 	end
 end
 hexanowMod:AddCallback(ModCallbacks.MC_EVALUATE_CACHE, hexanowMod.EvaluateCache)
 
+local fireworksToWipe = {}
 -- 在每一帧后执行
 function hexanowMod:PostUpdate()
 	CallForEveryPlayer(
@@ -639,13 +656,31 @@ function hexanowMod:PostUpdate()
 		end
 	)
 	
+	local hexanowExist = PlayerTypeExistInGame(playerTypeHexanow)
 	
+	for i,entity in ipairs(fireworksToWipe) do
+		if entity ~= nil then
+			entity:Remove()
+		end
+	end
+	fireworksToWipe = {}
 	
 	local roomEntities = Isaac.GetRoomEntities()
 	for i,entity in ipairs(roomEntities) do
+		
+		if hexanowExist then
+			local npc = entity:ToNPC()
+			if npc ~= nil then
+				table.insert(
+					fireworksToWipe,
+					Isaac.Spawn(EntityType.ENTITY_EFFECT, EffectVariant.FIREWORKS, 5, npc.Position, npc.Velocity, npc)
+					)
+			end
+		end
+		
 		local tear = entity:ToTear()
 		if tear ~= nil then
-			if tear.Parent.Type == EntityType.ENTITY_PLAYER then
+			if      tear.Parent.Type == EntityType.ENTITY_PLAYER then
 				local player = tear.Parent:ToPlayer()
 				if player:GetPlayerType() == playerTypeHexanow
 				then
@@ -694,6 +729,11 @@ function hexanowMod:PostUpdate()
 					end
 			
 				end
+			elseif  tear.Parent.Type == EntityType.ENTITY_FAMILIAR
+				and tear.Parent.Variant == entityVariantHeartsBlender
+				then
+				local fam = tear.Parent:ToFamiliar()
+				-- SOME THING TO DO
 			end
 		end
 	end
