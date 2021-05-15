@@ -3,8 +3,16 @@ local lairub = RegisterMod("Lairub", 1);
 local costume_Lairub_Body = Isaac.GetCostumeIdByPath("gfx/characters/LairubBody.anm2")
 local costume_Lairub_Head = Isaac.GetCostumeIdByPath("gfx/characters/LairubHead.anm2")
 local playerType_Lairub = Isaac.GetPlayerTypeByName("Lairub")
+local LairubStatUpdateItem = Isaac.GetItemIdByName( "Lairub Stat Trigger" )
 
 local ShiftChanged = 1
+
+-- 提交缓存更新请求
+function UpdateCache(player)
+	player:AddCacheFlags(CacheFlag.CACHE_DAMAGE)
+	player:AddCacheFlags(CacheFlag.CACHE_SPEED)
+	player:AddCacheFlags(CacheFlag.CACHE_FIREDELAY)
+end
 
 function lairub:Update(player)
 	local game = Game()
@@ -81,6 +89,29 @@ function lairub:EvaluateCache(player, cacheFlag)
 				end
 			end
 		end
+		-- Normal -> TakeSoul
+		if ShiftChanged == 2 then
+			if cacheFlag == CacheFlag.CACHE_SPEED then
+				player.MoveSpeed = player.MoveSpeed - 0.2
+			elseif cacheFlag == CacheFlag.CACHE_DAMAGE then
+				player.Damage = player.Damage + 1
+			elseif cacheFlag == CacheFlag.CACHE_FIREDELAY then
+				player.MaxFireDelay = player.MaxFireDelay + 10
+			end
+			IsShiftChanged = true
+		end
+		-- TakeSoul -> Normal
+		if ShiftChanged ==  1 then
+			if cacheFlag == CacheFlag.CACHE_SPEED then
+				player.MoveSpeed = player.MoveSpeed + 0.2
+			elseif cacheFlag == CacheFlag.CACHE_DAMAGE then
+				player.Damage = player.Damage - 1
+			elseif cacheFlag == CacheFlag.CACHE_FIREDELAY then
+				player.MaxFireDelay = player.MaxFireDelay - 10
+			end
+			IsShiftChanged = true
+		end
+		--========--
 	end
 end
 lairub:AddCallback( ModCallbacks.MC_EVALUATE_CACHE, lairub.EvaluateCache)
@@ -149,29 +180,12 @@ function lairub:Functions()
 				end
 			end		
 		end
-		-- Normal -> TakeSoul
-		if ShiftChanged == 2 then
-			if cacheFlag == CacheFlag.CACHE_SPEED then
-				player.MoveSpeed = player.MoveSpeed - 0.2
-			elseif cacheFlag == CacheFlag.CACHE_DAMAGE then
-				player.Damage = player.Damage + 1
-			elseif cacheFlag == CacheFlag.CACHE_FIREDELAY then
-				player.MaxFireDelay = player.MaxFireDelay + 10
-			end
-			IsShiftChanged = true
+		
+		if not IsShiftChanged then
+			player:AddCollectible(LairubStatUpdateItem)
+			player:RemoveCollectible(LairubStatUpdateItem)
+			UpdateCache(player)
 		end
-		-- TakeSoul -> Normal
-		if ShiftChanged ==  1 then
-			if cacheFlag == CacheFlag.CACHE_SPEED then
-				player.MoveSpeed = player.MoveSpeed + 0.2
-			elseif cacheFlag == CacheFlag.CACHE_DAMAGE then
-				player.Damage = player.Damage - 1
-			elseif cacheFlag == CacheFlag.CACHE_FIREDELAY then
-				player.MaxFireDelay = player.MaxFireDelay - 10
-			end
-			IsShiftChanged = true
-		end
-		--========--
 	end
 end
 lairub:AddCallback( ModCallbacks.MC_POST_UPDATE, lairub.Functions)
