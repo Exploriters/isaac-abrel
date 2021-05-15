@@ -1,0 +1,4 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<players root="gfx/characters/costumes/" portraitroot="gfx/ui/boss/" nameimageroot="gfx/ui/boss/" bigportraitroot="gfx/ui/stage/">
+  <player name="Lairub" skin="character_Lairub.png" black="6" hp="0" bombs="1" nameimage="playername_Lairub.png" portrait="playerportrait_Lairub.png" bigportrait="playerportraitbig_Lairub.png" skinColor="0" canShoot="true" />
+</players>

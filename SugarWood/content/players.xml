@@ -1,0 +1,4 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<players root="gfx/characters/costumes/" portraitroot="gfx/ui/boss/" nameimageroot="gfx/ui/boss/" bigportraitroot="gfx/ui/stage/">
+  <player name="SugarWood" skin="character_SugarWood.png" hp="6" black="2" coins="25" keys="1" nameimage="playername_SugarWood.png" portrait="playerportrait_SugarWood.png" bigportrait="playerportraitbig_SugarWood.png" skinColor="-1" canShoot="true" items="245,227"></player>
+</players>

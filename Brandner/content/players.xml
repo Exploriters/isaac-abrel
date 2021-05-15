@@ -1,0 +1,5 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<players root="gfx/characters/costumes/" portraitroot="gfx/ui/boss/" nameimageroot="gfx/ui/boss/" bigportraitroot="gfx/ui/stage/">
+  <player name="Brandner" skin="character_Brandner.png" hp="1" bombs="3" nameimage="playername_Brandner.png" portrait="playerportrait_Brandner.png" bigportrait="playerportraitbig_Brandner.png" skinColor="1" canShoot="true" items=""></player>
+  <player name="Tainted Brandner" skin="character_TaintedBrandner.png" hp="1" bombs="3" nameimage="playername_Brandner.png" portrait="playerportrait_Brandner.png" bigportrait="playerportraitbig_Brandner.png" skinColor="1" canShoot="true" items="452" bSkinParent="Brandner"></player>
+</players>

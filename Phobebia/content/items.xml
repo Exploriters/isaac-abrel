@@ -1,0 +1,9 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<items gfxroot="gfx/items/" version="1">
+  <passive name="The Cat's Guide" description="&quot;It's guiding me&quot;" gfx="TheCatsGuide.png"></passive>
+  <passive name="The Cat's Soul" description="&quot;We finally meet.&quot;" gfx="TheCatsSoul.png" cache="speed damage luck tearflag" blackhearts="2" />
+  <passive name="The Cat's Mind" description="&quot;You need help.&quot;" gfx="TheCatsMind.png" cache="speed damage flying firedelay"></passive>
+  <passive achievement="108" description="Sweet revenge" devilprice="2" gfx="JudasShadow.png" name="Judas' Shadow2" />
+  <passive name="Phobebia's Blood Bandage" description="Some kind of stubborn pursuit." gfx="PhobebiasBloodBandage.png" cache="tearflag damage tearcolor"></passive>
+  <passive name="Phobebia's Blood Bandage II" description="Some kind of stubborn pursuit." gfx="PhobebiasBloodBandage.png" cache="firedelay tearflag damage tearcolor"></passive>
+</items>

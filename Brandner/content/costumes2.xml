@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<costumes anm2root="gfx/characters/">
+  <!--== normal ==-->
+  <costume anm2path="BrandnerHead.anm2" type="none"></costume>
+  <costume anm2path="BrandnerHeadBone.anm2" type="none"></costume>
+  <costume anm2path="BrandnerBody.anm2" overwriteColor="true" skinColor="1" type="none" isFlying="true"></costume>
+  <!--== Tainted ==-->
+  <costume anm2path="TaintedBrandnerFireHead.anm2" type="none"></costume>
+  <costume anm2path="TaintedBrandnerHead.anm2" type="none"></costume>
+  <costume anm2path="TaintedBrandnerHeadBone.anm2" type="none"></costume>
+</costumes>

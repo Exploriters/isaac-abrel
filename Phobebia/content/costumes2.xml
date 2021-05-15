@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<costumes anm2root="gfx/characters/">
+  <!--==Normal Phobebia and PhobebiaII==-->
+  <costume anm2path="character_PhobebiaHair.anm2" type="none"></costume>
+  <costume anm2path="character_PhobebiaHairII.anm2" type="none" />
+  <!--==Tainted Phobebia==-->
+  <costume anm2path="character_Tainted_PhobebiaHair.anm2" type="none"></costume>
+  <!--==The Cat==-->
+  <costume anm2path="TheCat.anm2" overwriteColor="true" skinColor="1" type="none" isFlying="true"></costume>
+  <costume anm2path="TheCat_Head.anm2" overwriteColor="true" skinColor="1" type="none"></costume>
+  <!--==Phobebia's Blood Bandage==-->
+  <costume anm2path="PhobebiasBloodBandage.anm2" type="none"></costume>
+  <costume anm2path="PhobebiasBloodBandageII.anm2" type="none"></costume>
+  <!--==Some items costume==-->
+  <costume anm2path="Phobebia_habit.anm2" type="none"></costume>
+  <costume anm2path="Phobebia_anemic.anm2" type="none" />
+  <costume anm2path="Phobebia_fate.anm2" hasSkinAlt="true" isFlying="true" type="none"></costume>
+  <costume anm2path="PhobebiaII_fate.anm2" hasSkinAlt="true" isFlying="true" type="none"></costume>
+</costumes>
