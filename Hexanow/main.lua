@@ -4,6 +4,7 @@ local hexanowMod = RegisterMod("Hexanow", 1);
 
 local playerTypeHexanow = Isaac.GetPlayerTypeByName("Hexanow")
 --local hexanowItem = Isaac.GetItemIdByName( "Hexanow's Soul" )
+local hexanowFlightTriggerItem = Isaac.GetItemIdByName( "Hexanow flight trigger" )
 local hexanowHairCostume = Isaac.GetCostumeIdByPath("gfx/characters/HexanowHair.anm2")
 local hexanowFateCostume = Isaac.GetCostumeIdByPath("gfx/characters/Hexanow_fate.anm2")
 
@@ -16,7 +17,22 @@ local hexanowObjectives = {
 ["damageIncrease"] = 0.0
 }
 
--- require("apioverride")
+require("apioverride")
+
+--[[ MALFUNCTIONING
+local baseEntityPlayerHasCollectible = APIOverride.GetCurrentClassFunction(EntityPlayer, "HasCollectible")
+APIOverride.OverrideClassFunction(EntityPlayer, "HasCollectible", function(interval, Type, IgnoreModifiers)	
+    local result = baseEntityPlayerHasCollectible(interval, Type, IgnoreModifiers)
+	if interval:GetPlayerType() == playerTypeHexanow
+	and (  Type == CollectibleType.COLLECTIBLE_ANALOG_STICK
+		or Type == CollectibleType.COLLECTIBLE_URANUS
+		or Type == CollectibleType.COLLECTIBLE_NEPTUNUS
+	) then
+		result = true
+	end
+	return result
+end)
+]]
 
 --[[
 APIOverride.OverrideClassFunction(EntityPlayer, "GetMaxHearts", function()
@@ -300,6 +316,8 @@ function InitPlayerHexanow(player)
 		-- print("PostGameStarted for", player:GetName())
 		
 		itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_ANALOG_STICK)
+		itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_URANUS)
+		itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_NEPTUNUS)
 		itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR)
 		itemPool:RemoveTrinket(TrinketType.TRINKET_NO)
 		--[[
@@ -314,6 +332,7 @@ end
 -- local updatedCostumesOvertime = false
 local onceHoldingItem = false
 local lastCanFly = nil
+local flyEnabled = false
 -- 永久性确保项目，每一帧执行
 function TickEventHexanow(player)
 	if player:GetPlayerType() == playerTypeHexanow then
@@ -330,20 +349,29 @@ function TickEventHexanow(player)
 			return nil
 		end
 		
+		--[[
 		if not player:IsFlying() and Game():GetRoom():IsClear() and not player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_TRANSCENDENCE) then
-			--[[ 
+			
 			-- player:UseActiveItem(CollectibleType.COLLECTIBLE_BIBLE,false,true,true,false)
 			-- player:UseCard(Card.CARD_HANGED_MAN)
-			if not player:HasCollectible(CollectibleType.COLLECTIBLE_TRANSCENDENCE) then
-				player:AddCollectible(CollectibleType.COLLECTIBLE_TRANSCENDENCE, 0, false)
-				player:AddCacheFlags(CacheFlag.CACHE_FLYING)
-				player:RemoveCollectible(CollectibleType.COLLECTIBLE_TRANSCENDENCE)
-			end ]]
+			--if not player:HasCollectible(CollectibleType.COLLECTIBLE_TRANSCENDENCE) then
+			--	player:AddCollectible(CollectibleType.COLLECTIBLE_TRANSCENDENCE, 0, false)
+			--	player:AddCacheFlags(CacheFlag.CACHE_FLYING)
+			--	player:RemoveCollectible(CollectibleType.COLLECTIBLE_TRANSCENDENCE)
+			--end
 			
 			--player:GetEffects():AddCollectibleEffect(CollectibleType.COLLECTIBLE_TRANSCENDENCE, false, 1)
-			player:AddCacheFlags(CacheFlag.CACHE_FLYING)
+			--player:AddCacheFlags(CacheFlag.CACHE_FLYING)
 			
 			-- player:GetEffects():RemoveCollectibleEffect(CollectibleType.COLLECTIBLE_TRANSCENDENCE)
+		end
+		]]
+		if Game():GetRoom():IsClear() and not flyEnabled then
+			flyEnabled = true
+		end
+		
+		if flyEnabled and not player:IsFlying() then
+			player:RemoveCollectible(hexanowFlightTriggerItem)
 		end
 		
 		--[[
@@ -360,17 +388,26 @@ function TickEventHexanow(player)
 			player:GetEffects():AddCollectibleEffect(CollectibleType.COLLECTIBLE_ANALOG_STICK, false)
 		end
 		]]
-		
-		if not player:HasCollectible(CollectibleType.COLLECTIBLE_ANALOG_STICK) then
-			player:AddCollectible(CollectibleType.COLLECTIBLE_ANALOG_STICK, 0, false)
-			UpdateCostumes(player)
-		end
+		--if room:GetBackdropType() ~= 59 and room:GetBackdropType() ~= 58 then
+			if not player:HasCollectible(CollectibleType.COLLECTIBLE_ANALOG_STICK, true) then
+				player:AddCollectible(CollectibleType.COLLECTIBLE_ANALOG_STICK, 0, false)
+				UpdateCostumes(player)
+			end
+			if not player:HasCollectible(CollectibleType.COLLECTIBLE_URANUS, true) then
+				player:AddCollectible(CollectibleType.COLLECTIBLE_URANUS, 0, false)
+				UpdateCostumes(player)
+			end
+			if not player:HasCollectible(CollectibleType.COLLECTIBLE_NEPTUNUS, true) then
+				player:AddCollectible(CollectibleType.COLLECTIBLE_NEPTUNUS, 0, false)
+				UpdateCostumes(player)
+			end
+		--end
 		
 		
 		local VREntityNotTraced = true
 		local roomEntities = Isaac.GetRoomEntities()
 				
-		if player:HasCollectible(CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR) then
+		if player:HasCollectible(CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR, true) then
 			VREntityNotTraced = false
 		end
 		
@@ -528,6 +565,10 @@ function hexanowMod:PostNewRoom()
 		function(player)
 			if player:GetPlayerType() == playerTypeHexanow then
 				ApplyEternalHearts(player)
+				if not Game():GetRoom():IsClear() then
+					flyEnabled = false
+					player:RemoveCollectible(hexanowFlightTriggerItem)
+				end
 			end
 		end
 	)
@@ -630,8 +671,8 @@ function hexanowMod:EvaluateCache(player, cacheFlag, tear)
 				)
 		elseif cacheFlag == CacheFlag.CACHE_RANGE  then
 			player.TearHeight = player.TearHeight * 3 -- (1 + 2.5 * player:GetMaxHearts() / 24.0 - 0.5)
-			player.TearFallingSpeed = player.TearFallingSpeed -- + 5.0 -- * player:GetMaxHearts() / 24.0 
-			player.TearFallingAcceleration = math.min(player.TearFallingAcceleration, - 0.2 / 3)
+			--player.TearFallingSpeed = player.TearFallingSpeed -- + 5.0 -- * player:GetMaxHearts() / 24.0 
+			--player.TearFallingAcceleration = math.min(player.TearFallingAcceleration, - 0.2 / 3)
 		elseif cacheFlag == CacheFlag.CACHE_TEARFLAG then
 			player.TearFlags = player.TearFlags | TearFlags.TEAR_HOMING | TearFlags.TEAR_PERSISTENT | TearFlags.TEAR_SPECTRAL
 		elseif cacheFlag == CacheFlag.CACHE_FLYING then
@@ -640,6 +681,9 @@ function hexanowMod:EvaluateCache(player, cacheFlag, tear)
 			else
 				player.CanFly = false
 			end]]
+			if Game():GetRoom():IsClear() then
+				player.CanFly = true
+			end
 			 UpdateCostumes(player)
 		elseif cacheFlag == CacheFlag.CACHE_FAMILIARS then
 			local maybeFamiliars = Isaac.GetRoomEntities()
