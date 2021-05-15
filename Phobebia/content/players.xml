@@ -1,0 +1,5 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<players root="gfx/characters/costumes/" portraitroot="gfx/ui/boss/" nameimageroot="gfx/ui/boss/" bigportraitroot="gfx/ui/stage/">
+  <player name="Phobebia" skin="character_Phobebia.png" hp="0" black="2" bombs="0" keys="5" card="6" nameimage="playername_Phobebia.png" portrait="playerportrait_Phobebia.png" bigportrait="playerportraitbig_Phobebia.png" skinColor="0" canShoot="true" items="156,179,364,364,214"></player>
+  <player name="Tainted Phobebia" skin="character_Tainted_Phobebia.png" hp="0" black="4" bombs="0" keys="5" card="14" nameimage="playername_Phobebia.png" portrait="playerportrait_TaintedPhobebia.png" bigportrait="playerportraitbig_TaintedPhobebia.png" skinColor="0" canShoot="true" items="156,214" bSkinParent="Phobebia"></player>
+</players>

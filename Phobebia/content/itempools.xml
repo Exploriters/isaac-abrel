@@ -1,0 +1,26 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ItemPools>
+  <Pool Name="treasure">
+    <Item Name="Judas' Shadow2" Weight="1.3" DecreaseBy="1.0" RemoveOn="0.1" />
+    <Item Name="Phobebia's Blood Bandage" Weight="1.0" DecreaseBy="1.0" RemoveOn="0.1" />
+  </Pool>
+  <Pool Name="devil">
+    <Item Name="Judas' Shadow2" Weight="1.3" DecreaseBy="1.0" RemoveOn="0.1" />
+    <Item Name="Phobebia's Blood Bandage" Weight="1.0" DecreaseBy="1.0" RemoveOn="0.1" />
+  </Pool>
+  <Pool Name="angel">
+    <Item Name="Phobebia's Blood Bandage" Weight="1.0" DecreaseBy="1.0" RemoveOn="0.1" />
+  </Pool>
+  <Pool Name="boss">
+    <Item Name="Phobebia's Blood Bandage" Weight="1.0" DecreaseBy="1.0" RemoveOn="0.1" />
+  </Pool>
+  <Pool Name="secret">
+    <Item Name="Phobebia's Blood Bandage" Weight="1.0" DecreaseBy="1.0" RemoveOn="0.1" />
+  </Pool>
+  <Pool Name="goldenChest">
+    <Item Name="Phobebia's Blood Bandage" Weight="1.0" DecreaseBy="1.0" RemoveOn="0.1" />
+  </Pool>
+  <Pool Name="redChest">
+    <Item Name="Phobebia's Blood Bandage" Weight="1.0" DecreaseBy="1.0" RemoveOn="0.1" />
+  </Pool>
+</ItemPools>
