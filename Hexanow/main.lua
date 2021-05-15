@@ -1,3 +1,5 @@
+Isaac.ConsoleOutput("Init mod hexanow")
+
 local hexanowMod = RegisterMod("Hexanow", 1);
 
 local playerTypeHexanow = Isaac.GetPlayerTypeByName("Hexanow")
@@ -14,7 +16,7 @@ local hexanowObjectives = {
 ["damageIncrease"] = 0.0
 }
 
-require("apioverride")
+-- require("apioverride")
 
 --[[
 APIOverride.OverrideClassFunction(EntityPlayer, "GetMaxHearts", function()
@@ -150,12 +152,15 @@ end
 
 -- 读取mod数据
 function LoadHexanowModData()
+	--[[
 	local str = Isaac.LoadModData(hexanowMod)
 	print("Load Readout: ", str)
+	]]
 end
 
 -- 存储mod数据
 function SaveHexanowModData()
+	--[[
 	local str = "somethingWrong"
 	-- print("Save Readout: ", str)
 	Isaac.SaveModData(hexanowMod, str)
@@ -163,6 +168,7 @@ function SaveHexanowModData()
 	-- 复原临时变量
 	onceHoldingItem = false
 	lastCanFly = nil
+	]]
 end
 
 -- 测试
@@ -185,7 +191,6 @@ function UpdateCostumes(player)
 		player:AddNullCostume(hexanowHairCostume)
 		
 		player:TryRemoveNullCostume(hexanowFateCostume)
-		-- if player:HasCollectible(CollectibleType.COLLECTIBLE_FATE) then
 		if player.CanFly then
 			player:AddNullCostume(hexanowFateCostume)
 		end
@@ -288,7 +293,7 @@ function InitPlayerHexanow(player)
 		
 		player:AddHearts(-1)
 		player:AddCard(Card.CARD_JUSTICE)
-		player:AddTrinket(TrinketType.TRINKET_NO)
+		player:AddTrinket(TrinketType.TRINKET_NO | 32768)
 		-- player:AddCard(Card.CARD_SUN)
 		-- player:AddTrinket(TrinketType.TRINKET_BIBLE_TRACT)
 		
@@ -317,27 +322,38 @@ function TickEventHexanow(player)
 		local room = game:GetRoom()
 		local roomEntities = Isaac.GetRoomEntities()
 		
+		if game == nil
+		or level == nil
+		or room == nil
+		or roomEntities == nil
+		then
+			return nil
+		end
+		
 		if not player:IsFlying() and Game():GetRoom():IsClear() and not player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_TRANSCENDENCE) then
+			--[[ 
 			-- player:UseActiveItem(CollectibleType.COLLECTIBLE_BIBLE,false,true,true,false)
 			-- player:UseCard(Card.CARD_HANGED_MAN)
-			--[[ if not player:HasCollectible(CollectibleType.COLLECTIBLE_TRANSCENDENCE) then
+			if not player:HasCollectible(CollectibleType.COLLECTIBLE_TRANSCENDENCE) then
 				player:AddCollectible(CollectibleType.COLLECTIBLE_TRANSCENDENCE, 0, false)
 				player:AddCacheFlags(CacheFlag.CACHE_FLYING)
 				player:RemoveCollectible(CollectibleType.COLLECTIBLE_TRANSCENDENCE)
 			end ]]
 			
-			player:GetEffects():AddCollectibleEffect(CollectibleType.COLLECTIBLE_TRANSCENDENCE, false)
+			--player:GetEffects():AddCollectibleEffect(CollectibleType.COLLECTIBLE_TRANSCENDENCE, false, 1)
 			player:AddCacheFlags(CacheFlag.CACHE_FLYING)
 			
 			-- player:GetEffects():RemoveCollectibleEffect(CollectibleType.COLLECTIBLE_TRANSCENDENCE)
 		end
 		
+		--[[
 		-- player:UseActiveItem(CollectibleType.COLLECTIBLE_SACRIFICIAL_ALTAR,false,true,true,false)
 
 		-- player:AddCollectible(CollectibleType.COLLECTIBLE_SCHOOLBAG, 0, false)
 		-- player:AddCollectible(CollectibleType.COLLECTIBLE_MOMS_PURSE, 0, false)
 		-- player:AddCollectible(CollectibleType.COLLECTIBLE_POLYDACTYLY, 0, false)
 		-- player:AddCollectible(CollectibleType.COLLECTIBLE_PRAYER_CARD, 0, false)
+		]]
 		
 		--[[
 		if not player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_ANALOG_STICK) then
@@ -388,7 +404,7 @@ function TickEventHexanow(player)
 			end
 			]]
 			
-			TestDoDmg(player)
+			-- TestDoDmg(player)
 			
 		if player:IsDead() then
 			--player:Revive()
@@ -441,7 +457,7 @@ function TickEventHexanow(player)
 		
 		RearrangeHearts(player)
 		
-		EnsureFamiliars(player)
+		-- EnsureFamiliars(player)
 		
 	end
 end
@@ -472,10 +488,11 @@ hexanowMod:AddCallback(ModCallbacks.MC_EXECUTE_CMD, hexanowMod.ExecuteCmd);
 
 -- 在游戏被初始化后运行
 function hexanowMod:PostGameStarted(loadedFromSaves)	
-	LoadHexanowModData()
 	
 	if not loadedFromSaves then -- 仅限新游戏
 		CallForEveryPlayer(InitPlayerHexanow)
+	else -- 仅限从存档中读取
+		LoadHexanowModData()
 	end
 	
 end
@@ -645,7 +662,8 @@ function hexanowMod:EvaluateCache(player, cacheFlag, tear)
 end
 hexanowMod:AddCallback(ModCallbacks.MC_EVALUATE_CACHE, hexanowMod.EvaluateCache)
 
-local fireworksToWipe = {}
+--local fireworksToWipe = {}
+--local rainbowFireworkRng = RNG()
 -- 在每一帧后执行
 function hexanowMod:PostUpdate()
 	CallForEveryPlayer(
@@ -655,7 +673,7 @@ function hexanowMod:PostUpdate()
 			end
 		end
 	)
-	
+	--[[
 	local hexanowExist = PlayerTypeExistInGame(playerTypeHexanow)
 	
 	for i,entity in ipairs(fireworksToWipe) do
@@ -671,9 +689,43 @@ function hexanowMod:PostUpdate()
 		if hexanowExist then
 			local npc = entity:ToNPC()
 			if npc ~= nil then
+				local fireworkEntity = Isaac.Spawn(EntityType.ENTITY_EFFECT, EffectVariant.FIREWORKS, 5, entity.Position, entity.Velocity, entity)
+				
+				local r,g,b,h
+				h = rainbowFireworkRng:RandomInt(359)
+				
+				if     h < 60 then
+					r = 1
+					g = (h - 0) / 30.0
+					b = 0
+				elseif h < 120 then
+					r = 1 - (h - 60) / 30.0
+					g = 1
+					b = 0
+				elseif h < 180 then
+					r = 0
+					g = 1
+					b = (h - 120) / 30.0
+				elseif h < 240 then
+					r = 0
+					g = 1 - (h - 180) / 30.0
+					b = 1
+				elseif h < 270 then
+					r = (h - 240) / 30.0
+					g = 0
+					b = 1
+				elseif h < 360 then
+					r = 1
+					g = 0
+					b = 1 - (h - 270) / 30.0
+				end
+				
+				fireworkEntity.Visible = false
+				fireworkEntity:SetColor(Color(r,g,b,
+					1, 0, 0, 0), 0, 999, false, false)
 				table.insert(
 					fireworksToWipe,
-					Isaac.Spawn(EntityType.ENTITY_EFFECT, EffectVariant.FIREWORKS, 5, npc.Position, npc.Velocity, npc)
+					fireworkEntity
 					)
 			end
 		end
@@ -737,15 +789,9 @@ function hexanowMod:PostUpdate()
 			end
 		end
 	end
+	]]
 	
-	
-	
-	
-	
-	
-	
-	
-	SaveHexanowModData()
+	--SaveHexanowModData()
 end
 hexanowMod:AddCallback(ModCallbacks.MC_POST_UPDATE, hexanowMod.PostUpdate)
 
