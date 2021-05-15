@@ -8,9 +8,13 @@ local LairubStatUpdateItem = Isaac.GetItemIdByName( "Lairub Stat Trigger" )
 local ShiftChanged = 1
 
 function UpdateCache(player)
+	-- player:AddCollectible(LairubStatUpdateItem) 根本不需要给
+	player:RemoveCollectible(LairubStatUpdateItem)
+	--[[
 	player:AddCacheFlags(CacheFlag.CACHE_DAMAGE)
 	player:AddCacheFlags(CacheFlag.CACHE_SPEED)
 	player:AddCacheFlags(CacheFlag.CACHE_FIREDELAY)
+	]]
 end
 
 function lairub:Update(player)
@@ -181,8 +185,6 @@ function lairub:Functions()
 		end
 		
 		if not IsShiftChanged then
-			player:AddCollectible(LairubStatUpdateItem)
-			player:RemoveCollectible(LairubStatUpdateItem)
 			UpdateCache(player)
 		end
 	end
