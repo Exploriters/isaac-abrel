@@ -7,7 +7,6 @@ local LairubStatUpdateItem = Isaac.GetItemIdByName( "Lairub Stat Trigger" )
 
 local ShiftChanged = 1
 
--- 提交缓存更新请求
 function UpdateCache(player)
 	player:AddCacheFlags(CacheFlag.CACHE_DAMAGE)
 	player:AddCacheFlags(CacheFlag.CACHE_SPEED)

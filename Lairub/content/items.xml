@@ -1,3 +1,4 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
 <items gfxroot="gfx/items/" version="1">
-	<passive cache="damage speed firedelay" description="Stats changed" hidden="true" gfx="collectibles_045_yumheart.png" id="14433" name="Lairub Stat Trigger"  />
+  <passive cache="damage speed firedelay" description="Stats changed" hidden="true" gfx="Nothing.png" name="Lairub Stat Trigger" />
 </items>
