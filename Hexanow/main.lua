@@ -9,6 +9,7 @@ local hexanowHairCostume = Isaac.GetCostumeIdByPath("gfx/characters/HexanowHair.
 local hexanowFateCostume = Isaac.GetCostumeIdByPath("gfx/characters/Hexanow_fate.anm2")
 
 local entityVariantHeartsBlender = Isaac.GetEntityVariantByName("Hearts Blender")
+local entityTypeHexanowPortal = Isaac.GetEntityTypeByName("Hexanow Blue Portal")
 
 local MC_ENTITY_TAKE_DMG_Room = 0
 local MC_ENTITY_TAKE_DMG_Forever = 0
@@ -18,7 +19,6 @@ local hexanowObjectives = {
 }
 
 require("apioverride")
-
 --[[ MALFUNCTIONING
 local baseEntityPlayerHasCollectible = APIOverride.GetCurrentClassFunction(EntityPlayer, "HasCollectible")
 APIOverride.OverrideClassFunction(EntityPlayer, "HasCollectible", function(interval, Type, IgnoreModifiers)	
@@ -77,6 +77,14 @@ function CallForEveryPlayer(func)
 	local numPlayers = Game():GetNumPlayers()
 	for i=0,numPlayers-1,1 do
 		func(Isaac.GetPlayer(i))
+	end
+end
+
+-- 为每个实体执行目标函数
+function CallForEveryEntity(func)
+	local roomEntities = Isaac.GetRoomEntities()
+	for i,entity in ipairs(roomEntities) do
+		func(entity)
 	end
 end
 
@@ -347,7 +355,7 @@ function InitPlayerHexanow(player)
 		itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_URANUS)
 		itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_NEPTUNUS)
 		itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR)
-		itemPool:RemoveTrinket(TrinketType.TRINKET_NO)
+		--itemPool:RemoveTrinket(TrinketType.TRINKET_NO)
 		--[[
 		for i=0,14,1 do
 			itemPool:IdentifyPill(i)
@@ -564,6 +572,22 @@ function hexanowMod:ExecuteCmd(cmd, params)
 			end
 		end
 	end
+	if cmd == "reportentity" then
+		local roomEntities = Isaac.GetRoomEntities()
+				
+		for i,entity in ipairs(roomEntities) do
+			print(entity.Type,".",entity.Variant,".",entity.SubType,"(", entity.Position.X, ",", entity.Position.Y, ")")
+		end
+	end
+	if cmd == "reportentityne" then
+		local roomEntities = Isaac.GetRoomEntities()
+				
+		for i,entity in ipairs(roomEntities) do
+			if entity.Type ~= 1000 then
+				print(entity.Type,".",entity.Variant,".",entity.SubType,"(", entity.Position.X, ",", entity.Position.Y, ")")
+			end
+		end
+	end
 end
 hexanowMod:AddCallback(ModCallbacks.MC_EXECUTE_CMD, hexanowMod.ExecuteCmd);
 
@@ -582,6 +606,9 @@ hexanowMod:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, hexanowMod.PostGameSta
 -- 在游戏退出前运行
 function hexanowMod:PreGameExit(shouldSave)
 	SaveHexanowModData()
+	portalBlue = nil
+	portalOrange = nil
+	teledProjectiles = {}
 end
 hexanowMod:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, hexanowMod.PreGameExit)
 
@@ -756,10 +783,20 @@ function hexanowMod:EvaluateCache(player, cacheFlag, tear)
 end
 hexanowMod:AddCallback(ModCallbacks.MC_EVALUATE_CACHE, hexanowMod.EvaluateCache)
 
+
+local portalBlue = nil
+local portalOrange = nil
+local teledProjectiles = {}
 --local fireworksToWipe = {}
 --local rainbowFireworkRng = RNG()
+--local tempt = 0
 -- 在每一帧后执行
 function hexanowMod:PostUpdate()
+	local game = Game()
+	local level = game:GetLevel()
+	local room = game:GetRoom()
+	local roomEntities = Isaac.GetRoomEntities()
+	
 	CallForEveryPlayer(
 		function(player)
 			if player:GetPlayerType() == playerTypeHexanow then		
@@ -767,6 +804,195 @@ function hexanowMod:PostUpdate()
 			end
 		end
 	)
+	
+	if PlayerTypeExistInGame(playerTypeHexanow) then
+		--if room:GetType() == RoomType.PLANETARIUM then
+		--[[
+		if room:GetType() == 24 then
+			local restockFound = false
+			
+			CallForEveryEntity(
+				function(entity)
+					if entity.Type == EntityType.ENTITY_SLOT
+					and entity.Variant == 10
+					then
+						restockFound = true
+						return nil
+					end
+				end
+			)
+			
+			if not restockFound then
+				Isaac.Spawn(EntityType.ENTITY_SLOT, 10, 0, Vector(320,200), Vector(0,0), nil)
+			end
+		end
+		]]
+		
+		CallForEveryEntity(
+			function(entity)
+				if entity.Type == EntityType.ENTITY_EFFECT
+				and entity.Variant == EffectVariant.WOMB_TELEPORT
+				then
+					local portalFound = false
+					
+					CallForEveryEntity(
+						function(entity2)
+							if entity2.Type == entityTypeHexanowPortal
+							and entity2.Position:Distance(entity.Position) <= 20
+							then
+								portalFound = true
+								return nil
+							end
+						end
+					)
+					
+					if not portalFound then
+						Isaac.Spawn(entityTypeHexanowPortal, entity.SubType, 0, entity.Position, Vector(0,0), entity)
+					end
+					
+					entity.Visible = false
+				end
+			end
+		)
+	end
+	
+	CallForEveryEntity(
+		function(entity)
+			if entity.Type == entityTypeHexanowPortal then
+				if entity.Variant ~= 0
+				and entity.Variant ~= 1
+				then
+					entity:Remove()
+				end
+				
+				local sprite = entity:GetSprite()
+
+				if entity.FrameCount == 1 then
+				end
+				
+				local wombTeleportFound = false
+				
+				if PlayerTypeExistInGame(playerTypeHexanow) then
+					CallForEveryEntity(
+						function(entity2)
+							if entity2.Type == EntityType.ENTITY_EFFECT
+							and entity2.Variant == EffectVariant.WOMB_TELEPORT
+							and entity2.Position:Distance(entity.Position) <= 20
+							then
+								wombTeleportFound = true
+								return nil
+							end
+						end
+					)
+				end
+				
+				if not wombTeleportFound then
+					entity.SubType = 1
+				end
+				
+				if entity.SubType == 1 then
+					if portalBlue == entity then
+						portalBlue = nil
+					end
+					if portalOrange == entity then
+						portalOrange = nil
+					end
+					if not sprite:IsPlaying("Death") and not sprite:IsFinished("Death") then
+						sprite:Play("Death", true)
+					elseif sprite:IsFinished("Death") and sprite:GetFrame() > 0 then
+						entity:Remove()
+					end
+				else
+					if sprite:IsFinished("Appear") and sprite:GetFrame() > 0 then
+						sprite:Play("Idle", false)
+					end
+					
+					if entity.FrameCount > 20 then
+						if entity.Variant == 0 then
+							--entity:SetColor(Color(9,132,255,1, 0, 0, 0), 0, 999, false, false)
+							portalBlue = entity
+						elseif entity.Variant == 1 then
+							--entity:SetColor(Color(234,135,0,1, 0, 0, 0), 0, 999, false, false)
+							portalOrange = entity
+						end
+					end
+				
+						--entity.SubType = 1
+					--if entity.FrameCount%10 == 0 then
+					--	SFXManager():Play(tempt, 3, 0, false, 1 )
+					--	print("Playing",tempt)
+					--	tempt = tempt + 1
+					--end
+				end
+				
+			end
+		end
+	)
+	if portalBlue ~= nil and not portalBlue:Exists() then
+		portalBlue = nil
+	end
+	if portalOrange ~= nil and not portalOrange:Exists() then
+		portalOrange = nil
+	end
+	
+	if portalBlue ~= nil and portalOrange ~= nil then
+		CallForEveryEntity(
+			function(entity)
+				if entity.Type == EntityType.ENTITY_TEAR
+				or entity.Type == EntityType.ENTITY_BOMBDROP
+				--or entity.Type == EntityType.ENTITY_KNIFE
+				or entity.Type == EntityType.ENTITY_PROJECTILE  
+				then
+					if entity.Parent ~= nil and entity.Parent.Type == EntityType.ENTITY_PLAYER then
+						local closeToBlue = false
+						local closeToOrange = false
+						
+						local traced = false
+						for k,v in ipairs(teledProjectiles) do
+							if v == entity.Index then
+								traced = true
+								break
+							end
+						end
+						
+						if not traced then
+							if entity.Position:Distance(portalBlue.Position) <= 20 then
+								closeToBlue = true
+							end
+							if entity.Position:Distance(portalOrange.Position) <= 20 then
+								closeToOrange = true
+							end
+							
+							if closeToBlue and not closeToOrange then
+								entity.Position = portalBlue.Position - entity.Position + portalOrange.Position
+								table.insert(teledProjectiles, entity.Index)
+							elseif closeToOrange and not closeToBlue then
+								entity.Position = portalOrange.Position - entity.Position + portalBlue.Position
+								table.insert(teledProjectiles, entity.Index)
+							end
+						else
+							if entity.Position:Distance(portalBlue.Position) <= 40 then
+								closeToBlue = true
+							end
+							if entity.Position:Distance(portalOrange.Position) <= 40 then
+								closeToOrange = true
+							end
+							if not closeToBlue and not closeToOrange then
+								for k,v in ipairs(teledProjectiles) do
+									if v == entity.Index then
+										table.remove(teledProjectiles, k)
+										break
+									end
+								end
+							end
+						end
+					end
+				end
+			end
+		)
+	else
+		teledProjectiles = {}
+	end
 	--[[
 	local hexanowExist = PlayerTypeExistInGame(playerTypeHexanow)
 	
