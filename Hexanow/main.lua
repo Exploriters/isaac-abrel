@@ -44,6 +44,34 @@ APIOverride.OverrideClassFunction(EntityPlayer, "GetPlayerType", function()
 end)
 ]]
 
+
+function Tears2TearDelay(Tears)
+	if Tears <= 0.77 then
+		return 16 - 6 * Tears
+	elseif Tears < 0 then
+		return 16 - 6 * math.sqrt( Tears * 1.3 + 1 ) - 6 * Tears
+	else
+		return 16 - 6 * math.sqrt( Tears * 1.3 + 1 )
+	end
+end
+
+function TearDelay2Tears(TearDelay)
+	if TearDelay <= 10 then
+		return ( ( - ( TearDelay - 16 ) / 6 )^2 - 1 )/1.3\
+	elseif TearDelay < 20.62 then
+		return -(10*TearDelay+math.sqrt(3)*math.sqrt(5867-260*TearDelay)-199)/60
+	else
+		return ( 16 - TearDelay ) / 6
+	end
+end
+
+function ApplyTears2TearDelay(TearDelay, Tears)
+	return Tears2TearDelay(TearDelay2Tears(TearDelay) + Tears)
+end
+
+		--return ( 770 - 77*TearDelay )/1062 临时方案
+		--return ((-10*TearDelay)+math.sqrt(3)*math.sqrt(5867-260*TearDelay)+199)/60
+
 -- 为每个玩家执行目标函数
 function CallForEveryPlayer(func)
 	local numPlayers = Game():GetNumPlayers()
@@ -509,6 +537,22 @@ function hexanowMod:ExecuteCmd(cmd, params)
 			-- TODO EFFECTS
 		end
 	end
+	if cmd == "t2td" then
+		local pnum = tonumber(params)
+		if pnum == nil then
+			Isaac.ConsoleOutput("Invalid args")
+		else
+			Isaac.ConsoleOutput(Tears2TearDelay(pnum))
+		end
+	end
+	if cmd == "td2t" then
+		local pnum = tonumber(params)
+		if pnum == nil then
+			Isaac.ConsoleOutput("Invalid args")
+		else
+			Isaac.ConsoleOutput(TearDelay2Tears(pnum))
+		end
+	end
 	if cmd == "reportpos" then
 		local roomEntities = Isaac.GetRoomEntities()
 				
@@ -665,10 +709,14 @@ function hexanowMod:EvaluateCache(player, cacheFlag, tear)
 		elseif cacheFlag == CacheFlag.CACHE_SHOTSPEED then
 			player.ShotSpeed = player.ShotSpeed - 0.15 -- * (1.0 - 0.3 * player:GetMaxHearts() / 24.0 + 0.15)
 		elseif cacheFlag == CacheFlag.CACHE_FIREDELAY then
-			player.MaxFireDelay = math.ceil(
-					(player.MaxFireDelay + (player:HasCollectible(CollectibleType.COLLECTIBLE_ANALOG_STICK) and {2} or {0})[1]
-					) * 2 -- * (1.0 + 1.5 * player:GetMaxHearts() / 24.0 - 0.5)
-				)
+			--player.MaxFireDelay = math.ceil(
+			--		(player.MaxFireDelay + (player:HasCollectible(CollectibleType.COLLECTIBLE_ANALOG_STICK) and {2} or {0})[1]
+			--		) * 2 -- * (1.0 + 1.5 * player:GetMaxHearts() / 24.0 - 0.5)
+			--	)
+			if player:HasCollectible(CollectibleType.COLLECTIBLE_ANALOG_STICK) then
+				player.MaxFireDelay = ApplyTears2TearDelay(player.MaxFireDelay, -0.35 )
+			end
+			player.MaxFireDelay = player.MaxFireDelay * 2
 		elseif cacheFlag == CacheFlag.CACHE_RANGE  then
 			player.TearHeight = player.TearHeight * 3 -- (1 + 2.5 * player:GetMaxHearts() / 24.0 - 0.5)
 			--player.TearFallingSpeed = player.TearFallingSpeed -- + 5.0 -- * player:GetMaxHearts() / 24.0 
