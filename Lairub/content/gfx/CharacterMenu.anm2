@@ -5,7 +5,7 @@
 			<Spritesheet Path="charactermenu.png" Id="0"/>
 		</Spritesheets>
 		<Layers>
-			<!--<Layer Name="Background" Id="0" SpritesheetId="0"/>-->
+			<Layer Name="Background" Id="0" SpritesheetId="0"/>
 			<Layer Name="Left Arrow" Id="1" SpritesheetId="0"/>
 			<Layer Name="Right Arrow" Id="2" SpritesheetId="0"/>
 			<Layer Name="Name" Id="3" SpritesheetId="0"/>
