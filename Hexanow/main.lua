@@ -57,7 +57,7 @@ end
 
 function TearDelay2Tears(TearDelay)
 	if TearDelay <= 10 then
-		return ( ( - ( TearDelay - 16 ) / 6 )^2 - 1 )/1.3\
+		return ( ( - ( TearDelay - 16 ) / 6 )^2 - 1 )/1.3
 	elseif TearDelay < 20.62 then
 		return -(10*TearDelay+math.sqrt(3)*math.sqrt(5867-260*TearDelay)-199)/60
 	else
@@ -714,9 +714,11 @@ function hexanowMod:EvaluateCache(player, cacheFlag, tear)
 			--		) * 2 -- * (1.0 + 1.5 * player:GetMaxHearts() / 24.0 - 0.5)
 			--	)
 			if player:HasCollectible(CollectibleType.COLLECTIBLE_ANALOG_STICK) then
-				player.MaxFireDelay = ApplyTears2TearDelay(player.MaxFireDelay, -0.35 )
+				player.MaxFireDelay = ApplyTears2TearDelay(player.MaxFireDelay, -0.34999972571835 -0.6666666666666)
+			else
+				player.MaxFireDelay = ApplyTears2TearDelay(player.MaxFireDelay, -0.6666666666666)
 			end
-			player.MaxFireDelay = player.MaxFireDelay * 2
+			--player.MaxFireDelay = player.MaxFireDelay * 2
 		elseif cacheFlag == CacheFlag.CACHE_RANGE  then
 			player.TearHeight = player.TearHeight * 3 -- (1 + 2.5 * player:GetMaxHearts() / 24.0 - 0.5)
 			--player.TearFallingSpeed = player.TearFallingSpeed -- + 5.0 -- * player:GetMaxHearts() / 24.0 
