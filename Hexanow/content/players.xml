@@ -1,4 +1,14 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<players root="gfx/characters/costumes/" portraitroot="gfx/ui/boss/" nameimageroot="gfx/ui/boss/" bigportraitroot="gfx/ui/stage/">
-  <player name="Hexanow" skin="character_Hexanow.png" hp="12" black="0" bombs="0" keys="0" card="0" nameimage="playername_Hexanow.png" portrait="playerportrait_Hexanow.png" bigportrait="playerportraitbig_Hexanow.png" skinColor="0" canShoot="true" items=""></player>
+<players root="gfx/characters/costumes/"
+         portraitroot="gfx/ui/boss/"
+         nameimageroot="gfx/ui/boss/"
+         bigportraitroot="gfx/ui/stage/">
+  <player name="Hexanow" skin="character_Hexanow.png" hp="12" black="0" bombs="0" keys="0" card="0"
+	items=""
+	nameimage="playername_Hexanow.png" 
+	portrait="playerportrait_Hexanow.png" 
+	bigportrait="playerportraitbig_Hexanow.png"
+	canShoot="true"
+	costumeSuffix="hexanow"
+	birthright="not done" />
 </players>

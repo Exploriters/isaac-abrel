@@ -6,6 +6,9 @@ local costume_Lairub_Head_TakeSoul = Isaac.GetCostumeIdByPath("gfx/characters/La
 local playerType_Lairub = Isaac.GetPlayerTypeByName("Lairub")
 local LairubStatUpdateItem = Isaac.GetItemIdByName( "Lairub Stat Trigger" )
 
+local AnimationEnd = true
+local AnimationEnd_ReadySpawnCross = true
+
 local ShiftChanged = 1
 local IsShiftChanged = true
 local PressingShift = false
@@ -14,6 +17,12 @@ local PressedShiftOnce = false
 local PressingAlt = false
 local PressedAltOnce = false
 
+local PressingCtrl = false
+local PressedCtrlOnce = false
+
+local ReadySpawnCross = false
+local DetermineDirection = false
+local SpawnedCross = false
 
 function UpdateCache(player)
 	player:AddCacheFlags(CacheFlag.CACHE_DAMAGE)
@@ -209,7 +218,11 @@ function lairub:PostRender()
 		AttackIcon:Render(Vector(64,52), Vector(0,0), Vector(0,0))
 		--==CrossIcon==--
 		CrossIcon:SetOverlayRenderPriority(true)
-		CrossIcon:SetFrame("Locking", 1)
+		if SpawnedCross == true then
+			CrossIcon:SetFrame("Locking", 1)
+		else
+			CrossIcon:SetFrame("Ready", 1)
+		end
 		CrossIcon:Render(Vector(96,52), Vector(0,0), Vector(0,0))
 		--==ReleaseIcon==--
 		ReleaseIcon:SetOverlayRenderPriority(true)
@@ -237,11 +250,12 @@ local function LairubAnmChangedToTakeSoulUpdate(_, LairubAnmChangedToTakeSoul)
 		if LairubAnmChangedToTakeSoul:GetSprite():IsEventTriggered("End") then
 			player.Visible = true
 			player.ControlsEnabled = true
+			AnimationEnd = true
 			LairubAnmChangedToTakeSoul:Remove()
 		end
 	end
 end
-lairub:AddCallback(ModCallbacks.MC_FAMILIAR_UPDATE,LairubAnmChangedToTakeSoulUpdate, LairubAnmChangedToTakeSoul)
+lairub:AddCallback(ModCallbacks.MC_FAMILIAR_UPDATE,LairubAnmChangedToTakeSoulUpdate, LairubAnmChangedToTakeSoul_Variant)
 
 local LairubAnmChangedToNormal_Type = Isaac.GetEntityTypeByName("LairubAnmChangedToNormal")
 local LairubAnmChangedToNormal_Variant = Isaac.GetEntityVariantByName("LairubAnmChangedToNormal")
@@ -256,11 +270,12 @@ local function LairubAnmChangedToNormalUpdate(_, LairubAnmChangedToNormal)
 		if LairubAnmChangedToNormal:GetSprite():IsEventTriggered("End") then
 			player.Visible = true
 			player.ControlsEnabled = true
+			AnimationEnd = true
 			LairubAnmChangedToNormal:Remove()
 		end
 	end
 end
-lairub:AddCallback(ModCallbacks.MC_FAMILIAR_UPDATE,LairubAnmChangedToNormalUpdate, LairubAnmChangedToNormal)
+lairub:AddCallback(ModCallbacks.MC_FAMILIAR_UPDATE,LairubAnmChangedToNormalUpdate, LairubAnmChangedToNormal_Variant)
 
 local LairubAnmReleaseSoul_Type = Isaac.GetEntityTypeByName("LairubAnmReleaseSoul")
 local LairubAnmReleaseSoul_Variant = Isaac.GetEntityVariantByName("LairubAnmReleaseSoul")
@@ -272,18 +287,74 @@ local function LairubAnmReleaseSoulUpdate(_, LairubAnmReleaseSoul)
 	local room = game:GetRoom()
 	if player:GetPlayerType() == playerType_Lairub and not player:IsDead() then
 		LairubAnmReleaseSoul:GetSprite():Play("ReleaseSoul", false)
-		if LairubAnmReleaseSoul:GetSprite():IsEventTriggered("LoopEnd") then
-			LairubAnmReleaseSoul:GetSprite():SetFrame("ReleaseSoul", 9)
-			LairubAnmReleaseSoul:GetSprite():Play("ReleaseSoul", false)
-		end
 		if LairubAnmReleaseSoul:GetSprite():IsEventTriggered("End") then
-			player.Visible = true
-			player.ControlsEnabled = true
-			LairubAnmReleaseSoul:Remove()
+			if PressingAlt == false then
+				player.ControlsEnabled = true
+				player.Visible = true
+				AnimationEnd = true
+				LairubAnmReleaseSoul:Remove()
+			end
 		end
 	end
 end
-lairub:AddCallback(ModCallbacks.MC_FAMILIAR_UPDATE,LairubAnmReleaseSoulUpdate, LairubAnmReleaseSoul)
+lairub:AddCallback(ModCallbacks.MC_FAMILIAR_UPDATE,LairubAnmReleaseSoulUpdate, LairubAnmReleaseSoul_Variant)
+
+local LairubSoulCross_Type = Isaac.GetEntityTypeByName("LairubSoulCross")
+local LairubSoulCross_Variant = Isaac.GetEntityVariantByName("LairubSoulCross")
+
+local NPCdis = 0
+
+local function LairubSoulCrossUpdate(_, LairubSoulCross)
+	local game = Game()
+	local level = game:GetLevel()
+	local player = Isaac.GetPlayer(0)
+	local room = game:GetRoom()
+	local roomEntities = Isaac.GetRoomEntities()
+	if LairubSoulCross.FireCooldown < 1 then
+		for i,entity in ipairs(roomEntities) do
+			local NPC = entity:ToNPC()
+			if NPC ~= nil and NPC:IsVulnerableEnemy() then
+				if (LairubSoulCross.Position - NPC.Position):Length() < NPCdis then
+					local Laser = player:FireTechLaser(LairubSoulCross.Position, 1, (NPC.Position - LairubSoulCross.Position), false, true)
+					Laser.CollisionDamage = player.Damage * 0.5
+					local LaserSprite = Laser:GetSprite()
+					LaserSprite:ReplaceSpritesheet(0,"gfx/effects/effect_LairubLaserEffects.png")
+					LaserSprite:LoadGraphics("gfx/effects/effect_LairubLaserEffects.png")
+					NPCdis = 0
+				elseif (LairubSoulCross.Position - NPC.Position):Length() > NPCdis then
+					NPCdis = NPCdis + 64
+				end
+			end
+		end
+		LairubSoulCross.FireCooldown = math.ceil(player.MaxFireDelay)
+	else
+		LairubSoulCross.FireCooldown = LairubSoulCross.FireCooldown - 1
+	end
+end
+lairub:AddCallback(ModCallbacks.MC_FAMILIAR_UPDATE,LairubSoulCrossUpdate, LairubSoulCross_Variant)
+
+local LairubAnmReadySpawnCross_Type = Isaac.GetEntityTypeByName("LairubAnmReadySpawnCross")
+local LairubAnmReadySpawnCross_Variant = Isaac.GetEntityVariantByName("LairubAnmReadySpawnCross")
+
+local function LairubAnmReadySpawnCrossUpdate(_, LairubAnmReadySpawnCross)
+	local game = Game()
+	local level = game:GetLevel()
+	local player = Isaac.GetPlayer(0)
+	local room = game:GetRoom()
+	local roomEntities = Isaac.GetRoomEntities()
+	if player:GetPlayerType() == playerType_Lairub and not player:IsDead() then
+		LairubAnmReadySpawnCross:GetSprite():Play("ReadySpawnCross", false)
+		if LairubAnmReadySpawnCross:GetSprite():WasEventTriggered("End") then
+			AnimationEnd_ReadySpawnCross = true
+		end
+		if ReadySpawnCross == false or DetermineDirection == true then
+			player.Visible = true
+			player.ControlsEnabled = true
+			LairubAnmReadySpawnCross:Remove()
+		end
+	end
+end
+lairub:AddCallback(ModCallbacks.MC_FAMILIAR_UPDATE,LairubAnmReadySpawnCrossUpdate, LairubAnmReadySpawnCross_Variant)
 
 function lairub:Functions()
 	local level = Game():GetLevel()
@@ -294,20 +365,23 @@ function lairub:Functions()
 		--== Changed Icon==--
 		if Input.IsButtonPressed(Keyboard.KEY_LEFT_SHIFT, player.ControllerIndex) then
 			PressingShift = true
+			player.ControlsEnabled = false
 			if PressedShiftOnce == false then
 				PressedShiftOnce = true
-				if ShiftChanged == 1 then
+				if ShiftChanged == 1 and AnimationEnd == true then
 					Isaac.Spawn(EntityType.ENTITY_FAMILIAR, LairubAnmChangedToTakeSoul_Variant, 0, player.Position, Vector(0,0), player)
 					player.Visible = false
-					player.ControlsEnabled = false
+					SFXManager():Play(38, 3, 0, false, 0.5 )
 					ShiftChanged = 2 
 					IsShiftChanged = false
-				elseif ShiftChanged == 2 then
+					AnimationEnd = false
+				elseif ShiftChanged == 2 and AnimationEnd == true then
 					Isaac.Spawn(EntityType.ENTITY_FAMILIAR, LairubAnmChangedToNormal_Variant, 0, player.Position, Vector(0,0), player)
 					player.Visible = false
-					player.ControlsEnabled = false
+					SFXManager():Play(38, 3, 0, false, 0.8 )
 					ShiftChanged = 1
 					IsShiftChanged = false
+					AnimationEnd = false
 				end
 			end
 		else
@@ -350,20 +424,22 @@ function lairub:Functions()
 			end
 		end
 		--==== Release Soul ====--
-		if Input.IsButtonPressed(Keyboard.KEY_LEFT_ALT, player.ControllerIndex) then
+		if Input.IsButtonPressed(Keyboard.KEY_LEFT_ALT, player.ControllerIndex) and not ReadySpawnCross == true then
 			player.ControlsEnabled = false
+			player.Visible = false
 			PressingAlt = true
 			if PressedAltOnce == false then
 				PressedAltOnce = true
-				--Isaac.Spawn(EntityType.ENTITY_FAMILIAR, LairubAnmReleaseSoul_Variant, 0, player.Position, Vector(0,0), player)
+				Isaac.Spawn(EntityType.ENTITY_FAMILIAR, LairubAnmReleaseSoul_Variant, 0, player.Position, Vector(0,0), player)
 			end
 			if SoulCount > 0 then
 				for i,entity in ipairs(roomEntities) do
 					local NPC = entity:ToNPC()
-					if NPC ~= nil and NPC:IsVulnerableEnemy() then
+					if NPC ~= nil and NPC:IsVulnerableEnemy() and not NPC:HasEntityFlags(EntityFlag.FLAG_FRIENDLY) then
 						if (player.Position - NPC.Position):Length() < 192 then
 							SoulCount = SoulCount - 1
 							NPC:TakeDamage(player.Damage, 0, EntityRef(player), 0)
+							NPC:SetColor(Color(0, 0, 0, 1, 0, 0, 0), 30, 999, true, true)
 							if SoulCount < 0 then
 								SoulCount = 0
 							end
@@ -372,9 +448,117 @@ function lairub:Functions()
 				end
 			end
 		else
-			player.ControlsEnabled = true
 			PressingAlt = false
 			PressedAltOnce = false
+		end
+		--====Soul Cross====--
+		--==Ready Spawn==--
+		if Input.IsButtonPressed(Keyboard.KEY_LEFT_CONTROL, player.ControllerIndex) then
+			PressingCtrl = true
+			if PressedCtrlOnce == false then
+				PressedCtrlOnce = true
+				if ReadySpawnCross == false and SpawnedCross == false then
+					player.Visible = false
+					Isaac.Spawn(EntityType.ENTITY_FAMILIAR, LairubAnmReadySpawnCross_Variant, 0, player.Position, Vector(0,0), player)
+					SFXManager():Play(252, 1, 0, false, 1 )
+					ReadySpawnCross = true -- Ready spawn
+				elseif ReadySpawnCross == true or SpawnedCross == true then
+					ReadySpawnCross = false -- Give up
+				end
+			end
+		else
+			PressingCtrl = false
+			PressedCtrlOnce = false
+		end
+		
+		if not Input.IsButtonPressed(Keyboard.KEY_LEFT_ALT, player.ControllerIndex) and not Input.IsButtonPressed(Keyboard.KEY_LEFT_SHIFT, player.ControllerIndex) then
+			if ReadySpawnCross == true then
+				AnimationEnd_ReadySpawnCross = false
+				player.ControlsEnabled = false
+				--== Spawn direction==--
+				-- Left
+				if Input.IsButtonPressed(Keyboard.KEY_LEFT, player.ControllerIndex) then
+					DetermineDirection = true
+					if SpawnedCross == false then
+						SFXManager():Play(2, 2, 0, false, 0.7 )
+						LairubCross = Isaac.Spawn(EntityType.ENTITY_FAMILIAR, LairubSoulCross_Variant, 0, Vector((player.Position.X - 32), player.Position.Y), Vector(0,0), player)
+						LairubCross:BloodExplode()
+						player.ControlsEnabled = true
+						ReadySpawnCross = false
+						for i,entity in ipairs(roomEntities) do
+							local NPC = entity:ToNPC()
+							if NPC ~= nil and NPC:IsVulnerableEnemy() then
+								if (player.Position - NPC.Position):Length() < 64 then
+									NPC:TakeDamage((player.Damage * 2), 0, EntityRef(player), 0)
+								end
+							end
+						end
+						SpawnedCross = true
+					end
+				end
+				-- Right
+				if Input.IsButtonPressed(Keyboard.KEY_RIGHT, player.ControllerIndex) then
+					DetermineDirection = true
+					if SpawnedCross == false then
+						SFXManager():Play(2, 2, 0, false, 0.7 )
+						LairubCross = Isaac.Spawn(EntityType.ENTITY_FAMILIAR, LairubSoulCross_Variant, 0, Vector((player.Position.X + 32), player.Position.Y), Vector(0,0), player)
+						LairubCross:BloodExplode()
+						player.ControlsEnabled = true
+						ReadySpawnCross = false
+						for i,entity in ipairs(roomEntities) do
+							local NPC = entity:ToNPC()
+							if NPC ~= nil and NPC:IsVulnerableEnemy() then
+								if (player.Position - NPC.Position):Length() < 64 then
+									NPC:TakeDamage((player.Damage * 2), 0, EntityRef(player), 0)
+								end
+							end
+						end
+						SpawnedCross = true
+					end
+				end
+				-- Up
+				if Input.IsButtonPressed(Keyboard.KEY_UP, player.ControllerIndex) then
+					DetermineDirection = true
+					if SpawnedCross == false then
+						SFXManager():Play(2, 2, 0, false, 0.7 )
+						LairubCross = Isaac.Spawn(EntityType.ENTITY_FAMILIAR, LairubSoulCross_Variant, 0, Vector(player.Position.X, (player.Position.Y - 32)), Vector(0,0), player)
+						LairubCross:BloodExplode()
+						player.ControlsEnabled = true
+						ReadySpawnCross = false
+						for i,entity in ipairs(roomEntities) do
+							local NPC = entity:ToNPC()
+							if NPC ~= nil and NPC:IsVulnerableEnemy() then
+								if (player.Position - NPC.Position):Length() < 64 then
+									NPC:TakeDamage((player.Damage * 2), 0, EntityRef(player), 0)
+								end
+							end
+						end
+						SpawnedCross = true
+					end
+				end
+				-- Down
+				if Input.IsButtonPressed(Keyboard.KEY_DOWN, player.ControllerIndex) then
+					DetermineDirection = true
+					if SpawnedCross == false then
+						SFXManager():Play(2, 2, 0, false, 0.7 )
+						LairubCross = Isaac.Spawn(EntityType.ENTITY_FAMILIAR, LairubSoulCross_Variant, 0, Vector(player.Position.X, (player.Position.Y + 32)), Vector(0,0), player)
+						LairubCross:BloodExplode()
+						player.ControlsEnabled = true
+						ReadySpawnCross = false
+						for i,entity in ipairs(roomEntities) do
+							local NPC = entity:ToNPC()
+							if NPC ~= nil and NPC:IsVulnerableEnemy() then
+								if (player.Position - NPC.Position):Length() < 64 then
+									NPC:TakeDamage((player.Damage * 2), 0, EntityRef(player), 0)
+								end
+							end
+						end
+						SpawnedCross = true
+					end
+				end
+			elseif ReadySpawnCross == false then
+				player.ControlsEnabled = true
+			end
 		end
 		--========--
 	end
@@ -389,18 +573,75 @@ function lairub:PostNPCDeath()
 end
 lairub:AddCallback( ModCallbacks.MC_POST_NPC_DEATH, lairub.PostNPCDeath)
 
+function lairub:PrePickupCollision(pickup, collider, low)
+	local player = collider:ToPlayer()
+	if player ~= nil and player:GetPlayerType() == playerType_Lairub then
+		if pickup.Variant == PickupVariant.PICKUP_HEART and (pickup.SubType == HeartSubType.HEART_FULL or pickup.SubType == HeartSubType.HEART_HALF or pickup.SubType == HeartSubType.HEART_SCARED) then
+			return false
+		else
+			return nil
+		end
+	end
+end
+lairub:AddCallback(ModCallbacks.MC_PRE_PICKUP_COLLISION, lairub.PrePickupCollision)
+
 function lairub:PostNewLevel()
 	SoulCount = 0
+	NPCdis = 0
 end
 lairub:AddCallback( ModCallbacks.MC_POST_NEW_LEVEL, lairub.PostNewLevel)
+
+function lairub:PostNewRoom()
+	local game = Game()
+	local level = game:GetLevel()
+	local player = Isaac.GetPlayer(0)
+	local room = game:GetRoom()
+	local roomEntities = Isaac.GetRoomEntities()
+	
+	NPCdis = 0
+	
+	ReadySpawnCross = false
+	DetermineDirection = false
+	SpawnedCross = false
+	for i, entity in pairs(roomEntities) do
+		if entity.Type == EntityType.ENTITY_FAMILIAR and entity.Variant == LairubSoulCross_Variant then
+			entity:Remove()
+		end
+	end
+end
+lairub:AddCallback( ModCallbacks.MC_POST_NEW_ROOM, lairub.PostNewRoom)
 
 function lairub:PostNewGame()
 	ShiftChanged = 1
 	PressingShift = false
 	PressedShiftOnce = false
 	IsShiftChanged = true
+	
 	SoulCount = 0
 	PressingAlt = false
 	PressedAltOnce = false
+	
+	PressingCtrl = false
+	PressedCtrlOnce = false
+	
+	ReadySpawnCross = false
+	DetermineDirection = false
+	SpawnedCross = false
+	
+	AnimationEnd = true
+	AnimationEnd_ReadySpawnCross = true
+	
+	NPCdis = 0
+	
+	local game = Game()
+	local level = game:GetLevel()
+	local player = Isaac.GetPlayer(0)
+	local room = game:GetRoom()
+	local roomEntities = Isaac.GetRoomEntities()
+	for i, entity in pairs(roomEntities) do
+		if entity.Type == EntityType.ENTITY_FAMILIAR and entity.Variant == LairubSoulCross_Variant then
+			entity:Remove()
+		end
+	end
 end
 lairub:AddCallback( ModCallbacks.MC_POST_GAME_STARTED, lairub.PostNewGame)

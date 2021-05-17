@@ -38,6 +38,13 @@ local TCAnimateSadOnce = false -- When Tainted Phobebia become The Cat
 local TCRemoveTheCatsMindOnce = false
 local TCAnimateSadTwice = true
 
+--== Update Tainted Phobebia's Cache==--
+local PhobebiaStatUpdateItem = Isaac.GetItemIdByName( "Phobebia Stat Trigger" )
+
+function UpdateCache(player)
+	player:AddCacheFlags(CacheFlag.CACHE_DAMAGE)
+end
+
 function phobebia:Update()
 	local game = Game()
 	local level = game:GetLevel()
@@ -411,22 +418,22 @@ function phobebia:TaintedUpdate()
 				if not player:HasCollectible(118) then
 					player:AddCollectible(118, 0, true)
 				end
-			end
-			if player:GetSoulHearts() > 1 then
-				if player:HasCollectible(ItemID.TheCatsMind) then
-					player:RemoveCollectible(ItemID.TheCatsMind)
-					TCRemoveTheCatsMindOnce = true
-				end
-				if TCRemoveTheCatsMindOnce == true then
-					if  player:HasCollectible(118) then
-						player:RemoveCollectible(118)
-						TCRemoveTheCatsMindOnce = false
+				if player:GetSoulHearts() > 1 then
+					if player:HasCollectible(ItemID.TheCatsMind) then
+						player:RemoveCollectible(ItemID.TheCatsMind)
+						TCRemoveTheCatsMindOnce = true
 					end
-					if TCAnimateSadTwice == false then
-						player:AnimateSad()
-						TCAnimateSadTwice = true
+					if TCRemoveTheCatsMindOnce == true then
+						if  player:HasCollectible(118) then
+							player:RemoveCollectible(118)
+							TCRemoveTheCatsMindOnce = false
+						end
+						if TCAnimateSadTwice == false then
+							player:AnimateSad()
+							TCAnimateSadTwice = true
+						end
+						TCAnimateSadOnce = false
 					end
-					TCAnimateSadOnce = false
 				end
 			end
 		end
@@ -506,7 +513,9 @@ function phobebia:TaintedNPCDeath()
 	local player = Isaac.GetPlayer(0)
 	Deads = Deads + 1
 	if player:GetPlayerType() == playerType_Tainted_Phobebia then
-		player:AddCacheFlags(CacheFlag.CACHE_DAMAGE)
+		player:AddCollectible(PhobebiaStatUpdateItem)
+		player:RemoveCollectible(PhobebiaStatUpdateItem)
+		UpdateCache(player)
 	end
 end
 phobebia:AddCallback( ModCallbacks.MC_POST_NPC_DEATH, phobebia.TaintedNPCDeath)
@@ -662,10 +671,10 @@ function phobebia:UniversalUpdate()
 			player:AddEternalHearts(-HasEternalHearts, true)
 		end
 		if level:GetStage() == 4 then
-			if player:GetSoulHearts() > 4 and player:GetBlackHearts() > 4 then
+			if player:GetSoulHearts() > TaintedMaxSoulHearts and player:GetBlackHearts() > TaintedMaxSoulHearts then
 				player:AddBlackHearts(-MoreBlackHeartsCount, true)
 			else
-				if player:GetSoulHearts() > 4 and player:GetBlackHearts() <= 4 then
+				if player:GetSoulHearts() > TaintedMaxSoulHearts and player:GetBlackHearts() <= TaintedMaxSoulHearts then
 				player:AddSoulHearts(-MoreBlackHeartsCount, true)
 				end
 			end
@@ -713,7 +722,7 @@ function phobebia:UniversalUpdate()
 	end
 end
 phobebia:AddCallback( ModCallbacks.MC_POST_UPDATE, phobebia.UniversalUpdate)
-	
+
 function phobebia:UniversalPostNewRoom()
 	local game = Game()
 	local level = game:GetLevel()
@@ -733,6 +742,25 @@ function phobebia:UniversalPostNewRoom()
 	end
 end
 phobebia:AddCallback( ModCallbacks.MC_POST_NEW_ROOM, phobebia.UniversalPostNewRoom)
+
+function phobebia:UniversalPrePickupCollision(pickup, collider, low)
+	local player = collider:ToPlayer()
+	local game = Game()
+	local level = game:GetLevel()
+	local room = game:GetRoom()
+	if player ~= nil and (player:GetPlayerType() == playerType_Phobebia or player:GetPlayerType() == playerType_Tainted_Phobebia) then
+		if pickup.Variant == PickupVariant.PICKUP_HEART then
+			if (player:GetPlayerType() == playerType_Phobebia and player:GetSoulHearts() >= 2) 
+			or (player:GetPlayerType() == playerType_Phobebia and level:GetStage() == 4 and player:GetSoulHearts() >= 12) 
+			or (player:GetPlayerType() == playerType_Tainted_Phobebia and player:GetSoulHearts() >= 12) then
+				return false
+			end
+		else
+			return nil
+		end
+	end
+end
+phobebia:AddCallback(ModCallbacks.MC_PRE_PICKUP_COLLISION, phobebia.UniversalPrePickupCollision)
 
 --==For Judas==--
 local playerType_Judas = Isaac.GetPlayerTypeByName("Judas")

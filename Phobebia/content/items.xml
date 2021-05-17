@@ -6,4 +6,5 @@
   <passive achievement="108" description="Sweet revenge" devilprice="2" gfx="JudasShadow.png" name="Judas' Shadow2" />
   <passive name="Phobebia's Blood Bandage" description="Some kind of stubborn pursuit." gfx="PhobebiasBloodBandage.png" cache="tearflag damage tearcolor"></passive>
   <passive name="Phobebia's Blood Bandage II" description="Some kind of stubborn pursuit." gfx="PhobebiasBloodBandage.png" cache="firedelay tearflag damage tearcolor"></passive>
+  <passive cache="damage" description="Stats changed" hidden="true" gfx="Nothing.png" name="Phobebia Stat Trigger" />
 </items>
