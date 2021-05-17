@@ -354,6 +354,7 @@ function InitPlayerHexanow(player)
 		itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_ANALOG_STICK)
 		itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_URANUS)
 		itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_NEPTUNUS)
+		--itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_SOL)
 		itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR)
 		--itemPool:RemoveTrinket(TrinketType.TRINKET_NO)
 		--[[
@@ -368,7 +369,7 @@ end
 -- local updatedCostumesOvertime = false
 local onceHoldingItem = false
 local lastCanFly = nil
-local flyEnabled = false
+local roomClearBounsEnabled = false
 -- 永久性确保项目，每一帧执行
 function TickEventHexanow(player)
 	if player:GetPlayerType() == playerTypeHexanow then
@@ -402,11 +403,12 @@ function TickEventHexanow(player)
 			-- player:GetEffects():RemoveCollectibleEffect(CollectibleType.COLLECTIBLE_TRANSCENDENCE)
 		end
 		]]
-		if Game():GetRoom():IsClear() and not flyEnabled then
-			flyEnabled = true
+		if Game():GetRoom():IsClear() and not roomClearBounsEnabled then
+			roomClearBounsEnabled = true
+			player:RemoveCollectible(hexanowFlightTriggerItem)
 		end
 		
-		if flyEnabled and not player:IsFlying() then
+		if roomClearBounsEnabled and not player:IsFlying() then
 			player:RemoveCollectible(hexanowFlightTriggerItem)
 		end
 		
@@ -437,6 +439,10 @@ function TickEventHexanow(player)
 				player:AddCollectible(CollectibleType.COLLECTIBLE_NEPTUNUS, 0, false)
 				UpdateCostumes(player)
 			end
+			--if not player:HasCollectible(CollectibleType.COLLECTIBLE_SOL, true) then
+			--	player:AddCollectible(CollectibleType.COLLECTIBLE_SOL, 0, false)
+			--	UpdateCostumes(player)
+			--end
 		--end
 		
 		
@@ -606,6 +612,7 @@ hexanowMod:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, hexanowMod.PostGameSta
 -- 在游戏退出前运行
 function hexanowMod:PreGameExit(shouldSave)
 	SaveHexanowModData()
+	roomClearBounsEnabled = false
 	portalBlue = nil
 	portalOrange = nil
 	teledProjectiles = {}
@@ -634,15 +641,45 @@ hexanowMod:AddCallback(ModCallbacks.MC_POST_NEW_LEVEL, hexanowMod.PostNewLevel)
 function hexanowMod:PostNewRoom()
 	CallForEveryPlayer(
 		function(player)
+			UpdateCostumes(player)
 			if player:GetPlayerType() == playerTypeHexanow then
 				ApplyEternalHearts(player)
 				if not Game():GetRoom():IsClear() then
-					flyEnabled = false
+					roomClearBounsEnabled = false
 					player:RemoveCollectible(hexanowFlightTriggerItem)
 				end
 			end
 		end
 	)
+	
+	if PlayerTypeExistInGame(playerTypeHexanow) then
+		CallForEveryEntity(
+			function(entity)
+				if entity.Type == EntityType.ENTITY_EFFECT
+				and entity.Variant == EffectVariant.WOMB_TELEPORT
+				then
+					local portalFound = false
+					
+					CallForEveryEntity(
+						function(entity2)
+							if entity2.Type == entityTypeHexanowPortal
+							and entity2.Position:Distance(entity.Position) <= 20
+							then
+								portalFound = true
+								return nil
+							end
+						end
+					)
+					
+					if not portalFound then
+						local portalEntity = Isaac.Spawn(entityTypeHexanowPortal, entity.SubType, 0, entity.Position, Vector(0,0), entity)
+					end
+					
+					entity.Visible = false
+				end
+			end
+		)
+	end
 end
 hexanowMod:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, hexanowMod.PostNewRoom)
 
@@ -703,6 +740,25 @@ function hexanowMod:EntityTakeDmg(TookDamage, DamageAmount, DamageFlag, DamageSo
 end
 hexanowMod:AddCallback(ModCallbacks.MC_ENTITY_TAKE_DMG , hexanowMod.EntityTakeDmg)
 
+-- 在生物被移除时运行
+function hexanowMod:PostEntityRemove(entity)
+	if entity.Type == 963 then
+		CallForEveryPlayer(
+			function(player)
+				ApplyEternalHearts(player)
+				--[[
+				if player:GetEternalHearts() <= 0 then
+					player:AddEternalHearts(1)
+				elseif player:GetMaxHearts() > player:GetHearts() then
+					player:AddHearts(1)
+				end
+				]]
+			end
+		)
+	end
+end
+hexanowMod:AddCallback(ModCallbacks.MC_POST_ENTITY_REMOVE , hexanowMod.PostEntityRemove)
+
 -- 干涉掉落物生成
 function hexanowMod:PostPickupSelection(Pickup, Variant, SubType)
 	if PlayerTypeExistInGame(playerTypeHexanow) then
@@ -724,13 +780,54 @@ function hexanowMod:PostPickupSelection(Pickup, Variant, SubType)
 end
 hexanowMod:AddCallback(ModCallbacks.MC_POST_PICKUP_SELECTION , hexanowMod.PostPickupSelection)
 
+-- 改变眼泪碰撞行为
+function hexanowMod:PreTearCollision(tear, collider, low)
+	if tear.Parent ~= nil then
+		local player = tear.Parent:ToPlayer()
+		if player ~= nil
+		and player:GetPlayerType() == playerTypeHexanow
+		and collider.Type == 963
+		then
+			return true
+		end
+	end
+end
+hexanowMod:AddCallback(ModCallbacks.MC_PRE_TEAR_COLLISION , hexanowMod.PreTearCollision)
+
+-- 改变掉落物拾取行为
+function hexanowMod:PrePickupCollision(pickup, collider, low)
+	local player = collider:ToPlayer()
+	if player ~= nil
+	and player:GetPlayerType() == playerTypeHexanow
+	then
+		--[[
+		if pickup.Variant == PickupVariant.PICKUP_HEART and 
+		(
+			SubType == HeartSubType.HEART_SOUL or
+			SubType == HeartSubType.HEART_HALF_SOUL or
+			SubType == HeartSubType.HEART_BLACK
+		)
+		then
+			return false
+		else
+			return nil
+		end
+		]]
+	end
+end
+hexanowMod:AddCallback(ModCallbacks.MC_PRE_PICKUP_COLLISION , hexanowMod.PrePickupCollision)
+
 -- 后期处理属性缓存
 function hexanowMod:EvaluateCache(player, cacheFlag, tear)
 	if player:GetPlayerType() == playerTypeHexanow then
 		if cacheFlag == CacheFlag.CACHE_SPEED then
-			player.MoveSpeed = player.MoveSpeed + 0.15 --  * (1.0 + 0.15 * player:GetMaxHearts() / 24.0)
+			if roomClearBounsEnabled then
+				player.MoveSpeed = player.MoveSpeed + 0.15 --  * (1.0 + 0.15 * player:GetMaxHearts() / 24.0)
+			else
+				player.MoveSpeed = player.MoveSpeed - 0.15
+			end
 		elseif cacheFlag == CacheFlag.CACHE_DAMAGE then
-			player.Damage = hexanowObjectives["damageIncrease"] + player.Damage * 3 -- (1.0 + 2.5 * player:GetMaxHearts() / 24.0 - 0.5)
+			player.Damage = player.Damage * 3 -- (1.0 + 2.5 * player:GetMaxHearts() / 24.0 - 0.5)
 		elseif cacheFlag == CacheFlag.CACHE_LUCK then
 			player.Luck = player.Luck - 3
 		elseif cacheFlag == CacheFlag.CACHE_SHOTSPEED then
@@ -758,7 +855,7 @@ function hexanowMod:EvaluateCache(player, cacheFlag, tear)
 			else
 				player.CanFly = false
 			end]]
-			if Game():GetRoom():IsClear() then
+			if roomClearBounsEnabled then
 				player.CanFly = true
 			end
 			 UpdateCostumes(player)
@@ -956,10 +1053,10 @@ function hexanowMod:PostUpdate()
 						end
 						
 						if not traced then
-							if entity.Position:Distance(portalBlue.Position) <= 20 then
+							if entity.Position:Distance(portalBlue.Position + Vector(20, 20)) <= 20 then
 								closeToBlue = true
 							end
-							if entity.Position:Distance(portalOrange.Position) <= 20 then
+							if entity.Position:Distance(portalOrange.Position + Vector(20, 20)) <= 20 then
 								closeToOrange = true
 							end
 							
@@ -971,10 +1068,10 @@ function hexanowMod:PostUpdate()
 								table.insert(teledProjectiles, entity.Index)
 							end
 						else
-							if entity.Position:Distance(portalBlue.Position) <= 40 then
+							if entity.Position:Distance(portalBlue.Position + Vector(20, 20)) <= 40 then
 								closeToBlue = true
 							end
-							if entity.Position:Distance(portalOrange.Position) <= 40 then
+							if entity.Position:Distance(portalOrange.Position + Vector(20, 20)) <= 40 then
 								closeToOrange = true
 							end
 							if not closeToBlue and not closeToOrange then
