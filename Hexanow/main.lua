@@ -578,6 +578,16 @@ function hexanowMod:ExecuteCmd(cmd, params)
 			end
 		end
 	end
+	if cmd == "reportpickup" then
+		local roomEntities = Isaac.GetRoomEntities()
+				
+		for i,entity in ipairs(roomEntities) do
+			if entity.Type == EntityType.ENTITY_PICKUP then
+				local pickup = entity:ToPickup()
+				print(entity.Type,".",entity.Variant,".",entity.SubType,"(", pickup.State, ")")
+			end
+		end
+	end
 	if cmd == "reportentity" then
 		local roomEntities = Isaac.GetRoomEntities()
 				
@@ -800,19 +810,37 @@ function hexanowMod:PrePickupCollision(pickup, collider, low)
 	if player ~= nil
 	and player:GetPlayerType() == playerTypeHexanow
 	then
-		--[[
-		if pickup.Variant == PickupVariant.PICKUP_HEART and 
-		(
-			SubType == HeartSubType.HEART_SOUL or
-			SubType == HeartSubType.HEART_HALF_SOUL or
-			SubType == HeartSubType.HEART_BLACK
-		)
-		then
-			return false
-		else
-			return nil
+		if pickup.Variant == PickupVariant.PICKUP_HEART then
+			if pickup.SubType == HeartSubType.HEART_ETERNAL
+			and player:GetMaxHearts() >= 24 
+			and player:GetHearts() < player:GetMaxHearts()
+			and player:GetEternalHearts() >= 1 then
+				-- SFXManager():Play(SoundEffect.SOUND_SUPERHOLY, 1, 0, false, 1 )
+				-- pickup:GetSprite():Play("Collect", true)
+				--player:AddEternalHearts(1)
+				--pickup:PlayPickupSound()
+				--print("DESTROYING")
+				--pickup:Destroy()
+				if player:GetMaxHearts() - player:GetHearts() == 1 then
+					-- player:AddEternalHearts(1)
+				end
+				player:AddMaxHearts(-1)
+				return nil
+			else
+			--[[
+				pickup.SubType == HeartSubType.HEART_FULL or
+				pickup.SubType == HeartSubType.HEART_HALF or
+				pickup.SubType == HeartSubType.HEART_SOUL or
+				pickup.SubType == HeartSubType.HEART_HALF_SOUL or
+				pickup.SubType == HeartSubType.HEART_SCARED or
+				pickup.SubType == HeartSubType.HEART_BLACK or
+				
+				(pickup.SubType == HeartSubType.HEART_BONE and player:GetMaxHearts() >= 24) or
+				pickup.SubType == HeartSubType.HEART_DOUBLEPACK
+			]]
+			end
 		end
-		]]
+		return nil
 	end
 end
 hexanowMod:AddCallback(ModCallbacks.MC_PRE_PICKUP_COLLISION , hexanowMod.PrePickupCollision)
