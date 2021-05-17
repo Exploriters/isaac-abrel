@@ -1,4 +1,4 @@
-Isaac.ConsoleOutput("Init mod hexanow")
+--Isaac.ConsoleOutput("Init mod hexanow\n")
 
 local hexanowMod = RegisterMod("Hexanow", 1);
 
@@ -11,12 +11,137 @@ local hexanowFateCostume = Isaac.GetCostumeIdByPath("gfx/characters/Hexanow_fate
 local entityVariantHeartsBlender = Isaac.GetEntityVariantByName("Hearts Blender")
 local entityTypeHexanowPortal = Isaac.GetEntityTypeByName("Hexanow Blue Portal")
 
+local EternalChargeSprite = Sprite()
+EternalChargeSprite:Load("gfx/ui/EternalCharge.anm2", true)
+local SimNumbersPath = "gfx/ui/SimNumbers.anm2"
+
 local MC_ENTITY_TAKE_DMG_Room = 0
 local MC_ENTITY_TAKE_DMG_Forever = 0
 
-local hexanowObjectives = {
-["damageIncrease"] = 0.0
-}
+local HUDoffset = 10
+
+local EternalCharges = 0
+
+-- local lastMaxHearts = nil
+-- local updatedCostumesOvertime = false
+local onceHoldingItem = false
+local lastCanFly = nil
+local roomClearBounsEnabled = false
+
+local portalBlue = nil
+local portalOrange = nil
+local teledProjectiles = {}
+--local fireworksToWipe = {}
+--local rainbowFireworkRng = RNG()
+--local tempt = 0
+
+-- 抹除临时变量
+function WipeTempVar()
+EternalCharges = 0
+
+onceHoldingItem = false
+lastCanFly = nil
+roomClearBounsEnabled = false
+
+portalBlue = nil
+portalOrange = nil
+teledProjectiles = {}
+end
+
+keyValuePair = {key = "", value = ""}
+keyValuePair.__index = keyValuePair
+function KeyValuePair(key, value)
+  return keyValuePair:ctor(key, value)
+end
+function keyValuePair:ctor(key, value)
+  local cted = {}
+  setmetatable(cted, keyValuePair)
+  cted.key = key
+  cted.value = value
+  return cted
+end
+--[[local hexanowObjectives = {
+["damageIncrease"] = 0.0,
+}]]
+local hexanowObjectives = { }
+hexanowObjectives.__index = hexanowObjectives
+
+function hexanowObjectives_Wipe()
+	hexanowObjectives = { }
+end
+
+function hexanowObjectives_Read(key, default)
+	for i,kvp in ipairs(hexanowObjectives) do
+		if kvp.key == key then
+			return kvp.value
+		end
+	end
+	return default
+end
+
+function hexanowObjectives_Write(key, value)
+	for i,kvp in ipairs(hexanowObjectives) do
+		if kvp.key == key then
+			kvp.value = value
+			return value
+		end
+	end
+	table.insert(hexanowObjectives, KeyValuePair(key, value))
+end
+
+function hexanowObjectives_Apply()
+	HUDoffset = tonumber(hexanowObjectives_Read("HUDoffset", "10"))
+	EternalCharges = tonumber(hexanowObjectives_Read("EternalCharges", "0"))
+end
+function hexanowObjectives_Recieve()
+	hexanowObjectives_Write("HUDoffset", tostring(HUDoffset))
+	hexanowObjectives_Write("EternalCharges", tostring(EternalCharges))
+end
+
+function hexanowObjectives_ToString()
+	local str = ""
+	for i,kvp in ipairs(hexanowObjectives) do
+		str = str..tostring(kvp.key).."="..tostring(kvp.value).."\n"
+	end
+	return str
+end
+function hexanowObjectives_LoadFromString(str)
+	local strTable = {}
+	local pointer1 = 0
+	local pointer2 = 0
+	local count = 1
+	while true do
+		local point = string.find(str, "\n", count)
+		if point == nil then
+			break
+		end
+		pointer1 = pointer2
+		pointer2 = point
+		
+		table.insert(strTable, string.sub(str, pointer1 + 1, pointer2 - 1))
+		
+		count = count + 1
+	end
+	
+	for i,str in ipairs(strTable) do
+		local point = string.find(str, "=", 1)
+		if point ~= nil then
+			local key = string.sub(str, 1, point - 1)
+			local value = string.sub(str, point + 1, 256)
+			hexanowObjectives_Write(key, value)
+		end
+	end
+	--string.find(, "Lua", 1)
+end
+
+--[[
+for i,kvp in ipairs(hexanowObjectives) do
+	Isaac.ConsoleOutput(kvp.key)
+	Isaac.ConsoleOutput("=")
+	Isaac.ConsoleOutput(kvp.value)
+	Isaac.ConsoleOutput("\n")
+end
+]]
 
 require("apioverride")
 --[[ MALFUNCTIONING
@@ -204,24 +329,43 @@ end
 
 -- 读取mod数据
 function LoadHexanowModData()
-	--[[
-	local str = Isaac.LoadModData(hexanowMod)
-	print("Load Readout: ", str)
-	]]
+	local str = ""
+	if Isaac.HasModData(hexanowMod) then
+		str = Isaac.LoadModData(hexanowMod)
+	end
+	hexanowObjectives_Wipe()
+	hexanowObjectives_LoadFromString(str)
+	hexanowObjectives_Apply()
+	-- print("Load Readout: ", str)
 end
 
 -- 存储mod数据
 function SaveHexanowModData()
-	--[[
-	local str = "somethingWrong"
+	hexanowObjectives_Recieve()
+	local str = hexanowObjectives_ToString()
 	-- print("Save Readout: ", str)
 	Isaac.SaveModData(hexanowMod, str)
-	
-	-- 复原临时变量
-	onceHoldingItem = false
-	lastCanFly = nil
-	]]
 end
+
+-- 在游戏被初始化后运行
+function hexanowMod:PostGameStarted(loadedFromSaves)	
+	if not loadedFromSaves then -- 仅限新游戏
+		CallForEveryPlayer(InitPlayerHexanow)
+		WipeTempVar()
+		SaveHexanowModData()
+	else -- 仅限从存档中读取
+		WipeTempVar()
+		LoadHexanowModData()
+	end
+end
+hexanowMod:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, hexanowMod.PostGameStarted)
+
+-- 在游戏退出前运行
+function hexanowMod:PreGameExit(shouldSave)
+	SaveHexanowModData()
+	WipeTempVar()
+end
+hexanowMod:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, hexanowMod.PreGameExit)
 
 -- 测试
 function TestDoDmg(player)
@@ -271,6 +415,14 @@ function ApplyEternalHearts(player)
 	end
 end
 
+-- 给予永恒充能
+function ApplyEternalCharge(player)
+	if player:GetEternalHearts() <= 0 and EternalCharges > 0then
+		player:AddEternalHearts(1)
+		EternalCharges = EternalCharges - 1
+	end
+end
+
 -- 确保随从数量
 function EnsureFamiliars(player)
 	local roomEntities = Isaac.GetRoomEntities()
@@ -293,11 +445,45 @@ end
 
 -- 将魂心处理为黑心，放置于骨心后
 function RearrangeHearts(player)
-
 	local soulHearts = player:GetSoulHearts()
-	local blackHearts = player:GetBlackHearts()
+	local blackHeartsByte = player:GetBlackHearts()
 	
 	local totalHearts = math.ceil((player:GetHearts() + soulHearts)*0.5)
+	
+	local countSoul = soulHearts
+	local countBlack = 0
+	local countBone = 0
+	local countRott = player:GetRottenHearts()
+	local countBroken = player:GetBrokenHearts()
+	local countGold = math.min(player:GetGoldenHearts(), math.ceil(player:GetHearts()*0.5))
+	player:AddGoldenHearts(-countGold)
+	player:AddBrokenHearts(-countBroken)
+	player:AddRottenHearts(-countRott*2)
+	player:AddHearts(countRott*2)
+	
+	for i=0,totalHearts-1,1 do
+		if player:IsBoneHeart(i) then
+			countBone = countBone + 1
+		end
+	end
+	
+	local blackHeartsByteTemp = blackHeartsByte
+	while blackHeartsByteTemp ~= 0 do
+		if blackHeartsByteTemp & 1 == 1 then
+			countBlack = countBlack + 1
+		end
+		blackHeartsByteTemp = blackHeartsByteTemp >> 1
+	end
+	
+	countSoul = countSoul + countBlack * 2 + countBone * 2
+	EternalCharges = EternalCharges + math.floor(countSoul)
+	
+	player:AddSoulHearts(-soulHearts)
+	player:AddBoneHearts(-countBone)
+	player:AddGoldenHearts(countGold)
+	
+	return nil ----------------------------------------------------------------
+--[[
 	
 	local boneMisArrangeState = 0
 	for i=0,totalHearts-1,1 do
@@ -309,7 +495,7 @@ function RearrangeHearts(player)
 	end
 	
 	if boneMisArrangeState == 2
-	or blackHearts ~= 2^(math.ceil(soulHearts * 0.5)) - 1
+	or blackHeartsByte ~= 2^(math.ceil(soulHearts * 0.5)) - 1
 	then
 		player:AddSoulHearts(-soulHearts)
 		player:AddBlackHearts(soulHearts) --math.ceil(soulHearts * 0.5)*2)
@@ -319,16 +505,16 @@ function RearrangeHearts(player)
 	local num1,num2=math.modf(soulHearts*0.5)
     if num2 ~= 0 then
 		player:AddBlackHearts(1)
-		--[[
-		player:TakeDamage(
-			1,
-			DamageFlag.DAMAGE_NOKILL | DamageFlag.DAMAGE_INVINCIBLE ,
-			EntityRef(nil),
-			0
-			)
-		]]
+		--
+		--player:TakeDamage(
+		--	1,
+		--	DamageFlag.DAMAGE_NOKILL | DamageFlag.DAMAGE_INVINCIBLE ,
+		--	EntityRef(nil),
+		--	0
+		--	)
+		--
     end
-	
+]]
 	
 end
 
@@ -337,13 +523,16 @@ function InitPlayerHexanow(player)
 	if player:GetPlayerType() == playerTypeHexanow then
 		local itemPool = Game():GetItemPool()
 		
-		-- player:AddMaxHearts(6)
+		player:AddHearts(-player:GetHearts())
+		player:AddMaxHearts(-player:GetMaxHearts())
+		player:AddMaxHearts(12)
+		player:AddHearts(11)
 		-- player:AddGoldenHearts(0)
 		ApplyEternalHearts(player)
 		
 		TickEventHexanow(player)
 		
-		player:AddHearts(-1)
+		--player:AddHearts(-1)
 		player:AddCard(Card.CARD_JUSTICE)
 		player:AddTrinket(TrinketType.TRINKET_NO | 32768)
 		-- player:AddCard(Card.CARD_SUN)
@@ -365,11 +554,6 @@ function InitPlayerHexanow(player)
 	end
 end
 
--- local lastMaxHearts = nil
--- local updatedCostumesOvertime = false
-local onceHoldingItem = false
-local lastCanFly = nil
-local roomClearBounsEnabled = false
 -- 永久性确保项目，每一帧执行
 function TickEventHexanow(player)
 	if player:GetPlayerType() == playerTypeHexanow then
@@ -496,6 +680,8 @@ function TickEventHexanow(player)
 			
 			if room:GetAliveEnemiesCount() <= 0 then
 				ApplyEternalHearts(player)
+			else
+				ApplyEternalCharge(player)
 			end
 			
 			--[[ --Malfunction
@@ -543,12 +729,41 @@ end
 
 -- 自定义命令行
 function hexanowMod:ExecuteCmd(cmd, params)
+	if cmd == "hudoffset" then
+		if tonumber(params) ~= nil
+		and tonumber(params) > -1 and tonumber(params) < 11 then
+			HUDoffset = tonumber(params)
+			Isaac.ConsoleOutput("HUD Offset updated.")
+		else
+			Isaac.ConsoleOutput("Invalid args")
+		end
+	end
+	if cmd == "echarge" then
+		if tonumber(params) ~= nil then
+			EternalCharges = tonumber(params)
+			Isaac.ConsoleOutput("Eternal charges updated.")
+		else
+			Isaac.ConsoleOutput("Invalid args")
+		end
+	end
 	if cmd == "hexanow" then
 		local pnum = tonumber(params)
-		if pnum == nil then
-			Isaac.ConsoleOutput("Invalid args")
+		if pnum ~= nil and pnum >= 1 and pnum <= 4 then
+			local player = Game():GetPlayer(pnum - 1)
+			if player ~= nil then
+				while player:GetCollectibleCount() ~= 0 do
+					for m = 1, CollectibleType.NUM_COLLECTIBLES - 1 do
+						if player:HasCollectible(m, true) then
+							player:RemoveCollectible(m, true)
+						end
+					end
+				end	
+				player:ChangePlayerType(playerTypeHexanow)
+				
+				InitPlayerHexanow(player)
+			end
 		else
-			-- TODO EFFECTS
+			Isaac.ConsoleOutput("Invalid args")
 		end
 	end
 	if cmd == "t2td" then
@@ -590,7 +805,7 @@ function hexanowMod:ExecuteCmd(cmd, params)
 	end
 	if cmd == "reportentity" then
 		local roomEntities = Isaac.GetRoomEntities()
-				
+		
 		for i,entity in ipairs(roomEntities) do
 			print(entity.Type,".",entity.Variant,".",entity.SubType,"(", entity.Position.X, ",", entity.Position.Y, ")")
 		end
@@ -606,28 +821,6 @@ function hexanowMod:ExecuteCmd(cmd, params)
 	end
 end
 hexanowMod:AddCallback(ModCallbacks.MC_EXECUTE_CMD, hexanowMod.ExecuteCmd);
-
--- 在游戏被初始化后运行
-function hexanowMod:PostGameStarted(loadedFromSaves)	
-	
-	if not loadedFromSaves then -- 仅限新游戏
-		CallForEveryPlayer(InitPlayerHexanow)
-	else -- 仅限从存档中读取
-		LoadHexanowModData()
-	end
-	
-end
-hexanowMod:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, hexanowMod.PostGameStarted)
-
--- 在游戏退出前运行
-function hexanowMod:PreGameExit(shouldSave)
-	SaveHexanowModData()
-	roomClearBounsEnabled = false
-	portalBlue = nil
-	portalOrange = nil
-	teledProjectiles = {}
-end
-hexanowMod:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, hexanowMod.PreGameExit)
 
 -- 在玩家被加载后运行
 function hexanowMod:PostPlayerInit(player)
@@ -755,7 +948,7 @@ function hexanowMod:PostEntityRemove(entity)
 	if entity.Type == 963 then
 		CallForEveryPlayer(
 			function(player)
-				ApplyEternalHearts(player)
+				--ApplyEternalHearts(player)
 				--[[
 				if player:GetEternalHearts() <= 0 then
 					player:AddEternalHearts(1)
@@ -790,6 +983,16 @@ function hexanowMod:PostPickupSelection(Pickup, Variant, SubType)
 end
 hexanowMod:AddCallback(ModCallbacks.MC_POST_PICKUP_SELECTION , hexanowMod.PostPickupSelection)
 
+-- 改变玩家碰撞行为
+function hexanowMod:PrePlayerCollision(player, collider, low)
+	if player:GetPlayerType() == playerTypeHexanow then
+		if collider.Type == 306 then
+			return true
+		end
+	end
+end
+hexanowMod:AddCallback(ModCallbacks.MC_PRE_PLAYER_COLLISION , hexanowMod.PrePlayerCollision)
+
 -- 改变眼泪碰撞行为
 function hexanowMod:PreTearCollision(tear, collider, low)
 	if tear.Parent ~= nil then
@@ -815,29 +1018,31 @@ function hexanowMod:PrePickupCollision(pickup, collider, low)
 			and player:GetMaxHearts() >= 24 
 			and player:GetHearts() < player:GetMaxHearts()
 			and player:GetEternalHearts() >= 1 then
-				-- SFXManager():Play(SoundEffect.SOUND_SUPERHOLY, 1, 0, false, 1 )
-				-- pickup:GetSprite():Play("Collect", true)
-				--player:AddEternalHearts(1)
-				--pickup:PlayPickupSound()
+				--SFXManager():Play(SoundEffect.SOUND_SUPERHOLY, 1, 0, false, 1 )
+				pickup:GetSprite():Play("Collect", true)
+				player:AddEternalHearts(2)
+				pickup:PlayPickupSound()
 				--print("DESTROYING")
-				--pickup:Destroy()
-				if player:GetMaxHearts() - player:GetHearts() == 1 then
-					-- player:AddEternalHearts(1)
+				player:AddHearts(player:GetMaxHearts())
+				pickup:Remove()
+				return false
+			elseif
+				pickup.SubType == HeartSubType.HEART_HALF_SOUL
+			or	pickup.SubType == HeartSubType.HEART_SOUL
+			or	pickup.SubType == HeartSubType.HEART_BONE
+			or	pickup.SubType == HeartSubType.HEART_BLACK
+			then
+				local score = 2
+				if pickup.SubType == HeartSubType.HEART_HALF_SOUL then
+					score = 1
+				elseif pickup.SubType == HeartSubType.HEART_BLACK then
+					score = 4
 				end
-				player:AddMaxHearts(-1)
-				return nil
-			else
-			--[[
-				pickup.SubType == HeartSubType.HEART_FULL or
-				pickup.SubType == HeartSubType.HEART_HALF or
-				pickup.SubType == HeartSubType.HEART_SOUL or
-				pickup.SubType == HeartSubType.HEART_HALF_SOUL or
-				pickup.SubType == HeartSubType.HEART_SCARED or
-				pickup.SubType == HeartSubType.HEART_BLACK or
-				
-				(pickup.SubType == HeartSubType.HEART_BONE and player:GetMaxHearts() >= 24) or
-				pickup.SubType == HeartSubType.HEART_DOUBLEPACK
-			]]
+				pickup:PlayPickupSound()
+				EternalCharges = EternalCharges + score
+				pickup:GetSprite():Play("Collect", true)
+				pickup:Remove()
+				return false
 			end
 		end
 		return nil
@@ -908,13 +1113,6 @@ function hexanowMod:EvaluateCache(player, cacheFlag, tear)
 end
 hexanowMod:AddCallback(ModCallbacks.MC_EVALUATE_CACHE, hexanowMod.EvaluateCache)
 
-
-local portalBlue = nil
-local portalOrange = nil
-local teledProjectiles = {}
---local fireworksToWipe = {}
---local rainbowFireworkRng = RNG()
---local tempt = 0
 -- 在每一帧后执行
 function hexanowMod:PostUpdate()
 	local game = Game()
@@ -959,21 +1157,44 @@ function hexanowMod:PostUpdate()
 				and entity.Variant == EffectVariant.WOMB_TELEPORT
 				then
 					local portalFound = false
+					local wombPortalFound = false
+					local voidPortalFound = false
+					
 					
 					CallForEveryEntity(
 						function(entity2)
-							if entity2.Type == entityTypeHexanowPortal
+							if entity2.Index ~= entity.Index
 							and entity2.Position:Distance(entity.Position) <= 20
 							then
-								portalFound = true
-								return nil
+								if entity2.Type == EntityType.ENTITY_EFFECT
+								and entity2.Variant == EffectVariant.WOMB_TELEPORT
+								then
+									wombPortalFound = true
+								end
+								
+								if entity2.Type == entityTypeHexanowPortal
+								then
+									portalFound = true
+								end
+								
+								if entity2.Type == 306
+								then
+									voidPortalFound = true
+								end
 							end
 						end
 					)
 					
-					if not portalFound then
-						Isaac.Spawn(entityTypeHexanowPortal, entity.SubType, 0, entity.Position, Vector(0,0), entity)
+					if wombPortalFound then
+						if not voidPortalFound then
+							Isaac.Spawn(306, 0, 0, entity.Position, Vector(0,0), entity)
+						end
+					else
+						if not portalFound then
+							Isaac.Spawn(entityTypeHexanowPortal, entity.SubType, 0, entity.Position, Vector(0,0), entity)
+						end
 					end
+						
 					
 					entity.Visible = false
 				end
@@ -995,7 +1216,7 @@ function hexanowMod:PostUpdate()
 				if entity.FrameCount == 1 then
 				end
 				
-				local wombTeleportFound = false
+				local wombTeleportFound = 0
 				
 				if PlayerTypeExistInGame(playerTypeHexanow) then
 					CallForEveryEntity(
@@ -1004,14 +1225,13 @@ function hexanowMod:PostUpdate()
 							and entity2.Variant == EffectVariant.WOMB_TELEPORT
 							and entity2.Position:Distance(entity.Position) <= 20
 							then
-								wombTeleportFound = true
-								return nil
+								wombTeleportFound = wombTeleportFound + 1
 							end
 						end
 					)
 				end
 				
-				if not wombTeleportFound then
+				if wombTeleportFound ~= 1 then
 					entity.SubType = 1
 				end
 				
@@ -1239,6 +1459,127 @@ function hexanowMod:PostUpdate()
 	--SaveHexanowModData()
 end
 hexanowMod:AddCallback(ModCallbacks.MC_POST_UPDATE, hexanowMod.PostUpdate)
+
+-- 渲染器，每一帧执行
+function hexanowMod:PostRender()
+	local baseOffset = Vector(3,71)
+	local offsetMod = Vector(2 * HUDoffset, 1.2 * HUDoffset)
+	
+	if PlayerTypeExistInGame(playerTypeHexanow) then
+		
+		local bet1 = PlayerTypeExistInGame(PlayerType.PLAYER_BETHANY)
+		local bet2 = PlayerTypeExistInGame(36)
+		if bet1 and bet2 then
+			offsetMod = offsetMod + Vector(0, 19)
+		elseif bet1 or bet2 then
+			offsetMod = offsetMod + Vector(0, 8)
+		end
+		
+		EternalChargeSprite:SetOverlayRenderPriority(true)
+		EternalChargeSprite:SetFrame("EternalCharge", 0)
+		EternalChargeSprite:Render(baseOffset + offsetMod, Vector(0,0), Vector(0,0))
+		DrawSimNumbers(EternalCharges, baseOffset + Vector(12, 1) + offsetMod, true)
+		
+		--Isaac.RenderScaledText("00", 35, 85, 1, 1, 255, 255, 255, 255)--tostring(00)
+		--DrawSimNumberSingle(7, Vector(35, 84), true)
+		--DrawSimNumberSingle("s", Vector(35+6, 84), true)
+		--DrawSimNumberSingle(7, Vector(35, 84), false)
+		--DrawSimNumberSingle("s", Vector(35+6, 84), false)
+	end
+end
+hexanowMod:AddCallback(ModCallbacks.MC_POST_RENDER, hexanowMod.PostRender)
+
+-- 渲染多个数字
+function DrawSimNumbers(num, pos)
+	local nums = {}
+	local inum = 0
+	local negative = false
+	local lessThanTen = false
+	
+	
+	if type(num) ~= "number" then
+		table.insert(nums, -2)
+		table.insert(nums, -2)
+	else
+		inum = math.floor(num)
+		if inum < 0 then
+			negative = true
+			inum = inum * -1
+		end
+		if inum < 10 then
+			lessThanTen = true
+		end
+		
+		while true do
+			table.insert(nums, inum%10)
+			inum = math.floor(inum/10)
+			if inum == 0 then
+				break
+			end
+		end
+		
+		if negative then
+			table.insert(nums, -1)
+		elseif lessThanTen then
+			table.insert(nums, 0)
+		end
+		
+		nums = reverseTable(nums)
+	end
+	
+	
+	DrawSimNumberSeries(nums, pos, true)
+	DrawSimNumberSeries(nums, pos, false)
+end
+
+function reverseTable(tab)
+	local tmp = {}
+	for i = 1, #tab do
+		local key = #tab
+		tmp[i] = table.remove(tab)
+	end
+
+	return tmp
+end
+
+-- 渲染数字组
+function DrawSimNumberSeries(nums, pos, bg)
+	local posp = 0
+	for i,num in ipairs(nums) do
+		posp = posp + DrawSimNumberSingle(num, pos + Vector(posp, 0), bg)
+	end
+end
+
+-- 渲染单个数字
+function DrawSimNumberSingle(num, pos, bg)
+	local sprite = Sprite()
+	sprite:Load(SimNumbersPath, true)
+	local AnimationName = "Base"
+	
+	if type(num) ~= "number" then
+		num = 10
+	else
+		num = math.floor(num)
+	end
+	if num == -1 then
+		num = 11
+	elseif num < 0 or num > 9 then
+		num = 10
+	end
+	
+	if bg == true then
+		AnimationName = "Background"
+		pos = pos + Vector(2,2)
+	end
+	sprite:SetFrame(AnimationName, num)
+	sprite:Render(pos, Vector(0,0), Vector(0,0))
+	
+	if num == 1 then
+		return 4
+	else
+		return 6
+	end
+end
 
 -- 初始化随从
 local function FamiliarInit(_, fam)
