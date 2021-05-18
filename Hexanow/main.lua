@@ -1214,10 +1214,14 @@ function hexanowMod:PrePickupCollision(pickup, collider, low)
 			and pickup.SubType ~= Card.CARD_CRACKED_KEY
 			)
 		then
-			EternalCharges = EternalCharges + 1
-			SFXManager():Play(SoundEffect.SOUND_HOLY, 1, 0, false, 1 )
-			pickup:Remove()
-			return false
+			if pickup:IsShopItem() then
+				return true
+			else
+				EternalCharges = EternalCharges + 1
+				SFXManager():Play(SoundEffect.SOUND_HOLY, 1, 0, false, 1 )
+				pickup:Remove()
+				return false
+			end
 		end
 		
 		
