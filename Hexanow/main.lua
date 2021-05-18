@@ -138,7 +138,6 @@ function hexanowObjectives_LoadFromString(str)
 			hexanowObjectives_Write(key, value)
 		end
 	end
-	--string.find(, "Lua", 1)
 end
 
 --[[
