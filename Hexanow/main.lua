@@ -554,6 +554,39 @@ function InitPlayerHexanow(player)
 	end
 end
 
+-- 存储mod数据
+function HexanowCollectiblePredicate(item)
+	if item ~= nil and
+		(	item:HasTags(ItemConfig.TAG_QUEST)
+		or	item.ID == CollectibleType.COLLECTIBLE_POLAROID
+		or	item.ID == CollectibleType.COLLECTIBLE_NEGATIVE
+		or	item.ID == CollectibleType.COLLECTIBLE_BROKEN_SHOVEL
+		or	item.ID == CollectibleType.COLLECTIBLE_BROKEN_SHOVEL_2
+		or	item.ID == CollectibleType.COLLECTIBLE_KEY_PIECE_1
+		or	item.ID == CollectibleType.COLLECTIBLE_KEY_PIECE_2
+		or	item.ID == CollectibleType.COLLECTIBLE_KNIFE_PIECE_1
+		or	item.ID == CollectibleType.COLLECTIBLE_KNIFE_PIECE_2
+		or	item.ID == CollectibleType.COLLECTIBLE_DADS_NOTE
+		or	item.ID == CollectibleType.COLLECTIBLE_DOGMA
+		
+		or	item.ID == CollectibleType.COLLECTIBLE_ANALOG_STICK
+		or	item.ID == CollectibleType.COLLECTIBLE_URANUS
+		or	item.ID == CollectibleType.COLLECTIBLE_NEPTUNUS
+		or	item.ID == CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR
+			
+		--or item.ID == CollectibleType.COLLECTIBLE_BIRTHRIGHT
+		
+		--or (item.Quality >= 4 and item.ItemType ~= ItemType.ITEM_FAMILIAR)
+		
+		or	item.Type == ItemType.ITEM_ACTIVE
+		)
+	then
+		return true
+	else
+		return false
+	end
+end
+
 -- 永久性确保项目，每一帧执行
 function TickEventHexanow(player)
 	if player:GetPlayerType() == playerTypeHexanow then
@@ -724,6 +757,18 @@ function TickEventHexanow(player)
 		
 		-- EnsureFamiliars(player)
 		
+		--local tracedItems = player:GetCollectibleCount()
+		local removeCount = -1
+		while removeCount ~= 0 do
+			removeCount = 0
+			for m = 1, CollectibleType.NUM_COLLECTIBLES - 1 do
+				if player:HasCollectible(m, true)
+				and not HexanowCollectiblePredicate(Isaac.GetItemConfig():GetCollectible(m)) then
+					player:RemoveCollectible(m, true)
+					removeCount = removeCount + 1
+				end
+			end
+		end
 	end
 end
 
@@ -1013,6 +1058,7 @@ function hexanowMod:PrePickupCollision(pickup, collider, low)
 	if player ~= nil
 	and player:GetPlayerType() == playerTypeHexanow
 	then
+	
 		if pickup.Variant == PickupVariant.PICKUP_HEART then
 			if pickup.SubType == HeartSubType.HEART_ETERNAL
 			and player:GetMaxHearts() >= 24 
@@ -1031,12 +1077,24 @@ function hexanowMod:PrePickupCollision(pickup, collider, low)
 			or	pickup.SubType == HeartSubType.HEART_SOUL
 			or	pickup.SubType == HeartSubType.HEART_BONE
 			or	pickup.SubType == HeartSubType.HEART_BLACK
+			or	pickup.SubType == HeartSubType.HEART_BLACK
+			or	pickup.SubType == HeartSubType.HEART_BLENDED
 			then
 				local score = 2
 				if pickup.SubType == HeartSubType.HEART_HALF_SOUL then
 					score = 1
 				elseif pickup.SubType == HeartSubType.HEART_BLACK then
 					score = 4
+				elseif pickup.SubType == HeartSubType.HEART_BLENDED then
+					if player:GetMaxHearts() - player:GetHearts() > 1 then
+						player:AddHearts(2)
+						score = 0
+					elseif player:GetMaxHearts() - player:GetHearts() == 1 then
+						player:AddHearts(1)
+						score = 1
+					else
+						score = 2
+					end
 				end
 				pickup:PlayPickupSound()
 				EternalCharges = EternalCharges + score
@@ -1045,6 +1103,44 @@ function hexanowMod:PrePickupCollision(pickup, collider, low)
 				return false
 			end
 		end
+	
+		if pickup.Variant == PickupVariant.PICKUP_COLLECTIBLE then
+			local item = Isaac.GetItemConfig():GetCollectible(pickup.SubType)
+			
+			if pickup.SubType == 0 or not HexanowCollectiblePredicate(item)
+			then
+				if pickup:IsShopItem() then
+					return true
+				else
+					if item ~= nil then
+						SFXManager():Play(SoundEffect.SOUND_HOLY, 1, 0, false, 1 )
+						local baseScore = 2 + item.Quality * 2
+						local score = 2 + item.Quality * 2
+						
+						local deltaMH = player:GetMaxHearts()
+						player:AddMaxHearts(baseScore)
+						deltaMH = (player:GetMaxHearts() - deltaMH)/2
+						score = score - deltaMH
+						
+						local deltaH = player:GetHearts()
+						player:AddHearts(baseScore * 2 - deltaMH * 2)
+						deltaH = (player:GetHearts() - deltaH)/2
+						score = score - deltaH
+						
+						EternalCharges = EternalCharges + math.max(0, math.floor(score))
+					end
+					
+					--pickup:Morph(EntityType.ENTITY_PICKUP, PickupVariant.PICKUP_COLLECTIBLE, 0, true)
+					--pickup.SubType = 0
+					pickup:Remove()
+					return true
+				end
+			else
+				return nil
+			end
+		end
+		
+		
 		return nil
 	end
 end
