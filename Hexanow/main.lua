@@ -91,12 +91,14 @@ function hexanowObjectives_Write(key, value)
 		end
 	end
 	table.insert(hexanowObjectives, KeyValuePair(key, value))
+	return value
 end
 
 function hexanowObjectives_Apply()
 	HUDoffset = tonumber(hexanowObjectives_Read("HUDoffset", "10"))
 	EternalCharges = tonumber(hexanowObjectives_Read("EternalCharges", "0"))
 end
+
 function hexanowObjectives_Recieve()
 	hexanowObjectives_Write("HUDoffset", tostring(HUDoffset))
 	hexanowObjectives_Write("EternalCharges", tostring(EternalCharges))
