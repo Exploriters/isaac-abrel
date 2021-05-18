@@ -157,6 +157,19 @@ APIOverride.OverrideClassFunction(EntityPlayer, "HasCollectible", function(inter
 	end
 	return result
 end)
+
+local baseHasCollectible = APIOverride.GetCurrentClassFunction(EntityPlayer, "HasCollectible")
+APIOverride.OverrideClassFunction(EntityPlayer, "HasCollectible", function(self, Type, IgnoreModifiers, a,b,c,d,e,f,g,h,i,j,k,l,m,n)
+	if self:GetPlayerType() == playerTypeHexanow
+	and (  Type == CollectibleType.COLLECTIBLE_ANALOG_STICK
+		or Type == CollectibleType.COLLECTIBLE_URANUS
+		or Type == CollectibleType.COLLECTIBLE_NEPTUNUS
+	) then
+		return true
+	end
+
+	return baseHasCollectible(self, Type, IgnoreModifiers, a,b,c,d,e,f,g,h,i,j,k,l,m,n)
+end)
 ]]
 
 --[[
@@ -527,13 +540,17 @@ function InitPlayerHexanow(player)
 		player:AddMaxHearts(-player:GetMaxHearts())
 		player:AddMaxHearts(12)
 		player:AddHearts(11)
+		
+		player:AddGoldenKey()
+		player:AddGoldenBomb()
 		-- player:AddGoldenHearts(0)
 		ApplyEternalHearts(player)
 		
 		TickEventHexanow(player)
 		
 		--player:AddHearts(-1)
-		player:AddCard(Card.CARD_JUSTICE)
+		--player:AddCard(Card.CARD_JUSTICE)
+		player:AddCard(Card.CARD_CRACKED_KEY)
 		player:AddTrinket(TrinketType.TRINKET_NO | 32768)
 		-- player:AddCard(Card.CARD_SUN)
 		-- player:AddTrinket(TrinketType.TRINKET_BIBLE_TRACT)
@@ -554,7 +571,7 @@ function InitPlayerHexanow(player)
 	end
 end
 
--- 存储mod数据
+-- 物品谓词
 function HexanowCollectiblePredicate(item)
 	if item ~= nil and
 		(	item:HasTags(ItemConfig.TAG_QUEST)
@@ -562,23 +579,25 @@ function HexanowCollectiblePredicate(item)
 		or	item.ID == CollectibleType.COLLECTIBLE_NEGATIVE
 		or	item.ID == CollectibleType.COLLECTIBLE_BROKEN_SHOVEL
 		or	item.ID == CollectibleType.COLLECTIBLE_BROKEN_SHOVEL_2
+		or	item.ID == CollectibleType.COLLECTIBLE_MOMS_SHOVEL
 		or	item.ID == CollectibleType.COLLECTIBLE_KEY_PIECE_1
 		or	item.ID == CollectibleType.COLLECTIBLE_KEY_PIECE_2
 		or	item.ID == CollectibleType.COLLECTIBLE_KNIFE_PIECE_1
 		or	item.ID == CollectibleType.COLLECTIBLE_KNIFE_PIECE_2
 		or	item.ID == CollectibleType.COLLECTIBLE_DADS_NOTE
 		or	item.ID == CollectibleType.COLLECTIBLE_DOGMA
+		or	item.ID == CollectibleType.COLLECTIBLE_RED_KEY
 		
 		or	item.ID == CollectibleType.COLLECTIBLE_ANALOG_STICK
 		or	item.ID == CollectibleType.COLLECTIBLE_URANUS
 		or	item.ID == CollectibleType.COLLECTIBLE_NEPTUNUS
 		or	item.ID == CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR
 			
-		--or item.ID == CollectibleType.COLLECTIBLE_BIRTHRIGHT
+		--or	item.ID == CollectibleType.COLLECTIBLE_BIRTHRIGHT
 		
-		--or (item.Quality >= 4 and item.ItemType ~= ItemType.ITEM_FAMILIAR)
+		--or	(item.Quality >= 4 and item.ItemType ~= ItemType.ITEM_FAMILIAR)
 		
-		or	item.Type == ItemType.ITEM_ACTIVE
+		--or	item.Type == ItemType.ITEM_ACTIVE
 		)
 	then
 		return true
@@ -664,10 +683,15 @@ function TickEventHexanow(player)
 		
 		
 		local VREntityNotTraced = true
+		local VRHolding = false
 		local roomEntities = Isaac.GetRoomEntities()
 				
-		if player:HasCollectible(CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR, true) then
+		--if player:HasCollectible(CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR, true) then
+		if player:GetActiveItem(ActiveSlot.SLOT_PRIMARY) == CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR
+		or player:GetActiveItem(ActiveSlot.SLOT_SECONDARY) == CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR
+		then
 			VREntityNotTraced = false
+			VRHolding = true
 		end
 		
 		for i,entity in ipairs(roomEntities) do
@@ -685,12 +709,28 @@ function TickEventHexanow(player)
 			end
 		end
 		
-		if VREntityNotTraced
-		and player:GetActiveItem() == CollectibleType.COLLECTIBLE_NULL
-		-- and not player:HasTrinket(TrinketType.TRINKET_BUTTER)
-		then
-			player:AddCollectible(CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR, 0, false)
+		if VREntityNotTraced then
+			if player:GetActiveItem(ActiveSlot.SLOT_PRIMARY) == CollectibleType.COLLECTIBLE_NULL
+			-- and not player:HasTrinket(TrinketType.TRINKET_BUTTER)
+			then
+				player:AddCollectible(CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR, 0, false)
+				VRHolding = true
+			end
 		end
+		
+		--[[
+		if VRHolding then
+			if player:GetActiveItem(ActiveSlot.SLOT_POCKET) == CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR
+			then
+				player:RemoveCollectible(CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR, true, ActiveSlot.SLOT_POCKET)
+			end
+		else
+			if player:GetActiveItem(ActiveSlot.SLOT_POCKET) ~= CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR
+			then
+				player:SetPocketActiveItem(CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR, ActiveSlot.SLOT_POCKET, false)
+			end
+		end
+		]]
 		
 			--[[
 			if lastMaxHearts ~= player:GetMaxHearts() then
@@ -901,6 +941,12 @@ function hexanowMod:PostNewRoom()
 	)
 	
 	if PlayerTypeExistInGame(playerTypeHexanow) then
+		local level = Game():GetLevel()
+		level:ApplyBlueMapEffect()
+		level:ApplyCompassEffect()
+		level:ApplyMapEffect()
+		level:ShowMap ()
+		
 		CallForEveryEntity(
 			function(entity)
 				if entity.Type == EntityType.ENTITY_EFFECT
@@ -1144,6 +1190,24 @@ function hexanowMod:PrePickupCollision(pickup, collider, low)
 					--pickup.SubType = 0
 				end
 			end
+		end
+	
+		if pickup.Variant == PickupVariant.PICKUP_PILL
+		or (pickup.Variant == PickupVariant.PICKUP_TRINKET
+			and pickup.SubType ~= TrinketType.TRINKET_NO
+			and pickup.SubType ~= TrinketType.TRINKET_NO | 32768
+			and pickup.SubType ~= TrinketType.TRINKET_PERFECTION
+			and pickup.SubType ~= TrinketType.TRINKET_PERFECTION | 32768
+			)
+		or pickup.Variant == PickupVariant.PICKUP_LIL_BATTERY
+		or (pickup.Variant == PickupVariant.PICKUP_TAROTCARD
+			and pickup.SubType ~= Card.CARD_CRACKED_KEY
+			)
+		then
+			EternalCharges = EternalCharges + 1
+			SFXManager():Play(SoundEffect.SOUND_HOLY, 1, 0, false, 1 )
+			pickup:Remove()
+			return false
 		end
 		
 		
@@ -1403,25 +1467,27 @@ function hexanowMod:PostUpdate()
 						end
 						
 						if not traced then
-							if entity.Position:Distance(portalBlue.Position + Vector(20, 20)) <= 20 then
+							if entity.Position:Distance(portalBlue.Position) <= 28.284271247461900976033774484194 then
 								closeToBlue = true
 							end
-							if entity.Position:Distance(portalOrange.Position + Vector(20, 20)) <= 20 then
+							if entity.Position:Distance(portalOrange.Position) <= 28.284271247461900976033774484194 then
 								closeToOrange = true
 							end
 							
 							if closeToBlue and not closeToOrange then
-								entity.Position = portalBlue.Position - entity.Position + portalOrange.Position
+								entity.Position = portalOrange.Position -- portalBlue.Position - entity.Position + portalOrange.Position
+								SFXManager():Play(SoundEffect.SOUND_TEARIMPACTS, 1, 0, false, 1 )
 								table.insert(teledProjectiles, entity.Index)
 							elseif closeToOrange and not closeToBlue then
-								entity.Position = portalOrange.Position - entity.Position + portalBlue.Position
+								entity.Position = portalBlue.Position -- portalOrange.Position - entity.Position + portalBlue.Position
+								SFXManager():Play(SoundEffect.SOUND_TEARIMPACTS, 1, 0, false, 1 )
 								table.insert(teledProjectiles, entity.Index)
 							end
 						else
-							if entity.Position:Distance(portalBlue.Position + Vector(20, 20)) <= 40 then
+							if entity.Position:Distance(portalBlue.Position) <= 40 then
 								closeToBlue = true
 							end
-							if entity.Position:Distance(portalOrange.Position + Vector(20, 20)) <= 40 then
+							if entity.Position:Distance(portalOrange.Position) <= 40 then
 								closeToOrange = true
 							end
 							if not closeToBlue and not closeToOrange then
