@@ -1113,30 +1113,36 @@ function hexanowMod:PrePickupCollision(pickup, collider, low)
 					return true
 				else
 					if item ~= nil then
-						SFXManager():Play(SoundEffect.SOUND_HOLY, 1, 0, false, 1 )
-						local baseScore = 2 + item.Quality * 2
-						local score = 2 + item.Quality * 2
+						local baseScore = item.Quality * 2
 						
-						local deltaMH = player:GetMaxHearts()
-						player:AddMaxHearts(baseScore)
-						deltaMH = (player:GetMaxHearts() - deltaMH)/2
-						score = score - deltaMH
+						if baseScore > 0 then
+							local score = baseScore
 						
-						local deltaH = player:GetHearts()
-						player:AddHearts(baseScore * 2 - deltaMH * 2)
-						deltaH = (player:GetHearts() - deltaH)/2
-						score = score - deltaH
-						
-						EternalCharges = EternalCharges + math.max(0, math.floor(score))
+							local deltaMH = player:GetMaxHearts()
+							player:AddMaxHearts(baseScore)
+							deltaMH = (player:GetMaxHearts() - deltaMH)/2
+							score = score - deltaMH
+							
+							local deltaH = player:GetHearts()
+							player:AddHearts(baseScore * 2 - deltaMH * 2)
+							deltaH = (player:GetHearts() - deltaH)/2
+							score = score - deltaH
+							
+							EternalCharges = EternalCharges + math.max(0, math.floor(score))
+							SFXManager():Play(SoundEffect.SOUND_HOLY, 1, 0, false, 1 )
+							pickup:Remove()
+							return false
+						else
+							return false
+						end
+					elseif pickup.SubType == 0 then
+						pickup:Remove()
+						return false
 					end
 					
 					--pickup:Morph(EntityType.ENTITY_PICKUP, PickupVariant.PICKUP_COLLECTIBLE, 0, true)
 					--pickup.SubType = 0
-					pickup:Remove()
-					return true
 				end
-			else
-				return nil
 			end
 		end
 		
