@@ -27,6 +27,7 @@ local EternalCharges = 0
 local onceHoldingItem = false
 local lastCanFly = nil
 local roomClearBounsEnabled = false
+local EternalChargeForFree = true
 
 local portalBlue = nil
 local portalOrange = nil
@@ -42,6 +43,7 @@ EternalCharges = 0
 onceHoldingItem = false
 lastCanFly = nil
 roomClearBounsEnabled = false
+EternalChargeForFree = true
 
 portalBlue = nil
 portalOrange = nil
@@ -751,12 +753,6 @@ function TickEventHexanow(player)
 			UpdateCostumes(player)
 		else
 			
-			if room:GetAliveEnemiesCount() <= 0 then
-				ApplyEternalHearts(player)
-			else
-				ApplyEternalCharge(player)
-			end
-			
 			--[[ --Malfunction
 			if  ( player.Velocity.X < 0.05 and player.Velocity.X > -0.05)
 			and ( player.Velocity.Y < 0.05 and player.Velocity.Y > -0.05)
@@ -785,6 +781,14 @@ function TickEventHexanow(player)
 				lastCanFly = player.CanFly
 			end
 			
+		end
+			
+		if room:GetAliveEnemiesCount() <= 0 then
+			ApplyEternalHearts(player)
+			EternalChargeForFree = true
+		else
+			ApplyEternalCharge(player)
+			EternalChargeForFree = false
 		end
 		
 		--[[
@@ -927,6 +931,12 @@ hexanowMod:AddCallback(ModCallbacks.MC_POST_NEW_LEVEL, hexanowMod.PostNewLevel)
 
 -- 在玩家进入新房间后运行
 function hexanowMod:PostNewRoom()
+	if Game():GetRoom():GetAliveEnemiesCount() <= 0 then
+		EternalChargeForFree = true
+	else
+		EternalChargeForFree = false
+	end
+	
 	CallForEveryPlayer(
 		function(player)
 			UpdateCostumes(player)
@@ -1643,8 +1653,12 @@ function hexanowMod:PostRender()
 			offsetMod = offsetMod + Vector(0, 8)
 		end
 		
-		EternalChargeSprite:SetOverlayRenderPriority(true)
-		EternalChargeSprite:SetFrame("EternalCharge", 0)
+		if EternalChargeForFree then
+			EternalChargeSprite:SetFrame("Gold", 0)
+		else
+			EternalChargeSprite:SetFrame("Base", 0)
+		end
+		--EternalChargeSprite:SetOverlayRenderPriority(true)
 		EternalChargeSprite:Render(baseOffset + offsetMod, Vector(0,0), Vector(0,0))
 		DrawSimNumbers(EternalCharges, baseOffset + Vector(12, 1) + offsetMod, true)
 		
