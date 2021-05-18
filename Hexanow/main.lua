@@ -38,16 +38,16 @@ local teledProjectiles = {}
 
 -- 抹除临时变量
 function WipeTempVar()
-EternalCharges = 0
+	EternalCharges = 0
 
-onceHoldingItem = false
-lastCanFly = nil
-roomClearBounsEnabled = false
-EternalChargeForFree = true
+	onceHoldingItem = false
+	lastCanFly = nil
+	roomClearBounsEnabled = false
+	EternalChargeForFree = true
 
-portalBlue = nil
-portalOrange = nil
-teledProjectiles = {}
+	portalBlue = nil
+	portalOrange = nil
+	teledProjectiles = {}
 end
 
 keyValuePair = {key = "", value = ""}
@@ -62,9 +62,11 @@ function keyValuePair:ctor(key, value)
   cted.value = value
   return cted
 end
+
 --[[local hexanowObjectives = {
 ["damageIncrease"] = 0.0,
 }]]
+
 local hexanowObjectives = { }
 hexanowObjectives.__index = hexanowObjectives
 
@@ -107,6 +109,7 @@ function hexanowObjectives_ToString()
 	end
 	return str
 end
+
 function hexanowObjectives_LoadFromString(str)
 	local strTable = {}
 	local pointer1 = 0
@@ -365,9 +368,10 @@ end
 -- 在游戏被初始化后运行
 function hexanowMod:PostGameStarted(loadedFromSaves)	
 	if not loadedFromSaves then -- 仅限新游戏
-		CallForEveryPlayer(InitPlayerHexanow)
+		LoadHexanowModData()
 		WipeTempVar()
 		SaveHexanowModData()
+		CallForEveryPlayer(InitPlayerHexanow)
 	else -- 仅限从存档中读取
 		WipeTempVar()
 		LoadHexanowModData()
