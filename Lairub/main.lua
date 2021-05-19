@@ -1,28 +1,175 @@
 local lairub = RegisterMod("Lairub", 1);
 
+--==Costume and something else==--
 local costume_Lairub_Body = Isaac.GetCostumeIdByPath("gfx/characters/LairubBody.anm2")
 local costume_Lairub_Head = Isaac.GetCostumeIdByPath("gfx/characters/LairubHead.anm2")
 local costume_Lairub_Head_TakeSoul = Isaac.GetCostumeIdByPath("gfx/characters/LairubHead_TakeSoul.anm2")
 local playerType_Lairub = Isaac.GetPlayerTypeByName("Lairub")
 local LairubStatUpdateItem = Isaac.GetItemIdByName( "Lairub Stat Trigger" )
-
+--==Animation==--
 local AnimationEnd = true
 local AnimationEnd_ReadySpawnCross = true
-
+--==Shift(Changed TakeSoul)==--
 local ShiftChanged = 1
 local IsShiftChanged = true
 local PressingShift = false
 local PressedShiftOnce = false
-
+--==Alt(Release Soul)==--
 local PressingAlt = false
 local PressedAltOnce = false
-
+--==Ctrl(Spawn Soul Cross)==--
 local PressingCtrl = false
 local PressedCtrlOnce = false
-
+--==Soul Cross==--
 local ReadySpawnCross = false
 local DetermineDirection = false
 local SpawnedCross = false
+
+--==Z(Talk to player)==--
+local PressingZ = false
+local PressedZOnce = false
+local DialogueOver = false
+local Dialogue = 0
+
+--==== Store mod Data ====--
+keyValuePair = {key = "", value = ""}
+keyValuePair.__index = keyValuePair
+
+local LairubObjectives = { }
+LairubObjectives.__index = LairubObjectives
+
+function KeyValuePair(key, value)
+	return keyValuePair:ctor(key, value)
+end
+
+function keyValuePair:ctor(key, value)
+	local cted = {}
+	setmetatable(cted, keyValuePair)
+	cted.key = key
+	cted.value = value
+	return cted
+end
+
+function LairubObjectives_Wipe()
+	LairubObjectives = { }
+end
+
+function LairubObjectives_Read(key, default)
+	for i, kvp in ipairs(LairubObjectives) do
+		if kvp.key == key then
+			--print("Get value "..kvp.value.." for key "..key)
+			return kvp.value
+		end
+	end
+	--print("Problem getting value for key "..key.." defaulting to" ..default)
+	return default
+end
+
+function LairubObjectives_Write(key, value)
+	for i, kvp in ipairs(LairubObjectives) do
+		if kvp.key  == key then
+			kvp.value = value
+			return value
+		end
+	end
+	table.insert(LairubObjectives, KeyValuePair(key, value))
+	return value
+end
+
+function LairubObjectives_Apply()
+	local DialogueOverStr = LairubObjectives_Read("DialogueOver", "false")
+	if DialogueOverStr == "true" then
+		DialogueOver = true
+	elseif DialogueOverStr == "false" then
+		DialogueOver = false
+	else
+		DialogueOver = nil
+	end
+	--print(DialogueOver)
+end
+
+function LairubObjectives_Recieve()
+	LairubObjectives_Write("DialogueOver ", tostring(DialogueOver))
+end
+
+function LairubObjectives_ToString()
+	local str = ""
+	for i,kvp in ipairs(LairubObjectives) do
+		str = str..tostring(kvp.key).."="..tostring(kvp.value).."\n"
+	end
+	return str
+end
+
+function LairubObjectives_LoadFromString(str)
+	--print("RAW:\n"..str)
+	local strTable = {}
+	local pointer1 = 0
+	local pointer2 = 0
+	local count = 1
+	while true do
+		local point = string.find(str, "\n", count)
+		if point == nil then
+			break
+		end
+		pointer1 = pointer2
+		pointer2 = point
+		table.insert(strTable, string.sub(str, pointer1 + 1, pointer2 -1))
+		count = count + 1
+	end
+	--print("Splt by line complete with "..tostring(count).." lines.")
+	for i, str in ipairs(strTable) do
+		local point = string.find(str, "=", 1)
+		if point ~= nil then
+			local key = string.sub(str, 1, point - 1)
+			local value = string.sub(str, point + 1, 256)
+			LairubObjectives_Write(key, value)
+			
+		end
+	end
+	--print("Load from string result:\n"..LairubObjectives_ToString())
+end
+--==Read==--
+function LoadLairubModData()
+	local str = "Error"
+	if Isaac.HasModData(lairub) then
+		str = Isaac.LoadModData(lairub, "ERROR\nERROR\nERROR\nI HATE YOU")
+		if str == nil then
+			print("Null readout!")
+		else
+			print("Load Readout:\n"..str)
+		end
+	else
+		print("Data doesn't exist")
+	end
+	LairubObjectives_Wipe()
+	LairubObjectives_LoadFromString(str)
+	LairubObjectives_Apply()
+end
+--==Write==--
+function SaveLairubModData()
+	LairubObjectives_Recieve()
+	local str = LairubObjectives_ToString()
+	Isaac.SaveModData(lairub, str)
+end
+--==Post game started==--
+function lairub:PostGameStarted(loadedFromSaves)
+	if not loadedFromSaves then
+		LoadLairubModData()
+		DialogueOver = false
+		SaveLairubModData()
+	else
+		DialogueOver = false
+		LoadLairubModData()
+	end
+end
+lairub:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, lairub.PostGameStarted)
+
+function lairub:PreGameExit(shouldSave)
+	SaveLairubModData()
+	DialogueOver = false
+end
+lairub:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, lairub.PreGameExit)
+--========--
 
 function UpdateCache(player)
 	player:AddCacheFlags(CacheFlag.CACHE_DAMAGE)
@@ -35,7 +182,7 @@ function lairub:Update(player)
 	local level = game:GetLevel()
 	local player = Isaac.GetPlayer(0)
 	local room = game:GetRoom()
-	
+	--==Costume==--
 	if room:GetFrameCount() == 1 and player:GetPlayerType() == playerType_Lairub and not player:IsDead() then
 		if ShiftChanged == 1 then
 			if player:HasCollectible(CollectibleType.COLLECTIBLE_GUILLOTINE) or player:HasCollectible(CollectibleType.COLLECTIBLE_TRANSCENDENCE) then
@@ -59,8 +206,9 @@ function lairub:Update(player)
 			end
 		end
 	end
-	
+
 	if player:GetPlayerType() == playerType_Lairub then
+		--==Hearts Limit==--
 		while player:GetMaxHearts() > 0 do
 			player:AddMaxHearts(-2, true)
 			player:AddBoneHearts(1)
@@ -200,8 +348,11 @@ ReleaseIcon:Load("gfx/Lairub_ReleaseIcon.anm2", true)
 local SoulCount = 0
 
 function lairub:PostRender()
+	local game = Game()
+	local level = game:GetLevel()
 	local player = Isaac.GetPlayer(0)
-	local room = Game():GetRoom()
+	local room = game:GetRoom()
+	local playerPos = room:WorldToScreenPosition(player.Position)
 	if player:GetPlayerType() == playerType_Lairub then
 		--==SoulSign==--
 		SoulSign:SetOverlayRenderPriority(true)
@@ -232,6 +383,26 @@ function lairub:PostRender()
 			ReleaseIcon:SetFrame("Locking", 1)
 		end
 		ReleaseIcon:Render(Vector(128,52), Vector(0,0), Vector(0,0))
+		--==Talk to player==--
+		if DialogueOver == false and level:GetStage() == 13 then
+			--Lowest Y = -64--
+			Isaac.RenderText("(Press 'Z' to continue)", playerPos.X - 32, playerPos.Y - 64, 255, 255, 255, 255)
+			if Dialogue == 0 then
+				Isaac.RenderText("Lairub:", playerPos.X - 64, playerPos.Y - 84, 255, 255, 255, 255)
+				Isaac.RenderText("...", playerPos.X - 64, playerPos.Y - 74, 255, 255, 255, 255)
+			elseif Dialogue == 1 then
+				Isaac.RenderText("Lairub:", playerPos.X - 64, playerPos.Y - 94, 255, 255, 255, 255)
+				Isaac.RenderText("It seems that we have a stronger", playerPos.X - 64, playerPos.Y - 84, 255, 255, 255, 255)
+				Isaac.RenderText("enemy to deal with.", playerPos.X - 64, playerPos.Y - 74, 255, 255, 255, 255)
+			elseif Dialogue == 2 then
+				Isaac.RenderText("Lairub:", playerPos.X - 64, playerPos.Y - 94, 255, 255, 255, 255)
+				Isaac.RenderText("For the next battle, my skill 'Release Soul'", playerPos.X - 64, playerPos.Y - 84, 255, 255, 255, 255)
+				Isaac.RenderText("has been enhanced to full screen.", playerPos.X - 64, playerPos.Y - 74, 255, 255, 255, 255)
+			elseif Dialogue == 3 then
+				Isaac.RenderText("Lairub:", playerPos.X - 64, playerPos.Y - 84, 255, 255, 255, 255)
+				Isaac.RenderText("Good luck.", playerPos.X - 64, playerPos.Y - 74, 255, 255, 255, 255)
+			end
+		end
 		--====--
 	end
 end
@@ -356,6 +527,17 @@ local function LairubAnmReadySpawnCrossUpdate(_, LairubAnmReadySpawnCross)
 end
 lairub:AddCallback(ModCallbacks.MC_FAMILIAR_UPDATE,LairubAnmReadySpawnCrossUpdate, LairubAnmReadySpawnCross_Variant)
 
+local LairubSoulEffect_Type = Isaac.GetEntityTypeByName("LairubSoulEffect")
+local LairubSoulEffect_Variant = Isaac.GetEntityVariantByName("LairubSoulEffect")
+
+local function LairubSoulEffectUpdate(_, LairubSoulEffect)
+	LairubSoulEffect:GetSprite():Play("SoulEffect", false)
+	if LairubSoulEffect:GetSprite():WasEventTriggered("End") then
+		LairubSoulEffect:Remove()
+	end
+end
+lairub:AddCallback(ModCallbacks.MC_FAMILIAR_UPDATE,LairubSoulEffectUpdate, LairubSoulEffect_Variant)
+
 function lairub:Functions()
 	local level = Game():GetLevel()
 	local player = Isaac.GetPlayer(0)
@@ -404,7 +586,11 @@ function lairub:Functions()
 					end
 					tearSprite.Rotation = entity.Velocity:GetAngleDegrees()
 				end
-			end		
+			end	
+			local NPC = entity:ToNPC()
+			if NPC ~= nil and NPC:IsDead() and ShiftChanged == 2 and not NPC:IsBoss() and Input.IsButtonPressed(Keyboard.KEY_LEFT_ALT, player.ControllerIndex) then
+				Isaac.Spawn(EntityType.ENTITY_FAMILIAR, LairubSoulEffect_Variant, 0, NPC.Position, Vector(0,0), player)
+			end
 		end
 		
 		if not IsShiftChanged then
@@ -436,7 +622,7 @@ function lairub:Functions()
 				for i,entity in ipairs(roomEntities) do
 					local NPC = entity:ToNPC()
 					if NPC ~= nil and NPC:IsVulnerableEnemy() and not NPC:HasEntityFlags(EntityFlag.FLAG_FRIENDLY) then
-						if (player.Position - NPC.Position):Length() < 192 then
+						if (player.Position - NPC.Position):Length() < 192 or level:GetStage() == 13 then
 							SoulCount = SoulCount - 1
 							NPC:TakeDamage(player.Damage, 0, EntityRef(player), 0)
 							NPC:SetColor(Color(0, 0, 0, 1, 0, 0, 0), 30, 999, true, true)
@@ -560,7 +746,29 @@ function lairub:Functions()
 				player.ControlsEnabled = true
 			end
 		end
-		--========--
+		--====Talk to player==--
+		if level:GetStage() == 13 then
+			if DialogueOver == false then
+				player.ControlsEnabled = false
+				if Input.IsButtonPressed(Keyboard.KEY_Z, player.ControllerIndex) then
+					PressingZ = true
+					if PressedZOnce == false then
+						PressedZOnce = true
+						Dialogue = Dialogue + 1
+						if Dialogue > 3 then
+							Dialogue = 0
+							DialogueOver = true
+							print(DialogueOver)
+							player.ControlsEnabled = true
+						end
+					end
+				else
+					PressingZ = false
+					PressedZOnce = false
+				end
+			end
+		end
+	--========--
 	end
 end
 lairub:AddCallback( ModCallbacks.MC_POST_UPDATE, lairub.Functions)
@@ -633,6 +841,11 @@ function lairub:PostNewGame()
 	
 	NPCdis = 0
 	
+	PressingZ = false
+	PressedZOnce = false
+--	DialogueOver = false
+	Dialogue = 0
+	
 	local game = Game()
 	local level = game:GetLevel()
 	local player = Isaac.GetPlayer(0)
@@ -645,3 +858,26 @@ function lairub:PostNewGame()
 	end
 end
 lairub:AddCallback( ModCallbacks.MC_POST_GAME_STARTED, lairub.PostNewGame)
+
+--==For Locking Characters==--
+
+local playerType_Tainted_Lairub = Isaac.GetPlayerTypeByName("Tainted Lairub", true)
+
+function lairub:LockingUpdate(player)
+	local player = Isaac.GetPlayer(0)
+	if player:GetPlayerType() == playerType_Tainted_Lairub then
+		player.Visible = false
+		player.ControlsEnabled = false
+	end
+end
+lairub:AddCallback( ModCallbacks.MC_POST_UPDATE, lairub.LockingUpdate)
+
+function lairub:LockingPostRender()
+	local player = Isaac.GetPlayer(0)
+	local room = Game():GetRoom()
+	if player:GetPlayerType() == playerType_Tainted_Lairub then
+		Isaac.RenderText("Character 'Tainted Lairub' is an unfinished character.", 50, 60, 255, 0, 0, 255)
+		Isaac.RenderText("Now that she is locked, please wait for the update.", 50, 70, 255, 0, 0, 255)
+	end
+end
+lairub:AddCallback(ModCallbacks.MC_POST_RENDER, lairub.LockingPostRender)

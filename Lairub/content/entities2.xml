@@ -15,4 +15,7 @@
   <entity name="LairubAnmReadySpawnCross" anm2path="LairubAnm_ReadySpawnCross.anm2" baseHP="0" boss="0" champion="0" collisionDamage="0" id="3" collisionMass="3" collisionRadius="13" friction="1" numGridCollisionPoints="12" shadowSize="11" stageHP="0" variant="616584" subtype="0">
     <gibs amount="0" blood="1" bone="0" eye="0" gut="0" large="0" />
   </entity>
+  <entity name="LairubSoulEffect" anm2path="Lairub_SoulEffect.anm2" baseHP="0" boss="0" champion="0" collisionDamage="0" id="3" collisionMass="3" collisionRadius="13" friction="1" numGridCollisionPoints="12" shadowSize="11" stageHP="0" variant="616585" subtype="0">
+    <gibs amount="0" blood="1" bone="0" eye="0" gut="0" large="0" />
+  </entity>
 </entities>
