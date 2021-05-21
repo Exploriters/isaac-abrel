@@ -669,6 +669,7 @@ function HexanowCollectiblePredicate(ID, ignoreEnsured)
 	end
 end
 
+-- 返回物品持有数量上限
 function HexanowCollectibleMaxAllowed(ID)
 	local num = 0
 	
