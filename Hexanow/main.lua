@@ -3,6 +3,7 @@
 local hexanowMod = RegisterMod("Hexanow", 1);
 
 local playerTypeHexanow = Isaac.GetPlayerTypeByName("Hexanow")
+local playerTypeHexanowTainted = Isaac.GetPlayerTypeByName("Tainted Hexanow", true)
 --local hexanowItem = Isaac.GetItemIdByName( "Hexanow's Soul" )
 local hexanowFlightTriggerItem = Isaac.GetItemIdByName( "Hexanow flight trigger" )
 local hexanowHairCostume = Isaac.GetCostumeIdByPath("gfx/characters/HexanowHair.anm2")
@@ -30,6 +31,7 @@ local roomClearBounsEnabled = false
 local EternalChargeForFree = true
 
 local EternalChargeSuppressed = false
+local Tainted = false
 
 local WhiteHexanowCollectibleID = 0
 local WhiteHexanowTrinketID = 0
@@ -51,6 +53,7 @@ function WipeTempVar()
 	EternalChargeForFree = true
 	
 	EternalChargeSuppressed = false
+	Tainted = false
 	
 	WhiteHexanowCollectibleID = 0
 	WhiteHexanowTrinketID = 0
@@ -61,7 +64,7 @@ function WipeTempVar()
 end
 
 function WhiteHexanowCollectible(ID)
-	print("White Collectible Now",ID)
+	--print("White Collectible Now",ID)
 	WhiteHexanowCollectibleID = ID
 	WhiteHexanowTrinketID = 0
 	return ID
@@ -69,7 +72,7 @@ end
 
 function WhiteHexanowTrinket(ID)
 	ID = ID & 32767
-	print("White Trinket Now",ID)
+	--print("White Trinket Now",ID)
 	WhiteHexanowCollectibleID = 0
 	WhiteHexanowTrinketID = ID
 	return ID
@@ -132,12 +135,43 @@ function hexanowObjectives_Apply()
 		EternalChargeSuppressed = nil
 	end
 	--print("Eternal charge suppression state "..tostring(EternalChargeSuppressed))
+
+	local HTSStr = hexanowObjectives_Read("HexanowTaintedStarted", "false")
+	if HTSStr == "true" then
+		Tainted = true
+	elseif HTSStr == "false" then
+		Tainted = false
+	else
+		Tainted = nil
+	end
+	
+	local WHIStr = hexanowObjectives_Read("WhiteHexanowItem", "")
+	local WHIpoint = string.find(WHIStr, ":", 1)
+	if WHIpoint ~= nil then
+		local prefix = string.sub(WHIStr, 1, WHIpoint - 1)
+		local value = tonumber(string.sub(WHIStr, WHIpoint + 1, 256))
+		
+		if prefix == "Collectible" then
+			WhiteHexanowCollectible(value)
+		elseif prefix == "Trinket" then
+			WhiteHexanowTrinket(value)
+		end
+	end
 end
 
 function hexanowObjectives_Recieve()
 	hexanowObjectives_Write("HUDoffset", tostring(HUDoffset))
 	hexanowObjectives_Write("EternalCharges", tostring(EternalCharges))
 	hexanowObjectives_Write("EternalChargeSuppressed", tostring(EternalChargeSuppressed))
+	hexanowObjectives_Write("HexanowTaintedStarted", tostring(Tainted))
+	
+	if WhiteHexanowCollectibleID ~= 0 then
+		hexanowObjectives_Write("WhiteHexanowItem", "Collectible:"..tostring(WhiteHexanowCollectibleID))
+	elseif WhiteHexanowTrinketID ~= 0 then
+		hexanowObjectives_Write("WhiteHexanowItem", "Trinket:"..tostring(Tainted))
+	else
+		hexanowObjectives_Write("WhiteHexanowItem", "")
+	end
 end
 
 function hexanowObjectives_ToString()
@@ -418,6 +452,7 @@ function hexanowMod:PostGameStarted(loadedFromSaves)
 		LoadHexanowModData()
 		WipeTempVar()
 		SaveHexanowModData()
+		CallForEveryPlayer(InitPlayerHexanowTainted)
 		CallForEveryPlayer(InitPlayerHexanow)
 	else -- 仅限从存档中读取
 		WipeTempVar()
@@ -587,6 +622,89 @@ function RearrangeHearts(player)
 	
 end
 
+function TaintedHexanowRoomOverride()
+	if not Tainted then
+		return nil
+	end
+	
+	local game = Game()
+	local level = game:GetLevel()
+	local room = game:GetRoom()
+	local roomEntities = Isaac.GetRoomEntities()
+	
+	for i,entity in ipairs(roomEntities) do
+		
+		local pickup = entity:ToPickup()
+		if pickup ~= nil then
+			if pickup.Variant == PickupVariant.PICKUP_COLLECTIBLE and pickup.SubType ~= 0 then
+				if room:GetBackdropType() == 51 and pickup.SubType ~= CollectibleType.COLLECTIBLE_RED_KEY then
+					pickup:Morph(pickup.Type, pickup.Variant, CollectibleType.COLLECTIBLE_RED_KEY, true)
+				end
+				
+				if pickup.SubType == CollectibleType.COLLECTIBLE_R_KEY
+				or pickup.SubType == CollectibleType.COLLECTIBLE_SPINDOWN_DICE
+				or pickup.SubType == CollectibleType.COLLECTIBLE_CLICKER
+				then
+					pickup:Morph(pickup.Type, pickup.Variant, CollectibleType.COLLECTIBLE_BREAKFAST, true)
+				end
+			end
+			if room:GetBackdropType() == 49 and 
+				 ( pickup.Variant == PickupVariant.PICKUP_CHEST 	
+				or pickup.Variant == PickupVariant.PICKUP_BOMBCHEST 	
+				or pickup.Variant == PickupVariant.PICKUP_SPIKEDCHEST 	
+				or pickup.Variant == PickupVariant.PICKUP_ETERNALCHEST 	
+				or pickup.Variant == PickupVariant.PICKUP_MIMICCHEST 	
+				or pickup.Variant == PickupVariant.PICKUP_LOCKEDCHEST 
+				)
+			then
+				pickup:Remove()
+			end
+		end
+		
+		if entity.Type == EntityType.ENTITY_SHOPKEEPER then
+			Isaac.Spawn(EntityType.ENTITY_PICKUP, PickupVariant.PICKUP_COLLECTIBLE, CollectibleType.COLLECTIBLE_DEATH_CERTIFICATE, entity.Position, Vector(0,0), entity)
+			entity:Remove()
+		end
+		
+		
+	end
+	
+end
+
+-- 初始化人物
+function InitPlayerHexanowTainted(player)
+	--print("CALLED!")
+	--print("PType", player:GetPlayerType())
+	--print("TType", playerTypeHexanowTainted)
+	if player:GetPlayerType() == playerTypeHexanowTainted then
+		--print("CALLED ACCEPT!")
+		local level = Game():GetLevel()
+		player:ChangePlayerType(playerTypeHexanow)
+		Tainted = true
+		
+		player:AddTrinket(TrinketType.TRINKET_PERFECTION | 32768)
+		--player:AddCard(Card.CARD_CRACKED_KEY)
+		--player:AddCollectible(CollectibleType.COLLECTIBLE_DEATH_CERTIFICATE, 0, false)
+		player:AddCoins(99)
+		player:AddBombs(99)
+		player:AddKeys(99)
+		--player:AddEternalHearts(24)
+		EternalCharges = EternalCharges + 99
+		
+		local stageType = level:GetStageType()
+		
+		if stageType == StageType.STAGETYPE_GREEDMODE then
+			--level:SetStage(LevelStage.STAGE7_GREED, stageType)
+			--level:SetNextStage()
+			Isaac.ExecuteCommand("stage 7")
+		else
+			--level:SetStage(13, stageType)
+			--level:SetNextStage()
+			Isaac.ExecuteCommand("stage 13")
+		end
+	end
+end
+
 -- 初始化人物
 function InitPlayerHexanow(player)
 	if player:GetPlayerType() == playerTypeHexanow then
@@ -605,7 +723,12 @@ function InitPlayerHexanow(player)
 		--player:AddHearts(-1)
 		--player:AddCard(Card.CARD_JUSTICE)
 		--player:AddCard(Card.CARD_CRACKED_KEY)
-		player:AddTrinket(TrinketType.TRINKET_NO | 32768)
+		if Tainted then
+			player:AddMaxHearts(12)
+			player:AddHearts(13)
+		else
+			player:AddTrinket(TrinketType.TRINKET_NO | 32768)
+		end
 		-- player:AddCard(Card.CARD_SUN)
 		-- player:AddTrinket(TrinketType.TRINKET_BIBLE_TRACT)
 		
@@ -648,7 +771,7 @@ function HexanowCollectiblePredicate(ID, ignoreEnsured)
 		or	item.ID == CollectibleType.COLLECTIBLE_KNIFE_PIECE_2
 		or	item.ID == CollectibleType.COLLECTIBLE_DADS_NOTE
 		or	item.ID == CollectibleType.COLLECTIBLE_DOGMA
-		or	item.ID == CollectibleType.COLLECTIBLE_RED_KEY
+		--or	item.ID == CollectibleType.COLLECTIBLE_RED_KEY
 		
 		or (not ignoreEnsured and (
 			item.ID == CollectibleType.COLLECTIBLE_ANALOG_STICK
@@ -1045,7 +1168,9 @@ function hexanowMod:PostNewLevel()
 	CallForEveryPlayer(
 		function(player)
 			if player:GetPlayerType() == playerTypeHexanow then
-				player:UseActiveItem(CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR, false, true, true, false)
+				if Game():GetLevel():GetStage() ~= 13 then
+					player:UseActiveItem(CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR, false, true, true, false)
+				end
 			end
 		end
 	)
@@ -1054,6 +1179,8 @@ hexanowMod:AddCallback(ModCallbacks.MC_POST_NEW_LEVEL, hexanowMod.PostNewLevel)
 
 -- 在玩家进入新房间后运行
 function hexanowMod:PostNewRoom()
+	TaintedHexanowRoomOverride()
+	
 	if Game():GetRoom():GetAliveEnemiesCount() <= 0 then
 		EternalChargeForFree = true
 	else
@@ -1241,6 +1368,17 @@ function hexanowMod:PrePickupCollision(pickup, collider, low)
 	if player ~= nil
 	and player:GetPlayerType() == playerTypeHexanow
 	then
+		if pickup.Variant == PickupVariant.PICKUP_COLLECTIBLE then
+			if pickup.SubType == CollectibleType.COLLECTIBLE_DEATH_CERTIFICATE
+			and not pickup:IsShopItem()
+			then
+				player:UseActiveItem(CollectibleType.COLLECTIBLE_DEATH_CERTIFICATE,false,false,true,false, -1)
+				player:RemoveCollectible(WhiteHexanowCollectibleID, true)
+				WhiteHexanowCollectible(0)
+				pickup:Remove()
+				return false
+			end
+		end
 	
 		if pickup.Variant == PickupVariant.PICKUP_HEART then
 			if pickup.SubType == HeartSubType.HEART_ETERNAL
@@ -1326,6 +1464,8 @@ function hexanowMod:PrePickupCollision(pickup, collider, low)
 			--	return nil
 			--end
 		end
+		
+		
 		--[[
 		if pickup.Variant == PickupVariant.PICKUP_COLLECTIBLE then
 			local item = Isaac.GetItemConfig():GetCollectible(pickup.SubType)
@@ -1488,6 +1628,8 @@ function hexanowMod:PostUpdate()
 	local level = game:GetLevel()
 	local room = game:GetRoom()
 	local roomEntities = Isaac.GetRoomEntities()
+	
+	TaintedHexanowRoomOverride()
 	
 	--[[
 	if level:GetStage() == 13 and not EternalChargeSuppressed then
@@ -1864,7 +2006,24 @@ function hexanowMod:PostUpdate()
 		end
 	end
 	]]
-	
+	--[[
+	CallForEveryEntity(
+		function(entity)
+			local tear = entity:ToTear()
+			if tear ~= nil then
+				if tear.Parent ~= nil
+				and tear.Parent.Type == EntityType.ENTITY_PLAYER then
+					local player = tear.Parent:ToPlayer()
+					if player:GetPlayerType() == playerTypeHexanow
+					then
+						--tear.Visible = false
+						--Isaac.Spawn(1000, 59, 0, tear.Position, Vector(0, 0), player)
+					end
+				end
+			end
+		end
+	)
+	]]
 	--SaveHexanowModData()
 end
 hexanowMod:AddCallback(ModCallbacks.MC_POST_UPDATE, hexanowMod.PostUpdate)
