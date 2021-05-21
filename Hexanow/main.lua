@@ -31,6 +31,9 @@ local EternalChargeForFree = true
 
 local EternalChargeSuppressed = false
 
+local WhiteHexanowCollectibleID = 0
+local WhiteHexanowTrinketID = 0
+
 local portalBlue = nil
 local portalOrange = nil
 local teledProjectiles = {}
@@ -48,10 +51,28 @@ function WipeTempVar()
 	EternalChargeForFree = true
 	
 	EternalChargeSuppressed = false
+	
+	WhiteHexanowCollectibleID = 0
+	WhiteHexanowTrinketID = 0
 
 	portalBlue = nil
 	portalOrange = nil
 	teledProjectiles = {}
+end
+
+function WhiteHexanowCollectible(ID)
+	print("White Collectible Now",ID)
+	WhiteHexanowCollectibleID = ID
+	WhiteHexanowTrinketID = 0
+	return ID
+end
+
+function WhiteHexanowTrinket(ID)
+	ID = ID & 32767
+	print("White Trinket Now",ID)
+	WhiteHexanowCollectibleID = 0
+	WhiteHexanowTrinketID = ID
+	return ID
 end
 
 keyValuePair = {key = "", value = ""}
@@ -428,6 +449,9 @@ function UpdateCostumes(player)
 	if player:GetPlayerType() == playerTypeHexanow then
 		player:ClearCostumes()
 		player:RemoveSkinCostume()
+		--player:TryRemoveCollectibleCostume(CollectibleType.COLLECTIBLE_ANALOG_STICK, false)
+		--player:TryRemoveCollectibleCostume(CollectibleType.COLLECTIBLE_URANUS, false)
+		--player:TryRemoveCollectibleCostume(CollectibleType.COLLECTIBLE_NEPTUNUS, false)
 		player:TryRemoveNullCostume(hexanowHairCostume)
 		player:AddNullCostume(hexanowHairCostume)
 		
@@ -580,7 +604,7 @@ function InitPlayerHexanow(player)
 		
 		--player:AddHearts(-1)
 		--player:AddCard(Card.CARD_JUSTICE)
-		player:AddCard(Card.CARD_CRACKED_KEY)
+		--player:AddCard(Card.CARD_CRACKED_KEY)
 		player:AddTrinket(TrinketType.TRINKET_NO | 32768)
 		-- player:AddCard(Card.CARD_SUN)
 		-- player:AddTrinket(TrinketType.TRINKET_BIBLE_TRACT)
@@ -593,11 +617,15 @@ function InitPlayerHexanow(player)
 		--itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_SOL)
 		itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR)
 		--itemPool:RemoveTrinket(TrinketType.TRINKET_NO)
-		--[[
-		for i=0,14,1 do
+		
+		for i=0, PillColor.NUM_PILLS - 1, 1 do
 			itemPool:IdentifyPill(i)
 		end
-		]]
+		
+		if player:GetActiveItem(ActiveSlot.SLOT_POCKET) ~= CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR
+		then
+			player:SetPocketActiveItem(CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR, ActiveSlot.SLOT_POCKET, false)
+		end
 		
 		TickEventHexanow(player)
 		UpdateCostumes(player)
@@ -605,7 +633,8 @@ function InitPlayerHexanow(player)
 end
 
 -- 物品谓词
-function HexanowCollectiblePredicate(item, ignoreEnsured)
+function HexanowCollectiblePredicate(ID, ignoreEnsured)
+	local item = Isaac.GetItemConfig():GetCollectible(ID)
 	if item ~= nil and
 		(	item:HasTags(ItemConfig.TAG_QUEST)
 		or	item.ID == CollectibleType.COLLECTIBLE_POLAROID
@@ -638,6 +667,22 @@ function HexanowCollectiblePredicate(item, ignoreEnsured)
 	else
 		return false
 	end
+end
+
+function HexanowCollectibleMaxAllowed(ID)
+	local num = 0
+	
+	if HexanowCollectiblePredicate(ID, false) then
+		num = num + 1
+	end
+	
+	if WhiteHexanowCollectibleID ~= 0
+	and ID == WhiteHexanowCollectibleID
+	then
+		num = num + 1
+	end
+	
+	return num
 end
 
 -- 永久性确保项目，每一帧执行
@@ -720,6 +765,7 @@ function TickEventHexanow(player)
 		local VRHolding = false
 		local roomEntities = Isaac.GetRoomEntities()
 				
+		--[[
 		--if player:HasCollectible(CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR, true) then
 		if player:GetActiveItem(ActiveSlot.SLOT_PRIMARY) == CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR
 		or player:GetActiveItem(ActiveSlot.SLOT_SECONDARY) == CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR
@@ -751,6 +797,7 @@ function TickEventHexanow(player)
 				VRHolding = true
 			end
 		end
+		]]
 		
 		--[[
 		if VRHolding then
@@ -834,14 +881,57 @@ function TickEventHexanow(player)
 		-- EnsureFamiliars(player)
 		
 		--local tracedItems = player:GetCollectibleCount()
-		local removeCount = -1
-		while removeCount ~= 0 do
-			removeCount = 0
-			for m = 1, CollectibleType.NUM_COLLECTIBLES - 1 do
-				if player:HasCollectible(m, true)
-				and not HexanowCollectiblePredicate(Isaac.GetItemConfig():GetCollectible(m), false) then
-					player:RemoveCollectible(m, true)
-					removeCount = removeCount + 1
+		
+		local missingWhiteCollectible = false
+		local missingWhiteTrinket = false
+		local hasWhiteCollectible = false
+		local hasWhiteTrinket = false
+			
+		if not player:IsHoldingItem() then
+			if WhiteHexanowTrinketID == 0
+			or not player:HasTrinket(WhiteHexanowTrinketID, true) then
+				missingWhiteTrinket = true
+			end
+			
+			if WhiteHexanowCollectibleID == 0
+			or not player:HasCollectible(WhiteHexanowCollectibleID, true)
+			then
+				missingWhiteCollectible = true
+			end
+			
+			if player:HasCollectible(WhiteHexanowCollectibleID, true) then
+				missingWhiteTrinket = false
+				hasWhiteTrinket = true
+			end
+			if player:HasTrinket(WhiteHexanowTrinketID, true) then
+				missingWhiteCollectible = false
+				hasWhiteCollectible = true
+			end
+		end
+		
+		local removedSomething = true
+		while removedSomething do
+			removedSomething = false
+			for ID = CollectibleType.NUM_COLLECTIBLES - 1, 1, -1 do
+				
+				local item = Isaac.GetItemConfig():GetCollectible(ID)
+				local ownNum = player:GetCollectibleNum(ID, true)
+				local maxNum = HexanowCollectibleMaxAllowed(ID)
+				local exceededNum = math.max(0, ownNum - maxNum)
+				
+				
+				if exceededNum >= 1 and missingWhiteCollectible then
+					WhiteHexanowCollectible(ID)
+					exceededNum = exceededNum - 1
+					--print("MISSING WHITE COLLECTIBLE FIX")
+				end
+				
+				if exceededNum > 0 then
+					removedSomething = true
+					for i = 1, exceededNum do
+						player:RemoveCollectible(ID, true)
+						EternalCharges = EternalCharges + item.Quality * 2 + 1
+					end
 				end
 			end
 		end
@@ -1031,11 +1121,13 @@ function hexanowMod:PreSpawnCleanAward(Rng, SpawnPos)
 end
 hexanowMod:AddCallback(ModCallbacks.MC_PRE_SPAWN_CLEAN_AWARD, hexanowMod.PreSpawnCleanAward)
 
--- 在玩家得到物品后运行
+--[[
+-- 在生成物品后运行
 function hexanowMod:PostGetCollectible(SelectedCollectible, PoolType, Decrease, Seed)
 	CallForEveryPlayer(
 		function(player)
 			if player:GetPlayerType() == playerTypeHexanow then
+				WhiteHexanowCollectible(SelectedCollectible)
 				UpdateCostumes(player)
 			end
 		end
@@ -1043,17 +1135,19 @@ function hexanowMod:PostGetCollectible(SelectedCollectible, PoolType, Decrease, 
 end
 hexanowMod:AddCallback(ModCallbacks.MC_POST_GET_COLLECTIBLE, hexanowMod.PostGetCollectible)
 
--- 在玩家得到饰品后运行
+-- 在生成饰品后运行
 function hexanowMod:GetTrinket(SelectedTrinket, TrinketRNG)
 	CallForEveryPlayer(
 		function(player)
 			if player:GetPlayerType() == playerTypeHexanow then
+				WhiteHexanowTrinket(SelectedTrinket)
 				UpdateCostumes(player)
 			end
 		end
 	)
 end
 hexanowMod:AddCallback(ModCallbacks.MC_GET_TRINKET, hexanowMod.GetTrinket)
+]]
 
 -- 在玩家受伤时运行
 function hexanowMod:EntityTakeDmg(TookDamage, DamageAmount, DamageFlag, DamageSource, DamageCountdownFrames)
@@ -1217,7 +1311,21 @@ function hexanowMod:PrePickupCollision(pickup, collider, low)
 				return false
 			end
 		end
-	
+		
+		if pickup.SubType ~= 0
+		and player:CanPickupItem()
+		and not player:IsHoldingItem()
+		and (pickup:IsShopItem() or player:GetNumCoins() >= pickup.Price) then
+			if pickup.Variant == PickupVariant.PICKUP_COLLECTIBLE then
+				WhiteHexanowCollectible(pickup.SubType)
+				return nil
+			end
+			--if pickup.Variant == PickupVariant.PICKUP_TRINKET then
+			--	WhiteHexanowTrinket(pickup.SubType)
+			--	return nil
+			--end
+		end
+		--[[
 		if pickup.Variant == PickupVariant.PICKUP_COLLECTIBLE then
 			local item = Isaac.GetItemConfig():GetCollectible(pickup.SubType)
 			
@@ -1268,16 +1376,18 @@ function hexanowMod:PrePickupCollision(pickup, collider, low)
 					--pickup.SubType = 0
 			end
 		end
-	
+		]]
+		
+		--[[
 		if pickup.Variant == PickupVariant.PICKUP_PILL
-		or (pickup.Variant == PickupVariant.PICKUP_TRINKET
-			and pickup.SubType ~= TrinketType.TRINKET_NO
-			and pickup.SubType ~= TrinketType.TRINKET_NO | 32768
-			and pickup.SubType ~= TrinketType.TRINKET_PERFECTION
-			and pickup.SubType ~= TrinketType.TRINKET_PERFECTION | 32768
-			)
-		or pickup.Variant == PickupVariant.PICKUP_LIL_BATTERY
-		or (pickup.Variant == PickupVariant.PICKUP_TAROTCARD
+		--or (pickup.Variant == PickupVariant.PICKUP_TRINKET
+		--	and pickup.SubType ~= TrinketType.TRINKET_NO
+		--	and pickup.SubType ~= TrinketType.TRINKET_NO | 32768
+		--	and pickup.SubType ~= TrinketType.TRINKET_PERFECTION
+		--	and pickup.SubType ~= TrinketType.TRINKET_PERFECTION | 32768
+		--	)
+		--or pickup.Variant == PickupVariant.PICKUP_LIL_BATTERY
+		or ( pickup.Variant == PickupVariant.PICKUP_TAROTCARD
 			and pickup.SubType ~= Card.CARD_CRACKED_KEY
 			)
 		then
@@ -1296,6 +1406,7 @@ function hexanowMod:PrePickupCollision(pickup, collider, low)
 			
 			return false
 		end
+		]]
 		
 		
 		return nil
