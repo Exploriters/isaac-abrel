@@ -89,7 +89,7 @@ function LairubObjectives_Apply()
 end
 
 function LairubObjectives_Recieve()
-	LairubObjectives_Write("DialogueOver ", tostring(DialogueOver))
+	LairubObjectives_Write("DialogueOver", tostring(DialogueOver))
 end
 
 function LairubObjectives_ToString()

@@ -29,6 +29,8 @@ local lastCanFly = nil
 local roomClearBounsEnabled = false
 local EternalChargeForFree = true
 
+local EternalChargeSuppressed = false
+
 local portalBlue = nil
 local portalOrange = nil
 local teledProjectiles = {}
@@ -44,6 +46,8 @@ function WipeTempVar()
 	lastCanFly = nil
 	roomClearBounsEnabled = false
 	EternalChargeForFree = true
+	
+	EternalChargeSuppressed = false
 
 	portalBlue = nil
 	portalOrange = nil
@@ -97,11 +101,22 @@ end
 function hexanowObjectives_Apply()
 	HUDoffset = tonumber(hexanowObjectives_Read("HUDoffset", "10"))
 	EternalCharges = tonumber(hexanowObjectives_Read("EternalCharges", "0"))
+	
+	local ECSStr = hexanowObjectives_Read("EternalChargeSuppressed", "false")
+	if ECSStr == "true" then
+		EternalChargeSuppressed = true
+	elseif ECSStr == "false" then
+		EternalChargeSuppressed = false
+	else
+		EternalChargeSuppressed = nil
+	end
+	--print("Eternal charge suppression state "..tostring(EternalChargeSuppressed))
 end
 
 function hexanowObjectives_Recieve()
 	hexanowObjectives_Write("HUDoffset", tostring(HUDoffset))
 	hexanowObjectives_Write("EternalCharges", tostring(EternalCharges))
+	hexanowObjectives_Write("EternalChargeSuppressed", tostring(EternalChargeSuppressed))
 end
 
 function hexanowObjectives_ToString()
@@ -113,6 +128,7 @@ function hexanowObjectives_ToString()
 end
 
 function hexanowObjectives_LoadFromString(str)
+	--print("RAW:\n"..str)
 	local strTable = {}
 	local pointer1 = 0
 	local pointer2 = 0
@@ -129,6 +145,7 @@ function hexanowObjectives_LoadFromString(str)
 		
 		count = count + 1
 	end
+	--print("Splt by line complete with "..tostring(count).." lines.")
 	
 	for i,str in ipairs(strTable) do
 		local point = string.find(str, "=", 1)
@@ -138,6 +155,7 @@ function hexanowObjectives_LoadFromString(str)
 			hexanowObjectives_Write(key, value)
 		end
 	end
+	--print("Load from string result:\n"..hexanowObjectives_ToString())
 end
 
 --[[
@@ -348,14 +366,21 @@ end
 
 -- 读取mod数据
 function LoadHexanowModData()
+	--Isaac.SaveModData(hexanowMod, "someThingWrong\nsomeThingWrong")
 	local str = ""
 	if Isaac.HasModData(hexanowMod) then
 		str = Isaac.LoadModData(hexanowMod)
+		if str == nil then
+			print("Null readout!")
+		else
+			print("Load Readout:\n"..str)
+		end
+	else
+		print("Data does not exist")
 	end
 	hexanowObjectives_Wipe()
 	hexanowObjectives_LoadFromString(str)
 	hexanowObjectives_Apply()
-	-- print("Load Readout: ", str)
 end
 
 -- 存储mod数据
@@ -553,8 +578,6 @@ function InitPlayerHexanow(player)
 		-- player:AddGoldenHearts(0)
 		ApplyEternalHearts(player)
 		
-		TickEventHexanow(player)
-		
 		--player:AddHearts(-1)
 		--player:AddCard(Card.CARD_JUSTICE)
 		player:AddCard(Card.CARD_CRACKED_KEY)
@@ -575,11 +598,14 @@ function InitPlayerHexanow(player)
 			itemPool:IdentifyPill(i)
 		end
 		]]
+		
+		TickEventHexanow(player)
+		UpdateCostumes(player)
 	end
 end
 
 -- 物品谓词
-function HexanowCollectiblePredicate(item)
+function HexanowCollectiblePredicate(item, ignoreEnsured)
 	if item ~= nil and
 		(	item:HasTags(ItemConfig.TAG_QUEST)
 		or	item.ID == CollectibleType.COLLECTIBLE_POLAROID
@@ -595,11 +621,12 @@ function HexanowCollectiblePredicate(item)
 		or	item.ID == CollectibleType.COLLECTIBLE_DOGMA
 		or	item.ID == CollectibleType.COLLECTIBLE_RED_KEY
 		
-		or	item.ID == CollectibleType.COLLECTIBLE_ANALOG_STICK
+		or (not ignoreEnsured and (
+			item.ID == CollectibleType.COLLECTIBLE_ANALOG_STICK
 		or	item.ID == CollectibleType.COLLECTIBLE_URANUS
 		or	item.ID == CollectibleType.COLLECTIBLE_NEPTUNUS
 		or	item.ID == CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR
-			
+		))
 		--or	item.ID == CollectibleType.COLLECTIBLE_BIRTHRIGHT
 		
 		--or	(item.Quality >= 4 and item.ItemType ~= ItemType.ITEM_FAMILIAR)
@@ -812,7 +839,7 @@ function TickEventHexanow(player)
 			removeCount = 0
 			for m = 1, CollectibleType.NUM_COLLECTIBLES - 1 do
 				if player:HasCollectible(m, true)
-				and not HexanowCollectiblePredicate(Isaac.GetItemConfig():GetCollectible(m)) then
+				and not HexanowCollectiblePredicate(Isaac.GetItemConfig():GetCollectible(m), false) then
 					player:RemoveCollectible(m, true)
 					removeCount = removeCount + 1
 				end
@@ -1168,7 +1195,7 @@ function hexanowMod:PrePickupCollision(pickup, collider, low)
 		if pickup.Variant == PickupVariant.PICKUP_COLLECTIBLE then
 			local item = Isaac.GetItemConfig():GetCollectible(pickup.SubType)
 			
-			if pickup.SubType == 0 or not HexanowCollectiblePredicate(item)
+			if pickup.SubType == 0 or not HexanowCollectiblePredicate(item, true)
 			then
 				if pickup:IsShopItem() then
 					return true
@@ -1278,6 +1305,7 @@ function hexanowMod:EvaluateCache(player, cacheFlag, tear)
 			end
 			 UpdateCostumes(player)
 		elseif cacheFlag == CacheFlag.CACHE_FAMILIARS then
+			--[[
 			local maybeFamiliars = Isaac.GetRoomEntities()
 			for m = 1, #maybeFamiliars do
 				local variant = maybeFamiliars[m].Variant
@@ -1286,10 +1314,13 @@ function hexanowMod:EvaluateCache(player, cacheFlag, tear)
 					player:AddNullCostume(hexanowHairCostume)
 				else
 					player:TryRemoveNullCostume(hexanowHairCostume)
+					player:AddNullCostume(hexanowHairCostume)
 				end
 			end
+			]]
 			
 			EnsureFamiliars(player)
+			UpdateCostumes(player)
 		elseif cacheFlag == CacheFlag.CACHE_TEARCOLOR then
 			player.TearColor = Color(1, 1, 1, 1, 0, 0, 0)
 		end
@@ -1305,6 +1336,12 @@ function hexanowMod:PostUpdate()
 	local room = game:GetRoom()
 	local roomEntities = Isaac.GetRoomEntities()
 	
+	--[[
+	if level:GetStage() == 13 and not EternalChargeSuppressed then
+		EternalChargeSuppressed = true
+		print("Suppressed!")
+	end
+	]]
 	CallForEveryPlayer(
 		function(player)
 			if player:GetPlayerType() == playerTypeHexanow then		
