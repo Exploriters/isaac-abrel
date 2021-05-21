@@ -370,13 +370,13 @@ function LoadHexanowModData()
 	local str = ""
 	if Isaac.HasModData(hexanowMod) then
 		str = Isaac.LoadModData(hexanowMod)
-		if str == nil then
-			print("Null readout!")
-		else
-			print("Load Readout:\n"..str)
-		end
-	else
-		print("Data does not exist")
+	--	if str == nil then
+	--		print("Null readout!")
+	--	else
+	--		print("Load Readout:\n"..str)
+	--	end
+	--else
+	--	print("Data does not exist")
 	end
 	hexanowObjectives_Wipe()
 	hexanowObjectives_LoadFromString(str)
@@ -928,7 +928,7 @@ function hexanowMod:ExecuteCmd(cmd, params)
 		local roomEntities = Isaac.GetRoomEntities()
 		
 		for i,entity in ipairs(roomEntities) do
-			print(entity.Type,".",entity.Variant,".",entity.SubType,"(", entity.Position.X, ",", entity.Position.Y, ")")
+			print(tostring(entity.Type).."."..tostring(entity.Variant).."."..tostring(entity.SubType).." "..tostring(entity.Index).." ("..tostring(entity.Position.X)..", "..tostring(entity.Position.Y)..")")
 		end
 	end
 	if cmd == "reportentityne" then
@@ -936,7 +936,7 @@ function hexanowMod:ExecuteCmd(cmd, params)
 				
 		for i,entity in ipairs(roomEntities) do
 			if entity.Type ~= 1000 then
-				print(entity.Type,".",entity.Variant,".",entity.SubType,"(", entity.Position.X, ",", entity.Position.Y, ")")
+				print(tostring(entity.Type).."."..tostring(entity.Variant).."."..tostring(entity.SubType).." "..tostring(entity.Index).." ("..tostring(entity.Position.X)..", "..tostring(entity.Position.Y)..")")
 			end
 		end
 	end
@@ -1152,13 +1152,25 @@ function hexanowMod:PrePickupCollision(pickup, collider, low)
 			and player:GetMaxHearts() >= 24 
 			and player:GetHearts() < player:GetMaxHearts()
 			and player:GetEternalHearts() >= 1 then
+				if pickup:IsShopItem() then
+					if player:GetNumCoins() >= pickup.Price then
+						player:AddCoins(-pickup.Price)
+					else
+						return true
+					end
+				end
 				--SFXManager():Play(SoundEffect.SOUND_SUPERHOLY, 1, 0, false, 1 )
 				pickup:GetSprite():Play("Collect", true)
 				player:AddEternalHearts(2)
 				pickup:PlayPickupSound()
 				--print("DESTROYING")
 				player:AddHearts(player:GetMaxHearts())
-				pickup:Remove()
+				--if pickup:IsShopItem() then
+				--	--pickup:Morph(pickup.Type, pickup.Variant, 0, true)
+				--	pickup.SubType = 0
+				--else
+					pickup:Remove()
+				--end
 				return false
 			elseif
 				pickup.SubType == HeartSubType.HEART_HALF_SOUL
@@ -1168,6 +1180,15 @@ function hexanowMod:PrePickupCollision(pickup, collider, low)
 			or	pickup.SubType == HeartSubType.HEART_BLACK
 			or	pickup.SubType == HeartSubType.HEART_BLENDED
 			then
+				
+				if pickup:IsShopItem() then
+					if player:GetNumCoins() >= pickup.Price then
+						player:AddCoins(-pickup.Price)
+					else
+						return true
+					end
+				end
+				
 				local score = 2
 				if pickup.SubType == HeartSubType.HEART_HALF_SOUL then
 					score = 1
@@ -1184,7 +1205,12 @@ function hexanowMod:PrePickupCollision(pickup, collider, low)
 						score = 2
 					end
 				end
-				pickup:PlayPickupSound()
+				
+				if pickup.SubType == HeartSubType.HEART_BLENDED then
+					SFXManager():Play(SoundEffect.SOUND_HOLY, 1, 0, false, 1 )
+				else
+					pickup:PlayPickupSound()
+				end
 				EternalCharges = EternalCharges + score
 				pickup:GetSprite():Play("Collect", true)
 				pickup:Remove()
@@ -1196,41 +1222,50 @@ function hexanowMod:PrePickupCollision(pickup, collider, low)
 			local item = Isaac.GetItemConfig():GetCollectible(pickup.SubType)
 			
 			if pickup.SubType == 0 or not HexanowCollectiblePredicate(item, true)
-			then
-				if pickup:IsShopItem() then
-					return true
-				else
-					if item ~= nil then
-						local baseScore = item.Quality * 2
+			then				
+				if item ~= nil then
+					local baseScore = item.Quality * 2
+					
+					if baseScore > 0 then
 						
-						if baseScore > 0 then
-							local score = baseScore
+						if pickup:IsShopItem() then
+							if player:GetNumCoins() >= pickup.Price then
+								player:AddCoins(-pickup.Price)
+							else
+								return true
+							end
+						end
 						
-							local deltaMH = player:GetMaxHearts()
-							player:AddMaxHearts(baseScore)
-							deltaMH = (player:GetMaxHearts() - deltaMH)/2
-							score = score - deltaMH
-							
-							local deltaH = player:GetHearts()
-							player:AddHearts(baseScore * 2 - deltaMH * 2)
-							deltaH = (player:GetHearts() - deltaH)/2
-							score = score - deltaH
-							
-							EternalCharges = EternalCharges + math.max(0, math.floor(score))
-							SFXManager():Play(SoundEffect.SOUND_HOLY, 1, 0, false, 1 )
-							pickup:Remove()
-							return false
+						local score = baseScore
+					
+						local deltaMH = player:GetMaxHearts()
+						player:AddMaxHearts(baseScore)
+						deltaMH = (player:GetMaxHearts() - deltaMH)/2
+						score = score - deltaMH
+						
+						local deltaH = player:GetHearts()
+						player:AddHearts(baseScore * 2 - deltaMH * 2)
+						deltaH = (player:GetHearts() - deltaH)/2
+						score = score - deltaH
+						
+						EternalCharges = EternalCharges + math.max(0, math.floor(score))
+						SFXManager():Play(SoundEffect.SOUND_HOLY, 1, 0, false, 1 )
+						pickup:Remove()
+						return false
+					else
+						if pickup:IsShopItem() then
+							return true
 						else
 							return false
 						end
-					elseif pickup.SubType == 0 then
-						pickup:Remove()
-						return false
 					end
+				elseif pickup.SubType == 0 then
+					pickup:Remove()
+					return false
+				end
 					
 					--pickup:Morph(EntityType.ENTITY_PICKUP, PickupVariant.PICKUP_COLLECTIBLE, 0, true)
 					--pickup.SubType = 0
-				end
 			end
 		end
 	
@@ -1247,13 +1282,19 @@ function hexanowMod:PrePickupCollision(pickup, collider, low)
 			)
 		then
 			if pickup:IsShopItem() then
-				return true
-			else
-				EternalCharges = EternalCharges + 1
-				SFXManager():Play(SoundEffect.SOUND_HOLY, 1, 0, false, 1 )
-				pickup:Remove()
-				return false
+				if player:GetNumCoins() >= pickup.Price then
+					player:AddCoins(-pickup.Price)
+				else
+					return true
+				end
 			end
+			EternalCharges = EternalCharges + 1
+			SFXManager():Play(SoundEffect.SOUND_HOLY, 1, 0, false, 1 )
+			
+			
+			pickup:Remove()
+			
+			return false
 		end
 		
 		
@@ -1395,11 +1436,16 @@ function hexanowMod:PostUpdate()
 								end
 								
 								if entity2.Type == entityTypeHexanowPortal
+								and (entity2.Variant == 0 or entity2.Variant == 1)
+								and entity2.SubType ~= 1
 								then
 									portalFound = true
 								end
 								
-								if entity2.Type == 306
+								--if entity2.Type == 306
+								if entity2.Type == entityTypeHexanowPortal
+								and entity2.Variant == 2
+								and entity2.SubType ~= 1
 								then
 									voidPortalFound = true
 								end
@@ -1409,7 +1455,7 @@ function hexanowMod:PostUpdate()
 					
 					if wombPortalFound then
 						if not voidPortalFound then
-							Isaac.Spawn(306, 0, 0, entity.Position, Vector(0,0), entity)
+							Isaac.Spawn(entityTypeHexanowPortal, 2, 0, entity.Position, Vector(0,0), entity)
 						end
 					else
 						if not portalFound then
@@ -1429,7 +1475,9 @@ function hexanowMod:PostUpdate()
 			if entity.Type == entityTypeHexanowPortal then
 				if entity.Variant ~= 0
 				and entity.Variant ~= 1
+				and entity.Variant ~= 2
 				then
+					--entity.Variant = 2
 					entity:Remove()
 				end
 				
@@ -1453,8 +1501,33 @@ function hexanowMod:PostUpdate()
 					)
 				end
 				
-				if wombTeleportFound ~= 1 then
+				if wombTeleportFound ~= 1 and entity.Variant ~= 2 then
 					entity.SubType = 1
+				end
+				if wombTeleportFound < 2 and entity.Variant == 2 then
+					entity.SubType = 1
+				end
+				
+				if entity.Variant == 2 then
+					if entity.FrameCount%6 == 0 then
+						sprite:ReplaceSpritesheet(0,"gfx/effects/HexanowPortalBlue.png")
+						sprite:ReplaceSpritesheet(1,"gfx/effects/HexanowPortalBlue.png")
+						sprite:ReplaceSpritesheet(2,"gfx/effects/HexanowPortalBlue.png")
+						sprite:ReplaceSpritesheet(3,"gfx/effects/HexanowPortalBlue.png")
+						sprite:ReplaceSpritesheet(4,"gfx/effects/HexanowPortalOrange.png")
+						sprite:ReplaceSpritesheet(5,"gfx/effects/HexanowPortalOrange.png")
+						sprite:ReplaceSpritesheet(6,"gfx/effects/HexanowPortalOrange.png")
+						sprite:LoadGraphics()
+					elseif entity.FrameCount%6 == 3 then
+						sprite:ReplaceSpritesheet(0,"gfx/effects/HexanowPortalOrange.png")
+						sprite:ReplaceSpritesheet(1,"gfx/effects/HexanowPortalOrange.png")
+						sprite:ReplaceSpritesheet(2,"gfx/effects/HexanowPortalOrange.png")
+						sprite:ReplaceSpritesheet(3,"gfx/effects/HexanowPortalOrange.png")
+						sprite:ReplaceSpritesheet(4,"gfx/effects/HexanowPortalBlue.png")
+						sprite:ReplaceSpritesheet(5,"gfx/effects/HexanowPortalBlue.png")
+						sprite:ReplaceSpritesheet(6,"gfx/effects/HexanowPortalBlue.png")
+						sprite:LoadGraphics()
+					end
 				end
 				
 				if entity.SubType == 1 then

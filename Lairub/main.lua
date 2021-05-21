@@ -133,13 +133,13 @@ function LoadLairubModData()
 	local str = "Error"
 	if Isaac.HasModData(lairub) then
 		str = Isaac.LoadModData(lairub, "ERROR\nERROR\nERROR\nI HATE YOU")
-		if str == nil then
-			print("Null readout!")
-		else
-			print("Load Readout:\n"..str)
-		end
-	else
-		print("Data doesn't exist")
+	--	if str == nil then
+	--		print("Null readout!")
+	--	else
+	--		print("Load Readout:\n"..str)
+	--	end
+	--else
+	--	print("Data doesn't exist")
 	end
 	LairubObjectives_Wipe()
 	LairubObjectives_LoadFromString(str)
