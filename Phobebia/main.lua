@@ -352,27 +352,29 @@ phobebia:AddCallback(ModCallbacks.MC_POST_UPDATE, phobebia.PostUpdate)
 function phobebia:PostUpdateProcessTears()
 	local roomEntities = Isaac.GetRoomEntities()
 	
-	for i,entity in ipairs(roomEntities) do
-		local tear = entity:ToTear()
-		if tear ~= nil then
-			if tear.Parent ~= nil
-			and tear.Parent.Type == EntityType.ENTITY_PLAYER
-			then
-				local player = tear.Parent:ToPlayer()
-				if player:GetPlayerType() == playerType_Phobebia
-				or player:GetPlayerType() == playerType_Tainted_Phobebia 
+	CallForEveryEntity(
+		function(entity)
+			local tear = entity:ToTear()
+			if tear ~= nil then
+				if tear.Parent ~= nil
+				and tear.Parent.Type == EntityType.ENTITY_PLAYER
 				then
-					if tear.Variant ~= TearVariant.BLOOD then
-						local tearSprite = tear:GetSprite()
-						tear:ChangeVariant(TearVariant.BLOOD)
-						tearSprite:ReplaceSpritesheet(0,"gfx/Phobebia_tears.png")
-						tearSprite:LoadGraphics()
-						tearSprite.Rotation = entity.Velocity:GetAngleDegrees()
+					local player = tear.Parent:ToPlayer()
+					if player:GetPlayerType() == playerType_Phobebia
+					or player:GetPlayerType() == playerType_Tainted_Phobebia 
+					then
+						if tear.Variant ~= TearVariant.BLOOD then
+							local tearSprite = tear:GetSprite()
+							tear:ChangeVariant(TearVariant.BLOOD)
+							tearSprite:ReplaceSpritesheet(0,"gfx/Phobebia_tears.png")
+							tearSprite:LoadGraphics()
+							tearSprite.Rotation = entity.Velocity:GetAngleDegrees()
+						end
 					end
 				end
 			end
 		end
-	end
+	)
 end
 phobebia:AddCallback(ModCallbacks.MC_POST_UPDATE, phobebia.PostUpdateProcessTears)
 
