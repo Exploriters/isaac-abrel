@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata>
+    <name>Ventricle Razor Portal Pin</name>
+    <directory>wombteleportpin</directory>
+    <id>2494369442</id>
+    <description>Hold portals from ventricle razor on their position during the fight with the Beast. By siiftun1857.</description>
+    <version>1.1</version>
+    <visibility>Public</visibility>
+    <tag id="Lua"/>
+    <tag id="Tweaks"/>
+</metadata>

@@ -1677,6 +1677,11 @@ function hexanowMod:PostUpdate()
 					local wombPortalFound = false
 					local voidPortalFound = false
 					
+					local posX = math.floor(entity.Position.X/40.0)*40
+					local posY = math.floor(entity.Position.Y/40.0)*40
+					entity.Position = Vector(posX, posY)
+					entity.Velocity = Vector(0, 0)
+					
 					
 					CallForEveryEntity(
 						function(entity2)
@@ -1727,6 +1732,11 @@ function hexanowMod:PostUpdate()
 	CallForEveryEntity(
 		function(entity)
 			if entity.Type == entityTypeHexanowPortal then
+				local posX = math.floor(entity.Position.X/40.0)*40
+				local posY = math.floor(entity.Position.Y/40.0)*40
+				entity.Position = Vector(posX, posY)
+				entity.Velocity = Vector(0, 0)
+				
 				if entity.Variant ~= 0
 				and entity.Variant ~= 1
 				and entity.Variant ~= 2
