@@ -5,6 +5,7 @@ local hexanowMod = RegisterMod("Hexanow", 1);
 local playerTypeHexanow = Isaac.GetPlayerTypeByName("Hexanow")
 local playerTypeHexanowTainted = Isaac.GetPlayerTypeByName("Tainted Hexanow", true)
 --local hexanowItem = Isaac.GetItemIdByName( "Hexanow's Soul" )
+local hexanowPortalTool = Isaac.GetItemIdByName("Eternal Portal")
 local hexanowFlightTriggerItem = Isaac.GetItemIdByName( "Hexanow flight trigger" )
 local hexanowHairCostume = Isaac.GetCostumeIdByPath("gfx/characters/HexanowHair.anm2")
 local hexanowFateCostume = Isaac.GetCostumeIdByPath("gfx/characters/Hexanow_fate.anm2")
@@ -22,6 +23,7 @@ local MC_ENTITY_TAKE_DMG_Forever = 0
 local HUDoffset = 10
 
 local EternalCharges = 0
+local EternalChargesLastRoom = 0
 
 -- local lastMaxHearts = nil
 -- local updatedCostumesOvertime = false
@@ -35,6 +37,8 @@ local Tainted = false
 
 local WhiteHexanowCollectibleID = 0
 local WhiteHexanowTrinketID = 0
+local WhiteHexanowCollectibleIDLastRoom = 0
+local WhiteHexanowTrinketIDLastRoom = 0
 
 local portalBlue = nil
 local portalOrange = nil
@@ -46,6 +50,7 @@ local teledProjectiles = {}
 -- 抹除临时变量
 function WipeTempVar()
 	EternalCharges = 0
+	EternalChargesLastRoom = 0
 
 	onceHoldingItem = false
 	lastCanFly = nil
@@ -63,8 +68,23 @@ function WipeTempVar()
 	teledProjectiles = {}
 end
 
+function UpdateLastRoomVar()
+	EternalChargesLastRoom = EternalCharges
+	WhiteHexanowCollectibleIDLastRoom = WhiteHexanowCollectibleID
+	WhiteHexanowTrinketIDLastRoom = WhiteHexanowTrinketID
+end
+
+function RewindLastRoomVar()
+	EternalCharges = EternalChargesLastRoom
+	WhiteHexanowCollectibleID = WhiteHexanowCollectibleIDLastRoom
+	WhiteHexanowTrinketID = WhiteHexanowTrinketIDLastRoom
+end
+
 function WhiteHexanowCollectible(ID)
 	--print("White Collectible Now",ID)
+	if HexanowBlackCollectiblePredicate(ID) then
+		return WhiteHexanowCollectibleID
+	end
 	WhiteHexanowCollectibleID = ID
 	WhiteHexanowTrinketID = 0
 	return ID
@@ -157,6 +177,8 @@ function hexanowObjectives_Apply()
 			WhiteHexanowTrinket(value)
 		end
 	end
+	
+	UpdateLastRoomVar()
 end
 
 function hexanowObjectives_Recieve()
@@ -745,9 +767,10 @@ function InitPlayerHexanow(player)
 			itemPool:IdentifyPill(i)
 		end
 		
-		if player:GetActiveItem(ActiveSlot.SLOT_POCKET) ~= CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR
+		if player:GetActiveItem(ActiveSlot.SLOT_POCKET) ~= hexanowPortalTool -- CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR
 		then
-			player:SetPocketActiveItem(CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR, ActiveSlot.SLOT_POCKET, false)
+			--player:SetPocketActiveItem(CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR, ActiveSlot.SLOT_POCKET, false)
+			player:SetPocketActiveItem(hexanowPortalTool, ActiveSlot.SLOT_POCKET, false)
 		end
 		
 		TickEventHexanow(player)
@@ -756,7 +779,20 @@ function InitPlayerHexanow(player)
 end
 
 -- 物品谓词
-function HexanowCollectiblePredicate(ID, ignoreEnsured)
+function HexanowBlackCollectiblePredicate(ID)
+	local item = Isaac.GetItemConfig():GetCollectible(ID)
+	if item ~= nil and
+		(
+		item.ID == CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR
+		)
+	then
+		return true
+	else
+		return false
+	end
+end
+-- 物品谓词
+function HexanowWhiteCollectiblePredicate(ID, ignoreEnsured)
 	local item = Isaac.GetItemConfig():GetCollectible(ID)
 	if item ~= nil and
 		(	item:HasTags(ItemConfig.TAG_QUEST)
@@ -771,13 +807,14 @@ function HexanowCollectiblePredicate(ID, ignoreEnsured)
 		or	item.ID == CollectibleType.COLLECTIBLE_KNIFE_PIECE_2
 		or	item.ID == CollectibleType.COLLECTIBLE_DADS_NOTE
 		or	item.ID == CollectibleType.COLLECTIBLE_DOGMA
+		or	item.ID == hexanowPortalTool
 		--or	item.ID == CollectibleType.COLLECTIBLE_RED_KEY
 		
-		or (not ignoreEnsured and (
+		or (not ignoreEnsured == true and (
 			item.ID == CollectibleType.COLLECTIBLE_ANALOG_STICK
 		or	item.ID == CollectibleType.COLLECTIBLE_URANUS
 		or	item.ID == CollectibleType.COLLECTIBLE_NEPTUNUS
-		or	item.ID == CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR
+		--or	item.ID == CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR
 		))
 		--or	item.ID == CollectibleType.COLLECTIBLE_BIRTHRIGHT
 		
@@ -796,7 +833,12 @@ end
 function HexanowCollectibleMaxAllowed(ID)
 	local num = 0
 	
-	if HexanowCollectiblePredicate(ID, false) then
+	if HexanowBlackCollectiblePredicate(ID)
+	then
+		return num
+	end
+	
+	if HexanowWhiteCollectiblePredicate(ID, false) then
 		num = num + 1
 	end
 	
@@ -1044,7 +1086,7 @@ function TickEventHexanow(player)
 				local exceededNum = math.max(0, ownNum - maxNum)
 				
 				
-				if exceededNum >= 1 and missingWhiteCollectible then
+				if not HexanowBlackCollectiblePredicate(ID) and exceededNum >= 1 and missingWhiteCollectible then
 					WhiteHexanowCollectible(ID)
 					exceededNum = exceededNum - 1
 					--print("MISSING WHITE COLLECTIBLE FIX")
@@ -1059,6 +1101,8 @@ function TickEventHexanow(player)
 				end
 			end
 		end
+		
+		--player.ItemHoldCooldown = 0
 	end
 end
 
@@ -1163,13 +1207,37 @@ function hexanowMod:PostPlayerInit(player)
 end
 hexanowMod:AddCallback(ModCallbacks.MC_POST_PLAYER_INIT, hexanowMod.PostPlayerInit)
 
+-- 使用传送门工具的效果
+function hexanowMod:UsePortalTool(itemId, itemRng, player, useFlags, activeSlot, customVarData)
+	local result = {
+		Discharge = true,
+		Remove = false,
+		ShowAnim = false,
+	}
+	player:UseActiveItem(CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR, false, false, true, false)
+	
+	return result
+end
+hexanowMod:AddCallback(ModCallbacks.MC_USE_ITEM, hexanowMod.UsePortalTool, hexanowPortalTool)
+
+-- 时间回溯
+function hexanowMod:UsePortalTool(itemId, itemRng, player, useFlags, activeSlot, customVarData)
+	if itemId == CollectibleType.COLLECTIBLE_GLOWING_HOUR_GLASS
+	--and player:GetPlayerType() == playerTypeHexanow
+	then
+		RewindLastRoomVar()
+		UpdateLastRoomVar()
+	end
+end
+hexanowMod:AddCallback(ModCallbacks.MC_USE_ITEM, hexanowMod.UsePortalTool)
+
 -- 在玩家进入新楼层后运行
 function hexanowMod:PostNewLevel()
 	CallForEveryPlayer(
 		function(player)
 			if player:GetPlayerType() == playerTypeHexanow then
 				if Game():GetLevel():GetStage() ~= 13 then
-					player:UseActiveItem(CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR, false, true, true, false)
+					player:UseActiveItem(CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR, false, false, true, false)
 				end
 			end
 		end
@@ -1180,6 +1248,7 @@ hexanowMod:AddCallback(ModCallbacks.MC_POST_NEW_LEVEL, hexanowMod.PostNewLevel)
 -- 在玩家进入新房间后运行
 function hexanowMod:PostNewRoom()
 	TaintedHexanowRoomOverride()
+	UpdateLastRoomVar()
 	
 	if Game():GetRoom():GetAliveEnemiesCount() <= 0 then
 		EternalChargeForFree = true
@@ -1470,7 +1539,7 @@ function hexanowMod:PrePickupCollision(pickup, collider, low)
 		if pickup.Variant == PickupVariant.PICKUP_COLLECTIBLE then
 			local item = Isaac.GetItemConfig():GetCollectible(pickup.SubType)
 			
-			if pickup.SubType == 0 or not HexanowCollectiblePredicate(item, true)
+			if pickup.SubType == 0 or not HexanowWhiteCollectiblePredicate(item, true)
 			then				
 				if item ~= nil then
 					local baseScore = item.Quality * 2
