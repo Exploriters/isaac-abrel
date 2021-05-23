@@ -29,8 +29,16 @@ local EternalChargesLastRoom = 0
 
 -- local lastMaxHearts = nil
 -- local updatedCostumesOvertime = false
-local onceHoldingItem = false
-local lastCanFly = nil
+local onceHoldingItem = { }
+onceHoldingItem[1] = false
+onceHoldingItem[2] = false
+onceHoldingItem[3] = false
+onceHoldingItem[4] = false
+local lastCanFly = { }
+lastCanFly[1] = nil
+lastCanFly[2] = nil
+lastCanFly[3] = nil
+lastCanFly[4] = nil
 local roomClearBounsEnabled = false
 local EternalChargeForFree = true
 
@@ -97,8 +105,16 @@ function WipeTempVar()
 	EternalCharges = 0
 	EternalChargesLastRoom = 0
 
-	onceHoldingItem = false
-	lastCanFly = nil
+	onceHoldingItem = { }
+	onceHoldingItem[1] = nil
+	onceHoldingItem[2] = nil
+	onceHoldingItem[3] = nil
+	onceHoldingItem[4] = nil
+	lastCanFly = { }
+	lastCanFly[1] = nil
+	lastCanFly[2] = nil
+	lastCanFly[3] = nil
+	lastCanFly[4] = nil
 	roomClearBounsEnabled = false
 	EternalChargeForFree = true
 	
@@ -159,10 +175,12 @@ function IsWhiteHexanowCollectible(player, ID)
 end
 
 function SetWhiteHexanowCollectible(player, ID, slot)
-	-- print("White Collectible Now",ID)
+	--print("White Collectible",slot,"Now",ID)
 	local playerID = GetPlayerID(player)
 	
-	if HexanowBlackCollectiblePredicate(ID) then
+	if HexanowBlackCollectiblePredicate(ID)
+	or ID == 0
+	then
 		return nil
 	end
 	
@@ -1053,6 +1071,7 @@ function HexanowCollectibleMaxAllowed(player, ID)
 	local num = 0
 	
 	if HexanowBlackCollectiblePredicate(ID)
+	or ID == 0
 	then
 		return num
 	end
@@ -1092,8 +1111,10 @@ function TickEventHexanow(player)
 		or room == nil
 		or roomEntities == nil
 		then
-			return nil
+			--return nil
 		end
+		
+		player:FlushQueueItem()
 		
 		--[[
 		if not player:IsFlying() and Game():GetRoom():IsClear() and not player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_TRANSCENDENCE) then
@@ -1157,8 +1178,7 @@ function TickEventHexanow(player)
 		
 		local VREntityNotTraced = true
 		local VRHolding = false
-		local roomEntities = Isaac.GetRoomEntities()
-				
+		
 		--[[
 		--if player:HasCollectible(CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR, true) then
 		if player:GetActiveItem(ActiveSlot.SLOT_PRIMARY) == CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR
@@ -1243,15 +1263,15 @@ function TickEventHexanow(player)
 			
 			if player:IsHoldingItem()
 			then
-				onceHoldingItem = true
-			elseif onceHoldingItem then
+				onceHoldingItem[playerID] = true
+			elseif onceHoldingItem[playerID] then
 				UpdateCostumes(player)
-				onceHoldingItem = false
+				onceHoldingItem[playerID] = false
 			end
 			
-			if lastCanFly ~= player.CanFly then
+			if lastCanFly[playerID] ~= player.CanFly then
 				UpdateCostumes(player)
-				lastCanFly = player.CanFly
+				lastCanFly[playerID] = player.CanFly
 			end
 			
 		end
@@ -1313,7 +1333,7 @@ function TickEventHexanow(player)
 		local item1Missing = item1 == 0
 		local item2Missing = item2 == 0
 		local item3Missing = item3 == 0
-			
+		
 		if not player:IsHoldingItem() then
 			
 			local item1dem = 1
@@ -1321,7 +1341,7 @@ function TickEventHexanow(player)
 			local item3dem = 1
 			
 			
-			if item1 == item2 then
+			if item2 == item1 then
 				item2dem = item2dem + 1
 			end
 			if item3 == item1 then
