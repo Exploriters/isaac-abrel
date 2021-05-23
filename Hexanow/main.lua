@@ -9,7 +9,7 @@ local playerTypeHexanowTainted = Isaac.GetPlayerTypeByName("Tainted Hexanow", tr
 local hexanowPortalTool = Isaac.GetItemIdByName("Eternal Portal")
 local hexanowFlightTriggerItem = Isaac.GetItemIdByName( "Hexanow flight trigger" )
 local hexanowHairCostume = Isaac.GetCostumeIdByPath("gfx/characters/HexanowHair.anm2")
-local hexanowBodyCostume = Isaac.GetCostumeIdByPath("gfx/characters/HexanowBody.anm2")
+local hexanowBodyCostume = Isaac.GetCostumeIdByPath("gfx/characters/Hexanow_uranus.anm2")
 local hexanowFateCostume = Isaac.GetCostumeIdByPath("gfx/characters/Hexanow_fate.anm2")
 
 local entityVariantHeartsBlender = Isaac.GetEntityVariantByName("Hearts Blender")
@@ -166,6 +166,10 @@ function SetWhiteHexanowCollectible(player, ID, slot)
 		return nil
 	end
 	
+	if HexanowCollectibleMaxAllowed(player, ID) - player:GetCollectibleNum(ID, true) > 0 then
+		return nil
+	end
+	
 	if slot == nil then
 		slot = SelectedWhiteItem[playerID]
 	end
@@ -185,6 +189,10 @@ function PickupWhiteHexanowCollectible(player, ID, slot)
 	local item = Isaac.GetItemConfig():GetCollectible(ID)
 	
 	if HexanowBlackCollectiblePredicate(ID) then
+		return nil
+	end
+	
+	if HexanowCollectibleMaxAllowed(player, ID) - player:GetCollectibleNum(ID, true) > 0 then
 		return nil
 	end
 	
@@ -698,14 +706,16 @@ function UpdateCostumes(player)
 	if player:GetPlayerType() == playerTypeHexanow then
 		player:ClearCostumes()
 		player:RemoveSkinCostume()
+		
 		--player:TryRemoveCollectibleCostume(CollectibleType.COLLECTIBLE_ANALOG_STICK, false)
 		--player:TryRemoveCollectibleCostume(CollectibleType.COLLECTIBLE_URANUS, false)
 		--player:TryRemoveCollectibleCostume(CollectibleType.COLLECTIBLE_NEPTUNUS, false)
 		--player:TryRemoveNullCostume(hexanowHairCostume)
-		
 		--player:TryRemoveNullCostume(hexanowFateCostume)
+		--player:TryRemoveNullCostume(hexanowBodyCostume)
+		
 		player:AddNullCostume(hexanowHairCostume)
-		--player:AddNullCostume(hexanowBodyCostume)
+		
 		if player.CanFly then
 			player:AddNullCostume(hexanowFateCostume)
 		else
@@ -713,7 +723,7 @@ function UpdateCostumes(player)
 		end
 	else
 		player:TryRemoveNullCostume(hexanowHairCostume)
-		--player:TryRemoveNullCostume(hexanowBodyCostume)
+		player:TryRemoveNullCostume(hexanowBodyCostume)
 		player:TryRemoveNullCostume(hexanowFateCostume)
 	end
 end
@@ -852,41 +862,45 @@ function TaintedHexanowRoomOverride()
 	local room = game:GetRoom()
 	local roomEntities = Isaac.GetRoomEntities()
 	
-	for i,entity in ipairs(roomEntities) do
-		
-		local pickup = entity:ToPickup()
-		if pickup ~= nil then
-			if pickup.Variant == PickupVariant.PICKUP_COLLECTIBLE and pickup.SubType ~= 0 then
-				if room:GetBackdropType() == 51 and pickup.SubType ~= CollectibleType.COLLECTIBLE_RED_KEY then
-					pickup:Morph(pickup.Type, pickup.Variant, CollectibleType.COLLECTIBLE_RED_KEY, true)
+	if Game().Difficulty ~= Difficulty.DIFFICULTY_GREED 
+	and Game().Difficulty ~= Difficulty.DIFFICULTY_GREEDIER
+	then
+		for i,entity in ipairs(roomEntities) do
+			
+			local pickup = entity:ToPickup()
+			if pickup ~= nil then
+				if pickup.Variant == PickupVariant.PICKUP_COLLECTIBLE and pickup.SubType ~= 0 then
+					if room:GetBackdropType() == 51 and pickup.SubType ~= CollectibleType.COLLECTIBLE_RED_KEY then
+						pickup:Morph(pickup.Type, pickup.Variant, CollectibleType.COLLECTIBLE_RED_KEY, true)
+					end
+					
+					if pickup.SubType == CollectibleType.COLLECTIBLE_R_KEY
+					or pickup.SubType == CollectibleType.COLLECTIBLE_SPINDOWN_DICE
+					or pickup.SubType == CollectibleType.COLLECTIBLE_CLICKER
+					then
+						pickup:Morph(pickup.Type, pickup.Variant, CollectibleType.COLLECTIBLE_BREAKFAST, true)
+					end
 				end
-				
-				if pickup.SubType == CollectibleType.COLLECTIBLE_R_KEY
-				or pickup.SubType == CollectibleType.COLLECTIBLE_SPINDOWN_DICE
-				or pickup.SubType == CollectibleType.COLLECTIBLE_CLICKER
+				if room:GetBackdropType() == 49 and 
+					 ( pickup.Variant == PickupVariant.PICKUP_CHEST 	
+					or pickup.Variant == PickupVariant.PICKUP_BOMBCHEST 	
+					or pickup.Variant == PickupVariant.PICKUP_SPIKEDCHEST 	
+					or pickup.Variant == PickupVariant.PICKUP_ETERNALCHEST 	
+					or pickup.Variant == PickupVariant.PICKUP_MIMICCHEST 	
+					or pickup.Variant == PickupVariant.PICKUP_LOCKEDCHEST 
+					)
 				then
-					pickup:Morph(pickup.Type, pickup.Variant, CollectibleType.COLLECTIBLE_BREAKFAST, true)
+					pickup:Remove()
 				end
 			end
-			if room:GetBackdropType() == 49 and 
-				 ( pickup.Variant == PickupVariant.PICKUP_CHEST 	
-				or pickup.Variant == PickupVariant.PICKUP_BOMBCHEST 	
-				or pickup.Variant == PickupVariant.PICKUP_SPIKEDCHEST 	
-				or pickup.Variant == PickupVariant.PICKUP_ETERNALCHEST 	
-				or pickup.Variant == PickupVariant.PICKUP_MIMICCHEST 	
-				or pickup.Variant == PickupVariant.PICKUP_LOCKEDCHEST 
-				)
-			then
-				pickup:Remove()
+			
+			if entity.Type == EntityType.ENTITY_SHOPKEEPER then
+				Isaac.Spawn(EntityType.ENTITY_PICKUP, PickupVariant.PICKUP_COLLECTIBLE, CollectibleType.COLLECTIBLE_DEATH_CERTIFICATE, entity.Position, Vector(0,0), entity)
+				entity:Remove()
 			end
+			
+			
 		end
-		
-		if entity.Type == EntityType.ENTITY_SHOPKEEPER then
-			Isaac.Spawn(EntityType.ENTITY_PICKUP, PickupVariant.PICKUP_COLLECTIBLE, CollectibleType.COLLECTIBLE_DEATH_CERTIFICATE, entity.Position, Vector(0,0), entity)
-			entity:Remove()
-		end
-		
-		
 	end
 	
 end
@@ -900,6 +914,7 @@ function InitPlayerHexanowTainted(player)
 		--print("CALLED ACCEPT!")
 		local level = Game():GetLevel()
 		player:ChangePlayerType(playerTypeHexanow)
+		Tainted = true
 		
 		player:AddTrinket(TrinketType.TRINKET_PERFECTION | 32768)
 		--player:AddCard(Card.CARD_CRACKED_KEY)
@@ -912,15 +927,18 @@ function InitPlayerHexanowTainted(player)
 		
 		local stageType = level:GetStageType()
 		
-		if stageType == StageType.STAGETYPE_GREEDMODE then
+		-- stageType == StageType.STAGETYPE_GREEDMODE
 			--level:SetStage(LevelStage.STAGE7_GREED, stageType)
 			--level:SetNextStage()
-			Isaac.ExecuteCommand("stage 7")
-		else
 			--level:SetStage(13, stageType)
 			--level:SetNextStage()
+			
+		if Game().Difficulty == Difficulty.DIFFICULTY_GREED 
+		or Game().Difficulty == Difficulty.DIFFICULTY_GREEDIER 
+		then
+			Isaac.ExecuteCommand("stage 6")
+		else
 			Isaac.ExecuteCommand("stage 13")
-			Tainted = true
 		end
 	end
 end
@@ -982,6 +1000,7 @@ function HexanowBlackCollectiblePredicate(ID)
 	if item ~= nil and
 		(
 		item.ID == CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR
+		or item.ID == CollectibleType.COLLECTIBLE_MEGA_MUSH
 		)
 	then
 		return true
@@ -989,6 +1008,7 @@ function HexanowBlackCollectiblePredicate(ID)
 		return false
 	end
 end
+
 -- 物品谓词
 function HexanowWhiteCollectiblePredicate(ID, ignoreEnsured)
 	local item = Isaac.GetItemConfig():GetCollectible(ID)
