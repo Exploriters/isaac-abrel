@@ -8,6 +8,7 @@ local playerTypeHexanowTainted = Isaac.GetPlayerTypeByName("Tainted Hexanow", tr
 --local hexanowItem = Isaac.GetItemIdByName( "Hexanow's Soul" )
 local hexanowPortalTool = Isaac.GetItemIdByName("Eternal Portal")
 local hexanowFlightTriggerItem = Isaac.GetItemIdByName( "Hexanow flight trigger" )
+local hexanowStatTriggerItem = Isaac.GetItemIdByName( "Hexanow overall stat trigger" )
 local hexanowHairCostume = Isaac.GetCostumeIdByPath("gfx/characters/HexanowHair.anm2")
 local hexanowBodyCostume = Isaac.GetCostumeIdByPath("gfx/characters/Hexanow_uranus.anm2")
 local hexanowFateCostume = Isaac.GetCostumeIdByPath("gfx/characters/Hexanow_fate.anm2")
@@ -44,6 +45,8 @@ local EternalChargeForFree = true
 
 local EternalChargeSuppressed = false
 local Tainted = false
+
+local SuperPower = false
 
 --local WhiteHexanowCollectibleID = 0
 --local WhiteHexanowTrinketID = 0
@@ -120,6 +123,7 @@ function WipeTempVar()
 	
 	EternalChargeSuppressed = false
 	Tainted = false
+	SuperPower = false
 	
 	--WhiteHexanowCollectibleID = 0
 	--WhiteHexanowTrinketID = 0
@@ -1484,6 +1488,14 @@ function hexanowMod:ExecuteCmd(cmd, params)
 			Isaac.ConsoleOutput("Invalid args")
 		end
 	end
+	if cmd == "ffsp" then
+		SuperPower = not SuperPower
+		CallForEveryPlayer(
+			function(player)
+				player:RemoveCollectible(hexanowStatTriggerItem)
+			end
+		)
+	end
 	if cmd == "t2td" then
 		local pnum = tonumber(params)
 		if pnum == nil then
@@ -2059,6 +2071,10 @@ function hexanowMod:EvaluateCache(player, cacheFlag, tear)
 			player.TearColor = Color(1, 1, 1, 1, 0, 0, 0)
 		end
 		
+	end
+	
+	if SuperPower and cacheFlag == CacheFlag.CACHE_DAMAGE then
+		player.Damage = player.Damage * 20
 	end
 end
 hexanowMod:AddCallback(ModCallbacks.MC_EVALUATE_CACHE, hexanowMod.EvaluateCache)
