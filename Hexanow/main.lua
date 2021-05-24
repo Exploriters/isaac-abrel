@@ -2118,8 +2118,8 @@ function hexanowMod:PostUpdate()
 					local wombPortalFound = false
 					local voidPortalFound = false
 					
-					local posX = math.floor(entity.Position.X/40.0)*40
-					local posY = math.floor(entity.Position.Y/40.0)*40
+					local posX = math.floor((entity.Position.X + 20)/40.0)*40
+					local posY = math.floor((entity.Position.Y + 20)/40.0)*40
 					entity.Position = Vector(posX, posY)
 					entity.Velocity = Vector(0, 0)
 					
@@ -2173,8 +2173,8 @@ function hexanowMod:PostUpdate()
 	CallForEveryEntity(
 		function(entity)
 			if entity.Type == entityTypeHexanowPortal then
-				local posX = math.floor(entity.Position.X/40.0)*40
-				local posY = math.floor(entity.Position.Y/40.0)*40
+				local posX = math.floor((entity.Position.X + 20)/40.0)*40
+				local posY = math.floor((entity.Position.Y + 20)/40.0)*40
 				entity.Position = Vector(posX, posY)
 				entity.Velocity = Vector(0, 0)
 				
