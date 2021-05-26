@@ -938,7 +938,6 @@ function InitPlayerHexanowTainted(player)
 		player:ChangePlayerType(playerTypeHexanow)
 		Tainted = true
 		
-		player:AddTrinket(TrinketType.TRINKET_PERFECTION | 32768)
 		--player:AddCard(Card.CARD_CRACKED_KEY)
 		--player:AddCollectible(CollectibleType.COLLECTIBLE_DEATH_CERTIFICATE, 0, false)
 		player:AddCoins(99)
@@ -986,6 +985,7 @@ function InitPlayerHexanow(player)
 		if Tainted then
 			player:AddMaxHearts(12)
 			player:AddHearts(13)
+			player:AddTrinket(TrinketType.TRINKET_PERFECTION | 32768)
 		else
 			player:AddTrinket(TrinketType.TRINKET_NO | 32768)
 		end
