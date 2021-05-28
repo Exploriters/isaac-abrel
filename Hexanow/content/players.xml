@@ -11,4 +11,14 @@
 	canShoot="true"
 	costumeSuffix="hexanow"
 	birthright="not done" />
+	
+  <player name="Tainted Hexanow" skin="character_Hexanow.png" hp="12" black="0" bombs="0" keys="0" card="0"
+	items=""
+	nameimage="playername_Hexanow.png" 
+	portrait="playerportrait_Hexanow.png" 
+	bigportrait="playerportraitbig_Hexanow.png"
+	canShoot="true"
+	costumeSuffix="hexanow"
+	birthright="not done"
+	bSkinParent="Hexanow"/>
 </players>

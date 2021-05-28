@@ -558,6 +558,12 @@ local function LairubSoulCrossUpdate(_, LairubSoulCross)
 	local player = Isaac.GetPlayer(0)
 	local room = game:GetRoom()
 	local roomEntities = Isaac.GetRoomEntities()
+	
+	local posX = math.floor(LairubSoulCross.Position.X/40.0)*40
+	local posY = math.floor(LairubSoulCross.Position.Y/40.0)*40
+	LairubSoulCross.Position = Vector(posX, posY)
+	LairubSoulCross.Velocity = Vector(0, 0)
+	
 	if LairubSoulCross.FireCooldown < 1 then
 		for i,entity in ipairs(roomEntities) do
 			local NPC = entity:ToNPC()
@@ -581,6 +587,15 @@ local function LairubSoulCrossUpdate(_, LairubSoulCross)
 end
 lairub:AddCallback(ModCallbacks.MC_FAMILIAR_UPDATE,LairubSoulCrossUpdate, LairubSoulCross_Variant)
 
+local function PreFamiliarCollision(Fam, Collider, Low)
+	if Fam.Variant == LairubSoulCross_Variant then
+		print("respown to collision")
+		return true
+	end
+end
+lairub:AddCallback(ModCallbacks.MC_PRE_FAMILIAR_COLLISION,PreFamiliarCollision)
+
+
 local LairubAnmReadySpawnCross_Type = Isaac.GetEntityTypeByName("LairubAnmReadySpawnCross")
 local LairubAnmReadySpawnCross_Variant = Isaac.GetEntityVariantByName("LairubAnmReadySpawnCross")
 
@@ -590,6 +605,8 @@ local function LairubAnmReadySpawnCrossUpdate(_, LairubAnmReadySpawnCross)
 	local player = Isaac.GetPlayer(0)
 	local room = game:GetRoom()
 	local roomEntities = Isaac.GetRoomEntities()
+	
+	
 	if player:GetPlayerType() == playerType_Lairub and not player:IsDead() then
 		LairubAnmReadySpawnCross:GetSprite():Play("ReadySpawnCross", false)
 		if LairubAnmReadySpawnCross:GetSprite():WasEventTriggered("End") then

@@ -29,150 +29,152 @@ function brandner:Update(player)
 	end
 	
 	if player:GetPlayerType() == playerType_Brandner then
-		if not player:HasCollectible(544) then
-			player:AddCollectible(544, 0, true)
-			player:TryRemoveNullCostume(costume_Brandner_Body)
-			player:AddNullCostume(costume_Brandner_Body)
-			player:TryRemoveNullCostume(costume_Brandner_Head)
-			player:AddNullCostume(costume_Brandner_Head)
-			player:TryRemoveNullCostume(costume_Brandner_HeadBone)
-			player:AddNullCostume(costume_Brandner_HeadBone)
-		end
-	end
-	
-	if player:GetPlayerType() == playerType_Brandner then
-	-- Hearts <= 2, Slipped Rib Num == 4
-		if player:GetHearts() <= 2 then
-			if player:GetCollectibleNum(542) ~= 4 then
-				if player:GetCollectibleNum(542) < 4 then
-					SFXManager():Play(461, 3, 0, false, 1 )
-					player:AddCollectible(542, 0, true)
-					player:TryRemoveNullCostume(costume_Brandner_Body)
-					player:AddNullCostume(costume_Brandner_Body)
-					player:TryRemoveNullCostume(costume_Brandner_Head)
-					player:AddNullCostume(costume_Brandner_Head)
-					player:TryRemoveNullCostume(costume_Brandner_HeadBone)
-					player:AddNullCostume(costume_Brandner_HeadBone)
-				end
-				if player:GetCollectibleNum(542) > 4 then
-					SFXManager():Play(461, 3, 0, false, 1 )
-					player:RemoveCollectible(542)
-					player:TryRemoveNullCostume(costume_Brandner_Body)
-					player:AddNullCostume(costume_Brandner_Body)
-					player:TryRemoveNullCostume(costume_Brandner_Head)
-					player:AddNullCostume(costume_Brandner_Head)
-					player:TryRemoveNullCostume(costume_Brandner_HeadBone)
-					player:AddNullCostume(costume_Brandner_HeadBone)
-				end
+		if room:GetBackdropType() ~= 58 and room:GetBackdropType() ~= 59 then
+			if not player:HasCollectible(544) then
+				player:AddCollectible(544, 0, true)
+				player:TryRemoveNullCostume(costume_Brandner_Body)
+				player:AddNullCostume(costume_Brandner_Body)
+				player:TryRemoveNullCostume(costume_Brandner_Head)
+				player:AddNullCostume(costume_Brandner_Head)
+				player:TryRemoveNullCostume(costume_Brandner_HeadBone)
+				player:AddNullCostume(costume_Brandner_HeadBone)
 			end
-		else
-			--Do nothing
 		end
-		-- Hearts <= 6, Slipped Rib Num == 3
-		if player:GetHearts() <= 6 and player:GetHearts() > 2 then
-			if player:GetCollectibleNum(542) ~= 3 then
-				if player:GetCollectibleNum(542) < 3 then
-					SFXManager():Play(461, 3, 0, false, 1 )
-					player:AddCollectible(542, 0, true)
-					player:TryRemoveNullCostume(costume_Brandner_Body)
-					player:AddNullCostume(costume_Brandner_Body)
-					player:TryRemoveNullCostume(costume_Brandner_Head)
-					player:AddNullCostume(costume_Brandner_Head)
-					player:TryRemoveNullCostume(costume_Brandner_HeadBone)
-					player:AddNullCostume(costume_Brandner_HeadBone)
+		
+		if player:GetPlayerType() == playerType_Brandner then
+		-- Hearts <= 2, Slipped Rib Num == 4
+			if player:GetHearts() <= 2 then
+				if player:GetCollectibleNum(542) ~= 4 then
+					if player:GetCollectibleNum(542) < 4 then
+						SFXManager():Play(461, 3, 0, false, 1 )
+						player:AddCollectible(542, 0, true)
+						player:TryRemoveNullCostume(costume_Brandner_Body)
+						player:AddNullCostume(costume_Brandner_Body)
+						player:TryRemoveNullCostume(costume_Brandner_Head)
+						player:AddNullCostume(costume_Brandner_Head)
+						player:TryRemoveNullCostume(costume_Brandner_HeadBone)
+						player:AddNullCostume(costume_Brandner_HeadBone)
+					end
+					if player:GetCollectibleNum(542) > 4 then
+						SFXManager():Play(461, 3, 0, false, 1 )
+						player:RemoveCollectible(542)
+						player:TryRemoveNullCostume(costume_Brandner_Body)
+						player:AddNullCostume(costume_Brandner_Body)
+						player:TryRemoveNullCostume(costume_Brandner_Head)
+						player:AddNullCostume(costume_Brandner_Head)
+						player:TryRemoveNullCostume(costume_Brandner_HeadBone)
+						player:AddNullCostume(costume_Brandner_HeadBone)
+					end
 				end
-				if player:GetCollectibleNum(542) > 3 then
-					SFXManager():Play(461, 3, 0, false, 1 )
-					player:RemoveCollectible(542)
-					player:TryRemoveNullCostume(costume_Brandner_Body)
-					player:AddNullCostume(costume_Brandner_Body)
-					player:TryRemoveNullCostume(costume_Brandner_Head)
-					player:AddNullCostume(costume_Brandner_Head)
-					player:TryRemoveNullCostume(costume_Brandner_HeadBone)
-					player:AddNullCostume(costume_Brandner_HeadBone)
-				end
+			else
+				--Do nothing
 			end
-		else
-			--Do nothing
-		end
-		-- Hearts <= 12, Slipped Rib Num == 2
-		if player:GetHearts() <= 12 and player:GetHearts() > 6 then
-			if player:GetCollectibleNum(542) ~= 2 then
-				if player:GetCollectibleNum(542) < 2 then
-					SFXManager():Play(461, 3, 0, false, 1 )
-					player:AddCollectible(542, 0, true)
-					player:TryRemoveNullCostume(costume_Brandner_Body)
-					player:AddNullCostume(costume_Brandner_Body)
-					player:TryRemoveNullCostume(costume_Brandner_Head)
-					player:AddNullCostume(costume_Brandner_Head)
-					player:TryRemoveNullCostume(costume_Brandner_HeadBone)
-					player:AddNullCostume(costume_Brandner_HeadBone)
+			-- Hearts <= 6, Slipped Rib Num == 3
+			if player:GetHearts() <= 6 and player:GetHearts() > 2 then
+				if player:GetCollectibleNum(542) ~= 3 then
+					if player:GetCollectibleNum(542) < 3 then
+						SFXManager():Play(461, 3, 0, false, 1 )
+						player:AddCollectible(542, 0, true)
+						player:TryRemoveNullCostume(costume_Brandner_Body)
+						player:AddNullCostume(costume_Brandner_Body)
+						player:TryRemoveNullCostume(costume_Brandner_Head)
+						player:AddNullCostume(costume_Brandner_Head)
+						player:TryRemoveNullCostume(costume_Brandner_HeadBone)
+						player:AddNullCostume(costume_Brandner_HeadBone)
+					end
+					if player:GetCollectibleNum(542) > 3 then
+						SFXManager():Play(461, 3, 0, false, 1 )
+						player:RemoveCollectible(542)
+						player:TryRemoveNullCostume(costume_Brandner_Body)
+						player:AddNullCostume(costume_Brandner_Body)
+						player:TryRemoveNullCostume(costume_Brandner_Head)
+						player:AddNullCostume(costume_Brandner_Head)
+						player:TryRemoveNullCostume(costume_Brandner_HeadBone)
+						player:AddNullCostume(costume_Brandner_HeadBone)
+					end
 				end
-				if player:GetCollectibleNum(542) > 2 then
-					SFXManager():Play(461, 3, 0, false, 1 )
-					player:RemoveCollectible(542)
-					player:TryRemoveNullCostume(costume_Brandner_Body)
-					player:AddNullCostume(costume_Brandner_Body)
-					player:TryRemoveNullCostume(costume_Brandner_Head)
-					player:AddNullCostume(costume_Brandner_Head)
-					player:TryRemoveNullCostume(costume_Brandner_HeadBone)
-					player:AddNullCostume(costume_Brandner_HeadBone)
-				end
+			else
+				--Do nothing
 			end
-		else
-			--Do nothing
-		end
-		-- Hearts <= 18, Slipped Rib Num == 1
-		if player:GetHearts() <= 18 and player:GetHearts() > 12 then
-			if player:GetCollectibleNum(542) ~= 1 then
-				if player:GetCollectibleNum(542) < 1 then
-					SFXManager():Play(461, 3, 0, false, 1 )
-					player:AddCollectible(542, 0, true)
-					player:TryRemoveNullCostume(costume_Brandner_Body)
-					player:AddNullCostume(costume_Brandner_Body)
-					player:TryRemoveNullCostume(costume_Brandner_Head)
-					player:AddNullCostume(costume_Brandner_Head)
-					player:TryRemoveNullCostume(costume_Brandner_HeadBone)
-					player:AddNullCostume(costume_Brandner_HeadBone)
+			-- Hearts <= 12, Slipped Rib Num == 2
+			if player:GetHearts() <= 12 and player:GetHearts() > 6 then
+				if player:GetCollectibleNum(542) ~= 2 then
+					if player:GetCollectibleNum(542) < 2 then
+						SFXManager():Play(461, 3, 0, false, 1 )
+						player:AddCollectible(542, 0, true)
+						player:TryRemoveNullCostume(costume_Brandner_Body)
+						player:AddNullCostume(costume_Brandner_Body)
+						player:TryRemoveNullCostume(costume_Brandner_Head)
+						player:AddNullCostume(costume_Brandner_Head)
+						player:TryRemoveNullCostume(costume_Brandner_HeadBone)
+						player:AddNullCostume(costume_Brandner_HeadBone)
+					end
+					if player:GetCollectibleNum(542) > 2 then
+						SFXManager():Play(461, 3, 0, false, 1 )
+						player:RemoveCollectible(542)
+						player:TryRemoveNullCostume(costume_Brandner_Body)
+						player:AddNullCostume(costume_Brandner_Body)
+						player:TryRemoveNullCostume(costume_Brandner_Head)
+						player:AddNullCostume(costume_Brandner_Head)
+						player:TryRemoveNullCostume(costume_Brandner_HeadBone)
+						player:AddNullCostume(costume_Brandner_HeadBone)
+					end
 				end
-				if player:GetCollectibleNum(542) > 1 then
-					SFXManager():Play(461, 3, 0, false, 1 )
-					player:RemoveCollectible(542)
-					player:TryRemoveNullCostume(costume_Brandner_Body)
-					player:AddNullCostume(costume_Brandner_Body)
-					player:TryRemoveNullCostume(costume_Brandner_Head)
-					player:AddNullCostume(costume_Brandner_Head)
-					player:TryRemoveNullCostume(costume_Brandner_HeadBone)
-					player:AddNullCostume(costume_Brandner_HeadBone)
-				end
+			else
+				--Do nothing
 			end
-		else
-			--Do nothing
-		end
-		-- Hearts <= 24, Slipped Rib Num == 0
-		if player:GetHearts() <= 24 and player:GetHearts() > 18 then
-			if player:GetCollectibleNum(542) ~= 0 then
-				if player:GetCollectibleNum(542) < 0 then
-					player:AddCollectible(542, 0, true)
-					player:TryRemoveNullCostume(costume_Brandner_Body)
-					player:AddNullCostume(costume_Brandner_Body)
-					player:TryRemoveNullCostume(costume_Brandner_Head)
-					player:AddNullCostume(costume_Brandner_Head)
-					player:TryRemoveNullCostume(costume_Brandner_HeadBone)
-					player:AddNullCostume(costume_Brandner_HeadBone)
+			-- Hearts <= 18, Slipped Rib Num == 1
+			if player:GetHearts() <= 18 and player:GetHearts() > 12 then
+				if player:GetCollectibleNum(542) ~= 1 then
+					if player:GetCollectibleNum(542) < 1 then
+						SFXManager():Play(461, 3, 0, false, 1 )
+						player:AddCollectible(542, 0, true)
+						player:TryRemoveNullCostume(costume_Brandner_Body)
+						player:AddNullCostume(costume_Brandner_Body)
+						player:TryRemoveNullCostume(costume_Brandner_Head)
+						player:AddNullCostume(costume_Brandner_Head)
+						player:TryRemoveNullCostume(costume_Brandner_HeadBone)
+						player:AddNullCostume(costume_Brandner_HeadBone)
+					end
+					if player:GetCollectibleNum(542) > 1 then
+						SFXManager():Play(461, 3, 0, false, 1 )
+						player:RemoveCollectible(542)
+						player:TryRemoveNullCostume(costume_Brandner_Body)
+						player:AddNullCostume(costume_Brandner_Body)
+						player:TryRemoveNullCostume(costume_Brandner_Head)
+						player:AddNullCostume(costume_Brandner_Head)
+						player:TryRemoveNullCostume(costume_Brandner_HeadBone)
+						player:AddNullCostume(costume_Brandner_HeadBone)
+					end
 				end
-				if player:GetCollectibleNum(542) > 0 then
-					player:RemoveCollectible(542)
-					player:TryRemoveNullCostume(costume_Brandner_Body)
-					player:AddNullCostume(costume_Brandner_Body)
-					player:TryRemoveNullCostume(costume_Brandner_Head)
-					player:AddNullCostume(costume_Brandner_Head)
-					player:TryRemoveNullCostume(costume_Brandner_HeadBone)
-					player:AddNullCostume(costume_Brandner_HeadBone)
-				end
+			else
+				--Do nothing
 			end
-		else
+			-- Hearts <= 24, Slipped Rib Num == 0
+			if player:GetHearts() <= 24 and player:GetHearts() > 18 then
+				if player:GetCollectibleNum(542) ~= 0 then
+					if player:GetCollectibleNum(542) < 0 then
+						player:AddCollectible(542, 0, true)
+						player:TryRemoveNullCostume(costume_Brandner_Body)
+						player:AddNullCostume(costume_Brandner_Body)
+						player:TryRemoveNullCostume(costume_Brandner_Head)
+						player:AddNullCostume(costume_Brandner_Head)
+						player:TryRemoveNullCostume(costume_Brandner_HeadBone)
+						player:AddNullCostume(costume_Brandner_HeadBone)
+					end
+					if player:GetCollectibleNum(542) > 0 then
+						player:RemoveCollectible(542)
+						player:TryRemoveNullCostume(costume_Brandner_Body)
+						player:AddNullCostume(costume_Brandner_Body)
+						player:TryRemoveNullCostume(costume_Brandner_Head)
+						player:AddNullCostume(costume_Brandner_Head)
+						player:TryRemoveNullCostume(costume_Brandner_HeadBone)
+						player:AddNullCostume(costume_Brandner_HeadBone)
+					end
+				end
+			else
 			-- Do nothing
+			end
 		end
 	end
 end
@@ -361,172 +363,174 @@ function brandner:TaintedUpdate()
 	end
 	
 	if player:GetPlayerType() == playerType_TaintedBrandner then
-		if not player:HasCollectible(544) then
-			player:AddCollectible(544, 0, true)
-			player:TryRemoveNullCostume(costume_TaintedBrandner_FireHead)
-			player:AddNullCostume(costume_TaintedBrandner_FireHead)
-			player:TryRemoveNullCostume(costume_TaintedBrandner_Head)
-			player:AddNullCostume(costume_TaintedBrandner_Head)
-			player:TryRemoveNullCostume(costume_TaintedBrandner_HeadBone)
-			player:AddNullCostume(costume_TaintedBrandner_HeadBone)
-			player:TryRemoveNullCostume(costume_Brandner_Body)
-			player:AddNullCostume(costume_Brandner_Body)
-		end
-	end
-	
-	if player:GetPlayerType() == playerType_TaintedBrandner	 then
-	-- Hearts <= 2, Slipped Rib Num == 4
-		if player:GetHearts() <= 2 then
-			if player:GetCollectibleNum(542) ~= 4 then
-				if player:GetCollectibleNum(542) < 4 then
-					SFXManager():Play(461, 3, 0, false, 1 )
-					player:AddCollectible(542, 0, true)
-					player:TryRemoveNullCostume(costume_TaintedBrandner_FireHead)
-					player:AddNullCostume(costume_TaintedBrandner_FireHead)
-					player:TryRemoveNullCostume(costume_TaintedBrandner_Head)
-					player:AddNullCostume(costume_TaintedBrandner_Head)
-					player:TryRemoveNullCostume(costume_TaintedBrandner_HeadBone)
-					player:AddNullCostume(costume_TaintedBrandner_HeadBone)
-					player:TryRemoveNullCostume(costume_Brandner_Body)
-					player:AddNullCostume(costume_Brandner_Body)
-				end
-				if player:GetCollectibleNum(542) > 4 then
-					SFXManager():Play(461, 3, 0, false, 1 )
-					player:RemoveCollectible(542)
-					player:TryRemoveNullCostume(costume_TaintedBrandner_FireHead)
-					player:AddNullCostume(costume_TaintedBrandner_FireHead)
-					player:TryRemoveNullCostume(costume_TaintedBrandner_Head)
-					player:AddNullCostume(costume_TaintedBrandner_Head)
-					player:TryRemoveNullCostume(costume_TaintedBrandner_HeadBone)
-					player:AddNullCostume(costume_TaintedBrandner_HeadBone)
-					player:TryRemoveNullCostume(costume_Brandner_Body)
-					player:AddNullCostume(costume_Brandner_Body)
-				end
+		if room:GetBackdropType() ~= 58 and room:GetBackdropType() ~= 59 then
+			if not player:HasCollectible(544) then
+				player:AddCollectible(544, 0, true)
+				player:TryRemoveNullCostume(costume_TaintedBrandner_FireHead)
+				player:AddNullCostume(costume_TaintedBrandner_FireHead)
+				player:TryRemoveNullCostume(costume_TaintedBrandner_Head)
+				player:AddNullCostume(costume_TaintedBrandner_Head)
+				player:TryRemoveNullCostume(costume_TaintedBrandner_HeadBone)
+				player:AddNullCostume(costume_TaintedBrandner_HeadBone)
+				player:TryRemoveNullCostume(costume_Brandner_Body)
+				player:AddNullCostume(costume_Brandner_Body)
 			end
-		else
-			--Do nothing
 		end
-		-- Hearts <= 6, Slipped Rib Num == 3
-		if player:GetHearts() <= 6 and player:GetHearts() > 2 then
-			if player:GetCollectibleNum(542) ~= 3 then
-				if player:GetCollectibleNum(542) < 3 then
-					SFXManager():Play(461, 3, 0, false, 1 )
-					player:AddCollectible(542, 0, true)
-					player:TryRemoveNullCostume(costume_TaintedBrandner_FireHead)
-					player:AddNullCostume(costume_TaintedBrandner_FireHead)
-					player:TryRemoveNullCostume(costume_TaintedBrandner_Head)
-					player:AddNullCostume(costume_TaintedBrandner_Head)
-					player:TryRemoveNullCostume(costume_TaintedBrandner_HeadBone)
-					player:AddNullCostume(costume_TaintedBrandner_HeadBone)
-					player:TryRemoveNullCostume(costume_Brandner_Body)
-					player:AddNullCostume(costume_Brandner_Body)
+		
+		if player:GetPlayerType() == playerType_TaintedBrandner	 then
+		-- Hearts <= 2, Slipped Rib Num == 4
+			if player:GetHearts() <= 2 then
+				if player:GetCollectibleNum(542) ~= 4 then
+					if player:GetCollectibleNum(542) < 4 then
+						SFXManager():Play(461, 3, 0, false, 1 )
+						player:AddCollectible(542, 0, true)
+						player:TryRemoveNullCostume(costume_TaintedBrandner_FireHead)
+						player:AddNullCostume(costume_TaintedBrandner_FireHead)
+						player:TryRemoveNullCostume(costume_TaintedBrandner_Head)
+						player:AddNullCostume(costume_TaintedBrandner_Head)
+						player:TryRemoveNullCostume(costume_TaintedBrandner_HeadBone)
+						player:AddNullCostume(costume_TaintedBrandner_HeadBone)
+						player:TryRemoveNullCostume(costume_Brandner_Body)
+						player:AddNullCostume(costume_Brandner_Body)
+					end
+					if player:GetCollectibleNum(542) > 4 then
+						SFXManager():Play(461, 3, 0, false, 1 )
+						player:RemoveCollectible(542)
+						player:TryRemoveNullCostume(costume_TaintedBrandner_FireHead)
+						player:AddNullCostume(costume_TaintedBrandner_FireHead)
+						player:TryRemoveNullCostume(costume_TaintedBrandner_Head)
+						player:AddNullCostume(costume_TaintedBrandner_Head)
+						player:TryRemoveNullCostume(costume_TaintedBrandner_HeadBone)
+						player:AddNullCostume(costume_TaintedBrandner_HeadBone)
+						player:TryRemoveNullCostume(costume_Brandner_Body)
+						player:AddNullCostume(costume_Brandner_Body)
+					end
 				end
-				if player:GetCollectibleNum(542) > 3 then
-					SFXManager():Play(461, 3, 0, false, 1 )
-					player:RemoveCollectible(542)
-					player:TryRemoveNullCostume(costume_TaintedBrandner_FireHead)
-					player:AddNullCostume(costume_TaintedBrandner_FireHead)
-					player:TryRemoveNullCostume(costume_TaintedBrandner_Head)
-					player:AddNullCostume(costume_TaintedBrandner_Head)
-					player:TryRemoveNullCostume(costume_TaintedBrandner_HeadBone)
-					player:AddNullCostume(costume_TaintedBrandner_HeadBone)
-					player:TryRemoveNullCostume(costume_Brandner_Body)
-					player:AddNullCostume(costume_Brandner_Body)
-				end
+			else
+				--Do nothing
 			end
-		else
-			--Do nothing
-		end
-		-- Hearts <= 12, Slipped Rib Num == 2
-		if player:GetHearts() <= 12 and player:GetHearts() > 6 then
-			if player:GetCollectibleNum(542) ~= 2 then
-				if player:GetCollectibleNum(542) < 2 then
-					SFXManager():Play(461, 3, 0, false, 1 )
-					player:AddCollectible(542, 0, true)
-					player:TryRemoveNullCostume(costume_TaintedBrandner_FireHead)
-					player:AddNullCostume(costume_TaintedBrandner_FireHead)
-					player:TryRemoveNullCostume(costume_TaintedBrandner_Head)
-					player:AddNullCostume(costume_TaintedBrandner_Head)
-					player:TryRemoveNullCostume(costume_TaintedBrandner_HeadBone)
-					player:AddNullCostume(costume_TaintedBrandner_HeadBone)
-					player:TryRemoveNullCostume(costume_Brandner_Body)
-					player:AddNullCostume(costume_Brandner_Body)
+			-- Hearts <= 6, Slipped Rib Num == 3
+			if player:GetHearts() <= 6 and player:GetHearts() > 2 then
+				if player:GetCollectibleNum(542) ~= 3 then
+					if player:GetCollectibleNum(542) < 3 then
+						SFXManager():Play(461, 3, 0, false, 1 )
+						player:AddCollectible(542, 0, true)
+						player:TryRemoveNullCostume(costume_TaintedBrandner_FireHead)
+						player:AddNullCostume(costume_TaintedBrandner_FireHead)
+						player:TryRemoveNullCostume(costume_TaintedBrandner_Head)
+						player:AddNullCostume(costume_TaintedBrandner_Head)
+						player:TryRemoveNullCostume(costume_TaintedBrandner_HeadBone)
+						player:AddNullCostume(costume_TaintedBrandner_HeadBone)
+						player:TryRemoveNullCostume(costume_Brandner_Body)
+						player:AddNullCostume(costume_Brandner_Body)
+					end
+					if player:GetCollectibleNum(542) > 3 then
+						SFXManager():Play(461, 3, 0, false, 1 )
+						player:RemoveCollectible(542)
+						player:TryRemoveNullCostume(costume_TaintedBrandner_FireHead)
+						player:AddNullCostume(costume_TaintedBrandner_FireHead)
+						player:TryRemoveNullCostume(costume_TaintedBrandner_Head)
+						player:AddNullCostume(costume_TaintedBrandner_Head)
+						player:TryRemoveNullCostume(costume_TaintedBrandner_HeadBone)
+						player:AddNullCostume(costume_TaintedBrandner_HeadBone)
+						player:TryRemoveNullCostume(costume_Brandner_Body)
+						player:AddNullCostume(costume_Brandner_Body)
+					end
 				end
-				if player:GetCollectibleNum(542) > 2 then
-					SFXManager():Play(461, 3, 0, false, 1 )
-					player:RemoveCollectible(542)
-					player:TryRemoveNullCostume(costume_TaintedBrandner_FireHead)
-					player:AddNullCostume(costume_TaintedBrandner_FireHead)
-					player:TryRemoveNullCostume(costume_TaintedBrandner_Head)
-					player:AddNullCostume(costume_TaintedBrandner_Head)
-					player:TryRemoveNullCostume(costume_TaintedBrandner_HeadBone)
-					player:AddNullCostume(costume_TaintedBrandner_HeadBone)
-					player:TryRemoveNullCostume(costume_Brandner_Body)
-					player:AddNullCostume(costume_Brandner_Body)
-				end
+			else
+				--Do nothing
 			end
-		else
-			--Do nothing
-		end
-		-- Hearts <= 18, Slipped Rib Num == 1
-		if player:GetHearts() <= 18 and player:GetHearts() > 12 then
-			if player:GetCollectibleNum(542) ~= 1 then
-				if player:GetCollectibleNum(542) < 1 then
-					SFXManager():Play(461, 3, 0, false, 1 )
-					player:AddCollectible(542, 0, true)
-					player:TryRemoveNullCostume(costume_TaintedBrandner_FireHead)
-					player:AddNullCostume(costume_TaintedBrandner_FireHead)
-					player:TryRemoveNullCostume(costume_TaintedBrandner_Head)
-					player:AddNullCostume(costume_TaintedBrandner_Head)
-					player:TryRemoveNullCostume(costume_TaintedBrandner_HeadBone)
-					player:AddNullCostume(costume_TaintedBrandner_HeadBone)
-					player:TryRemoveNullCostume(costume_Brandner_Body)
-					player:AddNullCostume(costume_Brandner_Body)
+			-- Hearts <= 12, Slipped Rib Num == 2
+			if player:GetHearts() <= 12 and player:GetHearts() > 6 then
+				if player:GetCollectibleNum(542) ~= 2 then
+					if player:GetCollectibleNum(542) < 2 then
+						SFXManager():Play(461, 3, 0, false, 1 )
+						player:AddCollectible(542, 0, true)
+						player:TryRemoveNullCostume(costume_TaintedBrandner_FireHead)
+						player:AddNullCostume(costume_TaintedBrandner_FireHead)
+						player:TryRemoveNullCostume(costume_TaintedBrandner_Head)
+						player:AddNullCostume(costume_TaintedBrandner_Head)
+						player:TryRemoveNullCostume(costume_TaintedBrandner_HeadBone)
+						player:AddNullCostume(costume_TaintedBrandner_HeadBone)
+						player:TryRemoveNullCostume(costume_Brandner_Body)
+						player:AddNullCostume(costume_Brandner_Body)
+					end
+					if player:GetCollectibleNum(542) > 2 then
+						SFXManager():Play(461, 3, 0, false, 1 )
+						player:RemoveCollectible(542)
+						player:TryRemoveNullCostume(costume_TaintedBrandner_FireHead)
+						player:AddNullCostume(costume_TaintedBrandner_FireHead)
+						player:TryRemoveNullCostume(costume_TaintedBrandner_Head)
+						player:AddNullCostume(costume_TaintedBrandner_Head)
+						player:TryRemoveNullCostume(costume_TaintedBrandner_HeadBone)
+						player:AddNullCostume(costume_TaintedBrandner_HeadBone)
+						player:TryRemoveNullCostume(costume_Brandner_Body)
+						player:AddNullCostume(costume_Brandner_Body)
+					end
 				end
-				if player:GetCollectibleNum(542) > 1 then
-					SFXManager():Play(461, 3, 0, false, 1 )
-					player:RemoveCollectible(542)
-					player:TryRemoveNullCostume(costume_TaintedBrandner_FireHead)
-					player:AddNullCostume(costume_TaintedBrandner_FireHead)
-					player:TryRemoveNullCostume(costume_TaintedBrandner_Head)
-					player:AddNullCostume(costume_TaintedBrandner_Head)
-					player:TryRemoveNullCostume(costume_TaintedBrandner_HeadBone)
-					player:AddNullCostume(costume_TaintedBrandner_HeadBone)
-					player:TryRemoveNullCostume(costume_Brandner_Body)
-					player:AddNullCostume(costume_Brandner_Body)
-				end
+			else
+				--Do nothing
 			end
-		else
-			--Do nothing
-		end
-		-- Hearts <= 24, Slipped Rib Num == 0
-		if player:GetHearts() <= 24 and player:GetHearts() > 18 then
-			if player:GetCollectibleNum(542) ~= 0 then
-				if player:GetCollectibleNum(542) < 0 then
-					player:AddCollectible(542, 0, true)
-					player:TryRemoveNullCostume(costume_TaintedBrandner_FireHead)
-					player:AddNullCostume(costume_TaintedBrandner_FireHead)
-					player:TryRemoveNullCostume(costume_TaintedBrandner_Head)
-					player:AddNullCostume(costume_TaintedBrandner_Head)
-					player:TryRemoveNullCostume(costume_TaintedBrandner_HeadBone)
-					player:AddNullCostume(costume_TaintedBrandner_HeadBone)
-					player:TryRemoveNullCostume(costume_Brandner_Body)
-					player:AddNullCostume(costume_Brandner_Body)
+			-- Hearts <= 18, Slipped Rib Num == 1
+			if player:GetHearts() <= 18 and player:GetHearts() > 12 then
+				if player:GetCollectibleNum(542) ~= 1 then
+					if player:GetCollectibleNum(542) < 1 then
+						SFXManager():Play(461, 3, 0, false, 1 )
+						player:AddCollectible(542, 0, true)
+						player:TryRemoveNullCostume(costume_TaintedBrandner_FireHead)
+						player:AddNullCostume(costume_TaintedBrandner_FireHead)
+						player:TryRemoveNullCostume(costume_TaintedBrandner_Head)
+						player:AddNullCostume(costume_TaintedBrandner_Head)
+						player:TryRemoveNullCostume(costume_TaintedBrandner_HeadBone)
+						player:AddNullCostume(costume_TaintedBrandner_HeadBone)
+						player:TryRemoveNullCostume(costume_Brandner_Body)
+						player:AddNullCostume(costume_Brandner_Body)
+					end
+					if player:GetCollectibleNum(542) > 1 then
+						SFXManager():Play(461, 3, 0, false, 1 )
+						player:RemoveCollectible(542)
+						player:TryRemoveNullCostume(costume_TaintedBrandner_FireHead)
+						player:AddNullCostume(costume_TaintedBrandner_FireHead)
+						player:TryRemoveNullCostume(costume_TaintedBrandner_Head)
+						player:AddNullCostume(costume_TaintedBrandner_Head)
+						player:TryRemoveNullCostume(costume_TaintedBrandner_HeadBone)
+						player:AddNullCostume(costume_TaintedBrandner_HeadBone)
+						player:TryRemoveNullCostume(costume_Brandner_Body)
+						player:AddNullCostume(costume_Brandner_Body)
+					end
 				end
-				if player:GetCollectibleNum(542) > 0 then
-					player:RemoveCollectible(542)
-					player:TryRemoveNullCostume(costume_TaintedBrandner_FireHead)
-					player:AddNullCostume(costume_TaintedBrandner_FireHead)
-					player:TryRemoveNullCostume(costume_TaintedBrandner_Head)
-					player:AddNullCostume(costume_TaintedBrandner_Head)
-					player:TryRemoveNullCostume(costume_TaintedBrandner_HeadBone)
-					player:AddNullCostume(costume_TaintedBrandner_HeadBone)
-					player:TryRemoveNullCostume(costume_Brandner_Body)
-					player:AddNullCostume(costume_Brandner_Body)
-				end
+			else
+				--Do nothing
 			end
-		else
-			-- Do nothing
+			-- Hearts <= 24, Slipped Rib Num == 0
+			if player:GetHearts() <= 24 and player:GetHearts() > 18 then
+				if player:GetCollectibleNum(542) ~= 0 then
+					if player:GetCollectibleNum(542) < 0 then
+						player:AddCollectible(542, 0, true)
+						player:TryRemoveNullCostume(costume_TaintedBrandner_FireHead)
+						player:AddNullCostume(costume_TaintedBrandner_FireHead)
+						player:TryRemoveNullCostume(costume_TaintedBrandner_Head)
+						player:AddNullCostume(costume_TaintedBrandner_Head)
+						player:TryRemoveNullCostume(costume_TaintedBrandner_HeadBone)
+						player:AddNullCostume(costume_TaintedBrandner_HeadBone)
+						player:TryRemoveNullCostume(costume_Brandner_Body)
+						player:AddNullCostume(costume_Brandner_Body)
+					end
+					if player:GetCollectibleNum(542) > 0 then
+						player:RemoveCollectible(542)
+						player:TryRemoveNullCostume(costume_TaintedBrandner_FireHead)
+						player:AddNullCostume(costume_TaintedBrandner_FireHead)
+						player:TryRemoveNullCostume(costume_TaintedBrandner_Head)
+						player:AddNullCostume(costume_TaintedBrandner_Head)
+						player:TryRemoveNullCostume(costume_TaintedBrandner_HeadBone)
+						player:AddNullCostume(costume_TaintedBrandner_HeadBone)
+						player:TryRemoveNullCostume(costume_Brandner_Body)
+						player:AddNullCostume(costume_Brandner_Body)
+					end
+				end
+			else
+				-- Do nothing
+			end
 		end
 	end
 end

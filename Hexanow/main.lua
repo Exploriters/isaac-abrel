@@ -3,9 +3,14 @@
 local hexanowMod = RegisterMod("Hexanow", 1);
 
 local playerTypeHexanow = Isaac.GetPlayerTypeByName("Hexanow")
+local playerTypeHexanowTainted = Isaac.GetPlayerTypeByName("Tainted Hexanow", true)
+
 --local hexanowItem = Isaac.GetItemIdByName( "Hexanow's Soul" )
+local hexanowPortalTool = Isaac.GetItemIdByName("Eternal Portal")
 local hexanowFlightTriggerItem = Isaac.GetItemIdByName( "Hexanow flight trigger" )
+local hexanowStatTriggerItem = Isaac.GetItemIdByName( "Hexanow overall stat trigger" )
 local hexanowHairCostume = Isaac.GetCostumeIdByPath("gfx/characters/HexanowHair.anm2")
+local hexanowBodyCostume = Isaac.GetCostumeIdByPath("gfx/characters/Hexanow_uranus.anm2")
 local hexanowFateCostume = Isaac.GetCostumeIdByPath("gfx/characters/Hexanow_fate.anm2")
 
 local entityVariantHeartsBlender = Isaac.GetEntityVariantByName("Hearts Blender")
@@ -21,13 +26,32 @@ local MC_ENTITY_TAKE_DMG_Forever = 0
 local HUDoffset = 10
 
 local EternalCharges = 0
+local EternalChargesLastRoom = 0
 
 -- local lastMaxHearts = nil
 -- local updatedCostumesOvertime = false
-local onceHoldingItem = false
-local lastCanFly = nil
+local onceHoldingItem = { }
+onceHoldingItem[1] = false
+onceHoldingItem[2] = false
+onceHoldingItem[3] = false
+onceHoldingItem[4] = false
+local lastCanFly = { }
+lastCanFly[1] = nil
+lastCanFly[2] = nil
+lastCanFly[3] = nil
+lastCanFly[4] = nil
 local roomClearBounsEnabled = false
 local EternalChargeForFree = true
+
+local EternalChargeSuppressed = false
+local Tainted = false
+
+local SuperPower = false
+
+--local WhiteHexanowCollectibleID = 0
+--local WhiteHexanowTrinketID = 0
+--local WhiteHexanowCollectibleIDLastRoom = 0
+--local WhiteHexanowTrinketIDLastRoom = 0
 
 local portalBlue = nil
 local portalOrange = nil
@@ -36,19 +60,244 @@ local teledProjectiles = {}
 --local rainbowFireworkRng = RNG()
 --local tempt = 0
 
+local WhiteItem = {}
+local SelectedWhiteItem = {}
+local WhiteItemSelectPressed = {}
+local WhiteItemLastRoom = {}
+local SelectedWhiteItemLastRoom = {}
+
+function initWhiteItemArray()
+	WhiteItem[1] = {}
+	WhiteItem[2] = {}
+	WhiteItem[3] = {}
+	WhiteItem[4] = {}
+	
+	SelectedWhiteItem[1] = 1
+	SelectedWhiteItem[2] = 1
+	SelectedWhiteItem[3] = 1
+	SelectedWhiteItem[4] = 1
+	
+	WhiteItemSelectPressed[1] = 0
+	WhiteItemSelectPressed[2] = 0
+	WhiteItemSelectPressed[3] = 0
+	WhiteItemSelectPressed[4] = 0
+	
+	WhiteItem[1][1] = 0
+	WhiteItem[1][2] = 0
+	WhiteItem[1][3] = 0
+	
+	WhiteItem[2][1] = 0
+	WhiteItem[2][2] = 0
+	WhiteItem[2][3] = 0
+	
+	WhiteItem[3][1] = 0
+	WhiteItem[3][2] = 0
+	WhiteItem[3][3] = 0
+	
+	WhiteItem[4][1] = 0
+	WhiteItem[4][2] = 0
+	WhiteItem[4][3] = 0
+	
+	WhiteItemLastRoom = WhiteItem
+end
+
+initWhiteItemArray()
+
 -- 抹除临时变量
 function WipeTempVar()
 	EternalCharges = 0
+	EternalChargesLastRoom = 0
 
-	onceHoldingItem = false
-	lastCanFly = nil
+	onceHoldingItem = { }
+	onceHoldingItem[1] = nil
+	onceHoldingItem[2] = nil
+	onceHoldingItem[3] = nil
+	onceHoldingItem[4] = nil
+	lastCanFly = { }
+	lastCanFly[1] = nil
+	lastCanFly[2] = nil
+	lastCanFly[3] = nil
+	lastCanFly[4] = nil
 	roomClearBounsEnabled = false
 	EternalChargeForFree = true
+	
+	EternalChargeSuppressed = false
+	Tainted = false
+	SuperPower = false
+	
+	--WhiteHexanowCollectibleID = 0
+	--WhiteHexanowTrinketID = 0
 
 	portalBlue = nil
 	portalOrange = nil
 	teledProjectiles = {}
+	
+	initWhiteItemArray()
+	UpdateLastRoomVar()
 end
+
+function UpdateLastRoomVar()
+	EternalChargesLastRoom = EternalCharges
+	WhiteItemLastRoom = WhiteItem
+	SelectedWhiteItemLastRoom = SelectedWhiteItem
+	
+	--WhiteHexanowCollectibleIDLastRoom = WhiteHexanowCollectibleID
+	--WhiteHexanowTrinketIDLastRoom = WhiteHexanowTrinketID
+end
+
+function RewindLastRoomVar()
+	EternalCharges = EternalChargesLastRoom
+	WhiteItem = WhiteItemLastRoom
+	SelectedWhiteItem = SelectedWhiteItemLastRoom
+	
+	--WhiteHexanowCollectibleID = WhiteHexanowCollectibleIDLastRoom
+	--WhiteHexanowTrinketID = WhiteHexanowTrinketIDLastRoom
+end
+
+function GetPlayerID(player)
+	local numPlayers = Game():GetNumPlayers()
+	for i=0,numPlayers-1,1 do
+		if Isaac.GetPlayer(i).Index == player.Index then
+			return i + 1
+		end
+	end
+	return nil
+end
+
+function IsWhiteHexanowCollectible(player, ID)
+	local playerID = GetPlayerID(player)
+
+	if HexanowBlackCollectiblePredicate(ID) then
+		return false
+	end
+	for i=1,3 do
+		if WhiteItem[playerID][i] == ID then
+			return true
+		end
+	end
+	return false
+end
+
+function SetWhiteHexanowCollectible(player, ID, slot)
+	--print("White Collectible",slot,"Now",ID)
+	local playerID = GetPlayerID(player)
+	
+	if HexanowBlackCollectiblePredicate(ID)
+	or ID == 0
+	then
+		return nil
+	end
+	
+	if HexanowCollectibleMaxAllowed(player, ID) - player:GetCollectibleNum(ID, true) > 0 then
+		return nil
+	end
+	
+	if slot == nil then
+		slot = SelectedWhiteItem[playerID]
+	end
+	
+	if slot ~= 1
+	and slot ~= 2
+	and slot ~= 3
+	then
+		return nil
+	end
+	
+	WhiteItem[playerID][slot] = ID
+end
+
+function PickupWhiteHexanowCollectible(player, ID, slot)
+	local playerID = GetPlayerID(player)
+	local item = Isaac.GetItemConfig():GetCollectible(ID)
+	
+	if HexanowBlackCollectiblePredicate(ID) then
+		return nil
+	end
+	
+	if HexanowCollectibleMaxAllowed(player, ID) - player:GetCollectibleNum(ID, true) > 0 then
+		return nil
+	end
+	
+	if slot == nil then
+		slot = SelectedWhiteItem[playerID]
+	end
+	
+	if slot ~= 1
+	and slot ~= 2
+	and slot ~= 3
+	and slot ~= 4
+	then
+		return nil
+	end
+	
+	if item ~= nil and item.Type == ItemType.ITEM_ACTIVE then
+		local primaryAcItem = player:GetActiveItem(ActiveSlot.SLOT_PRIMARY)
+		if primaryAcItem ~= CollectibleType.COLLECTIBLE_NULL
+		and not ( player:HasCollectible(CollectibleType.COLLECTIBLE_SCHOOLBAG, true)
+			and player:GetActiveItem(ActiveSlot.SLOT_SECONDARY) == CollectibleType.COLLECTIBLE_NULL
+			)
+		then
+			if WhiteItem[playerID][1] == primaryAcItem then slot = 1 end
+			if WhiteItem[playerID][2] == primaryAcItem then slot = 2 end
+			if WhiteItem[playerID][3] == primaryAcItem then slot = 3 end
+		end
+	end
+	
+	if slot == 4
+	then
+		return nil
+	end
+	
+	if ID ~= CollectibleType.COLLECTIBLE_SCHOOLBAG
+	and WhiteItem[playerID][slot] == CollectibleType.COLLECTIBLE_SCHOOLBAG then
+		local secondaryID = player:GetActiveItem(ActiveSlot.SLOT_SECONDARY)
+		if secondaryID ~= CollectibleType.COLLECTIBLE_NULL then
+			if WhiteItem[playerID][1] == secondaryID then
+				WhiteItem[playerID][1] = 0
+			end
+			if WhiteItem[playerID][2] == secondaryID then
+				WhiteItem[playerID][2] = 0
+			end
+			if WhiteItem[playerID][3] == secondaryID then
+				WhiteItem[playerID][3] = 0
+			end
+		end
+	end
+	
+	SetWhiteHexanowCollectible(player, ID, slot)
+end
+
+
+--[[
+function ReplaceWhiteHexanowCollectible(player, ID, slot)
+	--print("White Collectible Now",ID)
+	
+	if slot == nil then
+		slot = SelectedWhiteItem[playerID]
+	end
+	
+	if slot ~= 1
+	and slot ~= 2
+	and slot ~= 3
+	then
+		return nil
+	end
+	
+	player:RemoveCollectible(WhiteItem[playerID][slot], true)
+	
+	SetWhiteHexanowCollectible(player, ID, slot)
+end
+]]
+
+--[[
+function WhiteHexanowTrinket(ID)
+	ID = ID & 32767
+	--print("White Trinket Now",ID)
+	WhiteHexanowCollectibleID = 0
+	WhiteHexanowTrinketID = ID
+	return ID
+end
+]]
 
 keyValuePair = {key = "", value = ""}
 keyValuePair.__index = keyValuePair
@@ -97,11 +346,73 @@ end
 function hexanowObjectives_Apply()
 	HUDoffset = tonumber(hexanowObjectives_Read("HUDoffset", "10"))
 	EternalCharges = tonumber(hexanowObjectives_Read("EternalCharges", "0"))
+	
+	local ECSStr = hexanowObjectives_Read("EternalChargeSuppressed", "false")
+	if ECSStr == "true" then
+		EternalChargeSuppressed = true
+	elseif ECSStr == "false" then
+		EternalChargeSuppressed = false
+	else
+		EternalChargeSuppressed = nil
+	end
+	--print("Eternal charge suppression state "..tostring(EternalChargeSuppressed))
+
+	local HTSStr = hexanowObjectives_Read("HexanowTaintedStarted", "false")
+	if HTSStr == "true" then
+		Tainted = true
+	elseif HTSStr == "false" then
+		Tainted = false
+	else
+		Tainted = nil
+	end
+	
+	--[[
+	local WHIStr = hexanowObjectives_Read("WhiteHexanowItem", "")
+	local WHIpoint = string.find(WHIStr, ":", 1)
+	if WHIpoint ~= nil then
+		local prefix = string.sub(WHIStr, 1, WHIpoint - 1)
+		local value = tonumber(string.sub(WHIStr, WHIpoint + 1, 256))
+		
+		if prefix == "Collectible" then
+			SetWhiteHexanowCollectible(player, value)
+		elseif prefix == "Trinket" then
+			--WhiteHexanowTrinket(value)
+		end
+	end
+	]]
+	
+	for i=1,4 do
+		SelectedWhiteItem[i] = tonumber(hexanowObjectives_Read("SelectedWhiteItem-"..tostring(i), "1"))
+		for j=1,3 do
+			WhiteItem[i][j] = tonumber(hexanowObjectives_Read("WhiteItem-"..tostring(i).."-"..tostring(j), "0"))
+		end
+	end
+	
+	UpdateLastRoomVar()
 end
 
 function hexanowObjectives_Recieve()
 	hexanowObjectives_Write("HUDoffset", tostring(HUDoffset))
 	hexanowObjectives_Write("EternalCharges", tostring(EternalCharges))
+	hexanowObjectives_Write("EternalChargeSuppressed", tostring(EternalChargeSuppressed))
+	hexanowObjectives_Write("HexanowTaintedStarted", tostring(Tainted))
+	
+	--[[
+	if WhiteHexanowCollectibleID ~= 0 then
+		hexanowObjectives_Write("WhiteHexanowItem", "Collectible:"..tostring(WhiteHexanowCollectibleID))
+	--elseif WhiteHexanowTrinketID ~= 0 then
+	--	hexanowObjectives_Write("WhiteHexanowItem", "Trinket:"..tostring(WhiteHexanowTrinketID))
+	else
+		hexanowObjectives_Write("WhiteHexanowItem", "")
+	end
+	]]
+	
+	for i=1,4 do
+		hexanowObjectives_Write("SelectedWhiteItem-"..tostring(i), tostring(SelectedWhiteItem[i]))
+		for j=1,3 do
+			hexanowObjectives_Write("WhiteItem-"..tostring(i).."-"..tostring(j), tostring(WhiteItem[i][j]))
+		end
+	end
 end
 
 function hexanowObjectives_ToString()
@@ -113,6 +424,7 @@ function hexanowObjectives_ToString()
 end
 
 function hexanowObjectives_LoadFromString(str)
+	--print("RAW:\n"..str)
 	local strTable = {}
 	local pointer1 = 0
 	local pointer2 = 0
@@ -129,6 +441,7 @@ function hexanowObjectives_LoadFromString(str)
 		
 		count = count + 1
 	end
+	--print("Splt by line complete with "..tostring(count).." lines.")
 	
 	for i,str in ipairs(strTable) do
 		local point = string.find(str, "=", 1)
@@ -138,6 +451,7 @@ function hexanowObjectives_LoadFromString(str)
 			hexanowObjectives_Write(key, value)
 		end
 	end
+	--print("Load from string result:\n"..hexanowObjectives_ToString())
 end
 
 --[[
@@ -348,14 +662,21 @@ end
 
 -- 读取mod数据
 function LoadHexanowModData()
+	--Isaac.SaveModData(hexanowMod, "someThingWrong\nsomeThingWrong")
 	local str = ""
 	if Isaac.HasModData(hexanowMod) then
 		str = Isaac.LoadModData(hexanowMod)
+	--	if str == nil then
+	--		print("Null readout!")
+	--	else
+	--		print("Load Readout:\n"..str)
+	--	end
+	--else
+	--	print("Data does not exist")
 	end
 	hexanowObjectives_Wipe()
 	hexanowObjectives_LoadFromString(str)
 	hexanowObjectives_Apply()
-	-- print("Load Readout: ", str)
 end
 
 -- 存储mod数据
@@ -372,6 +693,7 @@ function hexanowMod:PostGameStarted(loadedFromSaves)
 		LoadHexanowModData()
 		WipeTempVar()
 		SaveHexanowModData()
+		CallForEveryPlayer(InitPlayerHexanowTainted)
 		CallForEveryPlayer(InitPlayerHexanow)
 	else -- 仅限从存档中读取
 		WipeTempVar()
@@ -382,6 +704,9 @@ hexanowMod:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, hexanowMod.PostGameSta
 
 -- 在游戏退出前运行
 function hexanowMod:PreGameExit(shouldSave)
+	if not shouldSave then
+		WipeTempVar()
+	end
 	SaveHexanowModData()
 	WipeTempVar()
 end
@@ -403,15 +728,24 @@ function UpdateCostumes(player)
 	if player:GetPlayerType() == playerTypeHexanow then
 		player:ClearCostumes()
 		player:RemoveSkinCostume()
-		player:TryRemoveNullCostume(hexanowHairCostume)
+		
+		--player:TryRemoveCollectibleCostume(CollectibleType.COLLECTIBLE_ANALOG_STICK, false)
+		--player:TryRemoveCollectibleCostume(CollectibleType.COLLECTIBLE_URANUS, false)
+		--player:TryRemoveCollectibleCostume(CollectibleType.COLLECTIBLE_NEPTUNUS, false)
+		--player:TryRemoveNullCostume(hexanowHairCostume)
+		--player:TryRemoveNullCostume(hexanowFateCostume)
+		--player:TryRemoveNullCostume(hexanowBodyCostume)
+		
 		player:AddNullCostume(hexanowHairCostume)
 		
-		player:TryRemoveNullCostume(hexanowFateCostume)
 		if player.CanFly then
 			player:AddNullCostume(hexanowFateCostume)
+		else
+			--player:AddNullCostume(hexanowBodyCostume)
 		end
 	else
 		player:TryRemoveNullCostume(hexanowHairCostume)
+		player:TryRemoveNullCostume(hexanowBodyCostume)
 		player:TryRemoveNullCostume(hexanowFateCostume)
 	end
 end
@@ -463,7 +797,7 @@ function EnsureFamiliars(player)
 	-- end
 end
 
--- 将魂心处理为黑心，放置于骨心后
+-- 移除红心外的所有心
 function RearrangeHearts(player)
 	local soulHearts = player:GetSoulHearts()
 	local blackHeartsByte = player:GetBlackHearts()
@@ -503,6 +837,8 @@ function RearrangeHearts(player)
 	player:AddGoldenHearts(countGold)
 	
 	return nil ----------------------------------------------------------------
+-- 弃用
+-- 将魂心处理为黑心，放置于骨心后
 --[[
 	
 	local boneMisArrangeState = 0
@@ -538,6 +874,96 @@ function RearrangeHearts(player)
 	
 end
 
+function TaintedHexanowRoomOverride()
+	if not Tainted then
+		return nil
+	end
+	
+	local game = Game()
+	local level = game:GetLevel()
+	local room = game:GetRoom()
+	local roomEntities = Isaac.GetRoomEntities()
+	
+	if Game().Difficulty ~= Difficulty.DIFFICULTY_GREED 
+	and Game().Difficulty ~= Difficulty.DIFFICULTY_GREEDIER
+	then
+		for i,entity in ipairs(roomEntities) do
+			
+			local pickup = entity:ToPickup()
+			if pickup ~= nil then
+				if pickup.Variant == PickupVariant.PICKUP_COLLECTIBLE and pickup.SubType ~= 0 then
+					if room:GetBackdropType() == 51 and pickup.SubType ~= CollectibleType.COLLECTIBLE_RED_KEY then
+						pickup:Morph(pickup.Type, pickup.Variant, CollectibleType.COLLECTIBLE_RED_KEY, true)
+					end
+					
+					if pickup.SubType == CollectibleType.COLLECTIBLE_R_KEY
+					or pickup.SubType == CollectibleType.COLLECTIBLE_SPINDOWN_DICE
+					or pickup.SubType == CollectibleType.COLLECTIBLE_CLICKER
+					then
+						pickup:Morph(pickup.Type, pickup.Variant, CollectibleType.COLLECTIBLE_BREAKFAST, true)
+					end
+				end
+				if room:GetBackdropType() == 49 and 
+					 ( pickup.Variant == PickupVariant.PICKUP_CHEST 	
+					or pickup.Variant == PickupVariant.PICKUP_BOMBCHEST 	
+					or pickup.Variant == PickupVariant.PICKUP_SPIKEDCHEST 	
+					or pickup.Variant == PickupVariant.PICKUP_ETERNALCHEST 	
+					or pickup.Variant == PickupVariant.PICKUP_MIMICCHEST 	
+					or pickup.Variant == PickupVariant.PICKUP_LOCKEDCHEST 
+					)
+				then
+					pickup:Remove()
+				end
+			end
+			
+			if entity.Type == EntityType.ENTITY_SHOPKEEPER then
+				Isaac.Spawn(EntityType.ENTITY_PICKUP, PickupVariant.PICKUP_COLLECTIBLE, CollectibleType.COLLECTIBLE_DEATH_CERTIFICATE, entity.Position, Vector(0,0), entity)
+				entity:Remove()
+			end
+			
+			
+		end
+	end
+	
+end
+
+-- 初始化人物
+function InitPlayerHexanowTainted(player)
+	--print("CALLED!")
+	--print("PType", player:GetPlayerType())
+	--print("TType", playerTypeHexanowTainted)
+	if player:GetPlayerType() == playerTypeHexanowTainted then
+		--print("CALLED ACCEPT!")
+		local level = Game():GetLevel()
+		player:ChangePlayerType(playerTypeHexanow)
+		Tainted = true
+		
+		--player:AddCard(Card.CARD_CRACKED_KEY)
+		--player:AddCollectible(CollectibleType.COLLECTIBLE_DEATH_CERTIFICATE, 0, false)
+		player:AddCoins(99)
+		player:AddBombs(99)
+		player:AddKeys(99)
+		--player:AddEternalHearts(24)
+		EternalCharges = EternalCharges + 99
+		
+		local stageType = level:GetStageType()
+		
+		-- stageType == StageType.STAGETYPE_GREEDMODE
+			--level:SetStage(LevelStage.STAGE7_GREED, stageType)
+			--level:SetNextStage()
+			--level:SetStage(13, stageType)
+			--level:SetNextStage()
+			
+		if Game().Difficulty == Difficulty.DIFFICULTY_GREED 
+		or Game().Difficulty == Difficulty.DIFFICULTY_GREEDIER 
+		then
+			Isaac.ExecuteCommand("stage 6")
+		else
+			Isaac.ExecuteCommand("stage 13")
+		end
+	end
+end
+
 -- 初始化人物
 function InitPlayerHexanow(player)
 	if player:GetPlayerType() == playerTypeHexanow then
@@ -553,12 +979,16 @@ function InitPlayerHexanow(player)
 		-- player:AddGoldenHearts(0)
 		ApplyEternalHearts(player)
 		
-		TickEventHexanow(player)
-		
 		--player:AddHearts(-1)
 		--player:AddCard(Card.CARD_JUSTICE)
-		player:AddCard(Card.CARD_CRACKED_KEY)
-		player:AddTrinket(TrinketType.TRINKET_NO | 32768)
+		--player:AddCard(Card.CARD_CRACKED_KEY)
+		if Tainted then
+			player:AddMaxHearts(12)
+			player:AddHearts(13)
+			player:AddTrinket(TrinketType.TRINKET_PERFECTION | 32768)
+		else
+			player:AddTrinket(TrinketType.TRINKET_NO | 32768)
+		end
 		-- player:AddCard(Card.CARD_SUN)
 		-- player:AddTrinket(TrinketType.TRINKET_BIBLE_TRACT)
 		
@@ -570,16 +1000,40 @@ function InitPlayerHexanow(player)
 		--itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_SOL)
 		itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR)
 		--itemPool:RemoveTrinket(TrinketType.TRINKET_NO)
-		--[[
-		for i=0,14,1 do
+		
+		for i=0, PillColor.NUM_PILLS - 1, 1 do
 			itemPool:IdentifyPill(i)
 		end
-		]]
+		
+		if player:GetActiveItem(ActiveSlot.SLOT_POCKET) ~= hexanowPortalTool -- CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR
+		then
+			--player:SetPocketActiveItem(CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR, ActiveSlot.SLOT_POCKET, false)
+			player:SetPocketActiveItem(hexanowPortalTool, ActiveSlot.SLOT_POCKET, false)
+		end
+		
+		TickEventHexanow(player)
+		UpdateCostumes(player)
 	end
 end
 
 -- 物品谓词
-function HexanowCollectiblePredicate(item)
+function HexanowBlackCollectiblePredicate(ID)
+	local item = Isaac.GetItemConfig():GetCollectible(ID)
+	if item ~= nil and
+		(
+		item.ID == CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR
+		or item.ID == CollectibleType.COLLECTIBLE_MEGA_MUSH
+		)
+	then
+		return true
+	else
+		return false
+	end
+end
+
+-- 物品谓词
+function HexanowWhiteCollectiblePredicate(ID, ignoreEnsured)
+	local item = Isaac.GetItemConfig():GetCollectible(ID)
 	if item ~= nil and
 		(	item:HasTags(ItemConfig.TAG_QUEST)
 		or	item.ID == CollectibleType.COLLECTIBLE_POLAROID
@@ -593,13 +1047,15 @@ function HexanowCollectiblePredicate(item)
 		or	item.ID == CollectibleType.COLLECTIBLE_KNIFE_PIECE_2
 		or	item.ID == CollectibleType.COLLECTIBLE_DADS_NOTE
 		or	item.ID == CollectibleType.COLLECTIBLE_DOGMA
-		or	item.ID == CollectibleType.COLLECTIBLE_RED_KEY
+		or	item.ID == hexanowPortalTool
+		--or	item.ID == CollectibleType.COLLECTIBLE_RED_KEY
 		
-		or	item.ID == CollectibleType.COLLECTIBLE_ANALOG_STICK
+		or (not ignoreEnsured == true and (
+			item.ID == CollectibleType.COLLECTIBLE_ANALOG_STICK
 		or	item.ID == CollectibleType.COLLECTIBLE_URANUS
 		or	item.ID == CollectibleType.COLLECTIBLE_NEPTUNUS
-		or	item.ID == CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR
-			
+		--or	item.ID == CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR
+		))
 		--or	item.ID == CollectibleType.COLLECTIBLE_BIRTHRIGHT
 		
 		--or	(item.Quality >= 4 and item.ItemType ~= ItemType.ITEM_FAMILIAR)
@@ -613,21 +1069,56 @@ function HexanowCollectiblePredicate(item)
 	end
 end
 
--- 永久性确保项目，每一帧执行
+-- 返回物品持有数量上限
+function HexanowCollectibleMaxAllowed(player, ID)
+	local playerID = GetPlayerID(player)
+	local num = 0
+	
+	if HexanowBlackCollectiblePredicate(ID)
+	or ID == 0
+	then
+		return num
+	end
+	
+	if HexanowWhiteCollectiblePredicate(ID, false) then
+		num = num + 1
+	end
+	
+	--[[
+	if WhiteHexanowCollectibleID ~= 0
+	and ID == WhiteHexanowCollectibleID
+	then
+		num = num + 1
+	end
+	]]
+	
+	for i=1,3 do
+		if WhiteItem[playerID][i] == ID then
+			num = num + 1
+		end
+	end
+	
+	return num
+end
+
+-- 玩家刻事件，每一帧执行
 function TickEventHexanow(player)
 	if player:GetPlayerType() == playerTypeHexanow then
 		local game = Game()
 		local level = game:GetLevel()
 		local room = game:GetRoom()
 		local roomEntities = Isaac.GetRoomEntities()
+		local playerID = GetPlayerID(player)
 		
 		if game == nil
 		or level == nil
 		or room == nil
 		or roomEntities == nil
 		then
-			return nil
+			--return nil
 		end
+		
+		player:FlushQueueItem()
 		
 		--[[
 		if not player:IsFlying() and Game():GetRoom():IsClear() and not player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_TRANSCENDENCE) then
@@ -691,8 +1182,8 @@ function TickEventHexanow(player)
 		
 		local VREntityNotTraced = true
 		local VRHolding = false
-		local roomEntities = Isaac.GetRoomEntities()
-				
+		
+		--[[
 		--if player:HasCollectible(CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR, true) then
 		if player:GetActiveItem(ActiveSlot.SLOT_PRIMARY) == CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR
 		or player:GetActiveItem(ActiveSlot.SLOT_SECONDARY) == CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR
@@ -724,6 +1215,7 @@ function TickEventHexanow(player)
 				VRHolding = true
 			end
 		end
+		]]
 		
 		--[[
 		if VRHolding then
@@ -775,15 +1267,15 @@ function TickEventHexanow(player)
 			
 			if player:IsHoldingItem()
 			then
-				onceHoldingItem = true
-			elseif onceHoldingItem then
+				onceHoldingItem[playerID] = true
+			elseif onceHoldingItem[playerID] then
 				UpdateCostumes(player)
-				onceHoldingItem = false
+				onceHoldingItem[playerID] = false
 			end
 			
-			if lastCanFly ~= player.CanFly then
+			if lastCanFly[playerID] ~= player.CanFly then
 				UpdateCostumes(player)
-				lastCanFly = player.CanFly
+				lastCanFly[playerID] = player.CanFly
 			end
 			
 		end
@@ -806,18 +1298,146 @@ function TickEventHexanow(player)
 		
 		-- EnsureFamiliars(player)
 		
+		
+		if Input.IsActionPressed(ButtonAction.ACTION_DROP, player.ControllerIndex)
+		then
+			if WhiteItemSelectPressed[playerID] >= 20 then
+				WhiteItemSelectPressed[playerID] = 0
+			end
+			if WhiteItemSelectPressed[playerID] == 0 then
+				local slot = SelectedWhiteItem[playerID]
+				
+				if slot == 1
+				or slot == 2
+				or slot == 3
+				then
+					slot = slot + 1
+				else
+					slot = 1
+				end
+				
+				SelectedWhiteItem[playerID] = slot
+			end
+			WhiteItemSelectPressed[playerID] = WhiteItemSelectPressed[playerID] + 1
+		else
+			WhiteItemSelectPressed[playerID] = 0
+		end
+		
 		--local tracedItems = player:GetCollectibleCount()
-		local removeCount = -1
-		while removeCount ~= 0 do
-			removeCount = 0
-			for m = 1, CollectibleType.NUM_COLLECTIBLES - 1 do
-				if player:HasCollectible(m, true)
-				and not HexanowCollectiblePredicate(Isaac.GetItemConfig():GetCollectible(m)) then
-					player:RemoveCollectible(m, true)
-					removeCount = removeCount + 1
+		
+		--local missingWhiteCollectible = false
+		--local missingWhiteTrinket = false
+		--local hasWhiteCollectible = false
+		--local hasWhiteTrinket = false
+		
+		local item1 = WhiteItem[playerID][1]
+		local item2 = WhiteItem[playerID][2]
+		local item3 = WhiteItem[playerID][3]
+		
+		local item1Missing = item1 == 0
+		local item2Missing = item2 == 0
+		local item3Missing = item3 == 0
+		
+		if not player:IsHoldingItem() then
+			
+			local item1dem = 1
+			local item2dem = 1
+			local item3dem = 1
+			
+			
+			if item2 == item1 then
+				item2dem = item2dem + 1
+			end
+			if item3 == item1 then
+				item3dem = item3dem + 1
+			end
+			if item3 == item2 then
+				item3dem = item3dem + 1
+			end
+			
+			if not item1Missing and player:GetCollectibleNum(item1, true) < item1dem then
+				item1Missing = true
+				SetWhiteHexanowCollectible(player, 0, 1)
+			end
+			
+			if not item2Missing and  player:GetCollectibleNum(item2, true) < item2dem then
+				item2Missing = true
+				SetWhiteHexanowCollectible(player, 0, 2)
+			end
+			
+			if not item3Missing and  player:GetCollectibleNum(item3, true) < item3dem then
+				item3Missing = true
+				SetWhiteHexanowCollectible(player, 0, 3)
+			end
+			
+			--[[
+			--if WhiteHexanowTrinketID == 0
+			--or not player:HasTrinket(WhiteHexanowTrinketID, true) then
+			--	missingWhiteTrinket = true
+			--end
+			
+			--if WhiteHexanowCollectibleID == 0
+			--or not player:HasCollectible(WhiteHexanowCollectibleID, true)
+			--then
+				--missingWhiteCollectible = true
+			--end
+			
+			--if player:HasCollectible(WhiteHexanowCollectibleID, true) then
+				--missingWhiteTrinket = false
+				--hasWhiteTrinket = true
+			--end
+			--if player:HasTrinket(WhiteHexanowTrinketID, true) then
+			--	missingWhiteCollectible = false
+			--	hasWhiteCollectible = true
+			--end
+			]]
+		end
+		
+		local removedSomething = true
+		while removedSomething do
+			removedSomething = false
+			for ID = CollectibleType.NUM_COLLECTIBLES - 1, 1, -1 do
+				
+				local item = Isaac.GetItemConfig():GetCollectible(ID)
+				local ownNum = player:GetCollectibleNum(ID, true)
+				local maxNum = HexanowCollectibleMaxAllowed(player, ID)
+				local exceededNum = math.max(0, ownNum - maxNum)
+				
+				
+				--if not HexanowBlackCollectiblePredicate(ID) and exceededNum >= 1 and missingWhiteCollectible then
+				--	SetWhiteHexanowCollectible(player, ID)
+				--	exceededNum = exceededNum - 1
+				--	--print("MISSING WHITE COLLECTIBLE FIX")
+				--end
+					
+				--print("MISSING WHITE COLLECTIBLE FIX")
+				
+				if not HexanowBlackCollectiblePredicate(ID) then
+					if item1Missing and exceededNum >= 1 then
+						SetWhiteHexanowCollectible(player, ID, 1)
+						exceededNum = exceededNum - 1
+					end
+					if item2Missing and exceededNum >= 1 then
+						SetWhiteHexanowCollectible(player, ID, 2)
+						exceededNum = exceededNum - 1
+					end
+					if item3Missing and exceededNum >= 1 then
+						SetWhiteHexanowCollectible(player, ID, 3)
+						exceededNum = exceededNum - 1
+					end
+				end
+				
+				if exceededNum > 0 then
+					removedSomething = true
+					for i = 1, exceededNum do
+						player:RemoveCollectible(ID, true)
+						EternalCharges = EternalCharges + item.Quality * 2 + 1
+					end
 				end
 			end
 		end
+		
+		--player.ItemHoldCooldown = 0
 	end
 end
 
@@ -836,6 +1456,14 @@ function hexanowMod:ExecuteCmd(cmd, params)
 		if tonumber(params) ~= nil then
 			EternalCharges = tonumber(params)
 			Isaac.ConsoleOutput("Eternal charges updated.")
+		else
+			Isaac.ConsoleOutput("Invalid args")
+		end
+	end
+	if cmd == "sel" then
+		if tonumber(params) ~= nil then
+			SelectedWhiteItem[1] = tonumber(params)
+			Isaac.ConsoleOutput("Sel updated.")
 		else
 			Isaac.ConsoleOutput("Invalid args")
 		end
@@ -859,6 +1487,14 @@ function hexanowMod:ExecuteCmd(cmd, params)
 		else
 			Isaac.ConsoleOutput("Invalid args")
 		end
+	end
+	if cmd == "ffsp" then
+		SuperPower = not SuperPower
+		CallForEveryPlayer(
+			function(player)
+				player:RemoveCollectible(hexanowStatTriggerItem)
+			end
+		)
 	end
 	if cmd == "t2td" then
 		local pnum = tonumber(params)
@@ -901,7 +1537,7 @@ function hexanowMod:ExecuteCmd(cmd, params)
 		local roomEntities = Isaac.GetRoomEntities()
 		
 		for i,entity in ipairs(roomEntities) do
-			print(entity.Type,".",entity.Variant,".",entity.SubType,"(", entity.Position.X, ",", entity.Position.Y, ")")
+			print(tostring(entity.Type).."."..tostring(entity.Variant).."."..tostring(entity.SubType).." "..tostring(entity.Index).." ("..tostring(entity.Position.X)..", "..tostring(entity.Position.Y)..")")
 		end
 	end
 	if cmd == "reportentityne" then
@@ -909,7 +1545,7 @@ function hexanowMod:ExecuteCmd(cmd, params)
 				
 		for i,entity in ipairs(roomEntities) do
 			if entity.Type ~= 1000 then
-				print(entity.Type,".",entity.Variant,".",entity.SubType,"(", entity.Position.X, ",", entity.Position.Y, ")")
+				print(tostring(entity.Type).."."..tostring(entity.Variant).."."..tostring(entity.SubType).." "..tostring(entity.Index).." ("..tostring(entity.Position.X)..", "..tostring(entity.Position.Y)..")")
 			end
 		end
 	end
@@ -922,12 +1558,71 @@ function hexanowMod:PostPlayerInit(player)
 end
 hexanowMod:AddCallback(ModCallbacks.MC_POST_PLAYER_INIT, hexanowMod.PostPlayerInit)
 
+-- 使用传送门工具的效果
+function hexanowMod:UsePortalTool(itemId, itemRng, player, useFlags, activeSlot, customVarData)
+	local result = {
+		Discharge = true,
+		Remove = false,
+		ShowAnim = false,
+	}
+	player:UseActiveItem(CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR, false, false, true, false)
+	
+	return result
+end
+hexanowMod:AddCallback(ModCallbacks.MC_USE_ITEM, hexanowMod.UsePortalTool, hexanowPortalTool)
+
+-- 时间回溯
+function hexanowMod:UsePortalTool(itemId, itemRng, player, useFlags, activeSlot, customVarData)
+	if itemId == CollectibleType.COLLECTIBLE_GLOWING_HOUR_GLASS
+	--and player:GetPlayerType() == playerTypeHexanow
+	then
+		RewindLastRoomVar()
+		UpdateLastRoomVar()
+	end
+end
+hexanowMod:AddCallback(ModCallbacks.MC_USE_ITEM, hexanowMod.UsePortalTool)
+
+--[[
+-- 按键事件
+function hexanowMod:InputAction(entity, inputHook, buttonAction)
+	if entity ~= nil then
+		local player = entity:ToPlayer()
+		if player ~= nil
+		and player:GetPlayerType() == playerTypeHexanow
+		then
+			local playerID = GetPlayerID(player)
+			
+			if buttonAction == ButtonAction.ACTION_DROP
+			and inputHook == InputHook.IS_ACTION_PRESSED
+			then
+				local slot = SelectedWhiteItem[playerID]
+				
+				if slot == 1
+				or slot == 2
+				or slot == 3
+				then
+					slot = slot + 1
+				else
+					slot = 1
+				end
+				
+				SelectedWhiteItem[playerID] = slot
+			end
+			
+		end
+	end
+end
+hexanowMod:AddCallback(ModCallbacks.MC_INPUT_ACTION, hexanowMod.InputAction, InputHook.IS_ACTION_PRESSED)
+]]
+
 -- 在玩家进入新楼层后运行
 function hexanowMod:PostNewLevel()
 	CallForEveryPlayer(
 		function(player)
 			if player:GetPlayerType() == playerTypeHexanow then
-				player:UseActiveItem(CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR, false, true, true, false)
+				if Game():GetLevel():GetStage() ~= 13 then
+					player:UseActiveItem(CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR, false, false, true, false)
+				end
 			end
 		end
 	)
@@ -936,6 +1631,9 @@ hexanowMod:AddCallback(ModCallbacks.MC_POST_NEW_LEVEL, hexanowMod.PostNewLevel)
 
 -- 在玩家进入新房间后运行
 function hexanowMod:PostNewRoom()
+	TaintedHexanowRoomOverride()
+	UpdateLastRoomVar()
+	
 	if Game():GetRoom():GetAliveEnemiesCount() <= 0 then
 		EternalChargeForFree = true
 	else
@@ -1004,11 +1702,13 @@ function hexanowMod:PreSpawnCleanAward(Rng, SpawnPos)
 end
 hexanowMod:AddCallback(ModCallbacks.MC_PRE_SPAWN_CLEAN_AWARD, hexanowMod.PreSpawnCleanAward)
 
--- 在玩家得到物品后运行
+--[[
+-- 在生成物品后运行
 function hexanowMod:PostGetCollectible(SelectedCollectible, PoolType, Decrease, Seed)
 	CallForEveryPlayer(
 		function(player)
 			if player:GetPlayerType() == playerTypeHexanow then
+				SetWhiteHexanowCollectible(player, SelectedCollectible)
 				UpdateCostumes(player)
 			end
 		end
@@ -1016,17 +1716,19 @@ function hexanowMod:PostGetCollectible(SelectedCollectible, PoolType, Decrease, 
 end
 hexanowMod:AddCallback(ModCallbacks.MC_POST_GET_COLLECTIBLE, hexanowMod.PostGetCollectible)
 
--- 在玩家得到饰品后运行
+-- 在生成饰品后运行
 function hexanowMod:GetTrinket(SelectedTrinket, TrinketRNG)
 	CallForEveryPlayer(
 		function(player)
 			if player:GetPlayerType() == playerTypeHexanow then
+				WhiteHexanowTrinket(SelectedTrinket)
 				UpdateCostumes(player)
 			end
 		end
 	)
 end
 hexanowMod:AddCallback(ModCallbacks.MC_GET_TRINKET, hexanowMod.GetTrinket)
+]]
 
 -- 在玩家受伤时运行
 function hexanowMod:EntityTakeDmg(TookDamage, DamageAmount, DamageFlag, DamageSource, DamageCountdownFrames)
@@ -1119,19 +1821,42 @@ function hexanowMod:PrePickupCollision(pickup, collider, low)
 	if player ~= nil
 	and player:GetPlayerType() == playerTypeHexanow
 	then
+		if pickup.Variant == PickupVariant.PICKUP_COLLECTIBLE then
+			if pickup.SubType == CollectibleType.COLLECTIBLE_DEATH_CERTIFICATE
+			and not pickup:IsShopItem()
+			then
+				player:UseActiveItem(CollectibleType.COLLECTIBLE_DEATH_CERTIFICATE,false,false,true,false, -1)
+				--player:RemoveCollectible(WhiteHexanowCollectibleID, true)
+				--SetWhiteHexanowCollectible(player, 0)
+				pickup:Remove()
+				return false
+			end
+		end
 	
 		if pickup.Variant == PickupVariant.PICKUP_HEART then
 			if pickup.SubType == HeartSubType.HEART_ETERNAL
 			and player:GetMaxHearts() >= 24 
 			and player:GetHearts() < player:GetMaxHearts()
 			and player:GetEternalHearts() >= 1 then
+				if pickup:IsShopItem() then
+					if player:GetNumCoins() >= pickup.Price then
+						player:AddCoins(-pickup.Price)
+					else
+						return true
+					end
+				end
 				--SFXManager():Play(SoundEffect.SOUND_SUPERHOLY, 1, 0, false, 1 )
 				pickup:GetSprite():Play("Collect", true)
 				player:AddEternalHearts(2)
 				pickup:PlayPickupSound()
 				--print("DESTROYING")
 				player:AddHearts(player:GetMaxHearts())
-				pickup:Remove()
+				--if pickup:IsShopItem() then
+				--	--pickup:Morph(pickup.Type, pickup.Variant, 0, true)
+				--	pickup.SubType = 0
+				--else
+					pickup:Remove()
+				--end
 				return false
 			elseif
 				pickup.SubType == HeartSubType.HEART_HALF_SOUL
@@ -1141,6 +1866,15 @@ function hexanowMod:PrePickupCollision(pickup, collider, low)
 			or	pickup.SubType == HeartSubType.HEART_BLACK
 			or	pickup.SubType == HeartSubType.HEART_BLENDED
 			then
+				
+				if pickup:IsShopItem() then
+					if player:GetNumCoins() >= pickup.Price then
+						player:AddCoins(-pickup.Price)
+					else
+						return true
+					end
+				end
+				
 				local score = 2
 				if pickup.SubType == HeartSubType.HEART_HALF_SOUL then
 					score = 1
@@ -1157,77 +1891,116 @@ function hexanowMod:PrePickupCollision(pickup, collider, low)
 						score = 2
 					end
 				end
-				pickup:PlayPickupSound()
+				
+				if pickup.SubType == HeartSubType.HEART_BLENDED then
+					SFXManager():Play(SoundEffect.SOUND_HOLY, 1, 0, false, 1 )
+				else
+					pickup:PlayPickupSound()
+				end
 				EternalCharges = EternalCharges + score
 				pickup:GetSprite():Play("Collect", true)
 				pickup:Remove()
 				return false
 			end
 		end
-	
+		
+		if pickup.SubType ~= 0
+		and player:CanPickupItem()
+		and not player:IsHoldingItem()
+		and (pickup:IsShopItem() or player:GetNumCoins() >= pickup.Price) then
+			if pickup.Variant == PickupVariant.PICKUP_COLLECTIBLE then
+				PickupWhiteHexanowCollectible(player, pickup.SubType)
+				return nil
+			end
+			--if pickup.Variant == PickupVariant.PICKUP_TRINKET then
+			--	WhiteHexanowTrinket(pickup.SubType)
+			--	return nil
+			--end
+		end
+		
+		
+		--[[
 		if pickup.Variant == PickupVariant.PICKUP_COLLECTIBLE then
 			local item = Isaac.GetItemConfig():GetCollectible(pickup.SubType)
 			
-			if pickup.SubType == 0 or not HexanowCollectiblePredicate(item)
-			then
-				if pickup:IsShopItem() then
-					return true
-				else
-					if item ~= nil then
-						local baseScore = item.Quality * 2
+			if pickup.SubType == 0 or not HexanowWhiteCollectiblePredicate(item, true)
+			then				
+				if item ~= nil then
+					local baseScore = item.Quality * 2
+					
+					if baseScore > 0 then
 						
-						if baseScore > 0 then
-							local score = baseScore
+						if pickup:IsShopItem() then
+							if player:GetNumCoins() >= pickup.Price then
+								player:AddCoins(-pickup.Price)
+							else
+								return true
+							end
+						end
 						
-							local deltaMH = player:GetMaxHearts()
-							player:AddMaxHearts(baseScore)
-							deltaMH = (player:GetMaxHearts() - deltaMH)/2
-							score = score - deltaMH
-							
-							local deltaH = player:GetHearts()
-							player:AddHearts(baseScore * 2 - deltaMH * 2)
-							deltaH = (player:GetHearts() - deltaH)/2
-							score = score - deltaH
-							
-							EternalCharges = EternalCharges + math.max(0, math.floor(score))
-							SFXManager():Play(SoundEffect.SOUND_HOLY, 1, 0, false, 1 )
-							pickup:Remove()
-							return false
+						local score = baseScore
+					
+						local deltaMH = player:GetMaxHearts()
+						player:AddMaxHearts(baseScore)
+						deltaMH = (player:GetMaxHearts() - deltaMH)/2
+						score = score - deltaMH
+						
+						local deltaH = player:GetHearts()
+						player:AddHearts(baseScore * 2 - deltaMH * 2)
+						deltaH = (player:GetHearts() - deltaH)/2
+						score = score - deltaH
+						
+						EternalCharges = EternalCharges + math.max(0, math.floor(score))
+						SFXManager():Play(SoundEffect.SOUND_HOLY, 1, 0, false, 1 )
+						pickup:Remove()
+						return false
+					else
+						if pickup:IsShopItem() then
+							return true
 						else
 							return false
 						end
-					elseif pickup.SubType == 0 then
-						pickup:Remove()
-						return false
 					end
+				elseif pickup.SubType == 0 then
+					pickup:Remove()
+					return false
+				end
 					
 					--pickup:Morph(EntityType.ENTITY_PICKUP, PickupVariant.PICKUP_COLLECTIBLE, 0, true)
 					--pickup.SubType = 0
-				end
 			end
 		end
-	
+		]]
+		
+		--[[
 		if pickup.Variant == PickupVariant.PICKUP_PILL
-		or (pickup.Variant == PickupVariant.PICKUP_TRINKET
-			and pickup.SubType ~= TrinketType.TRINKET_NO
-			and pickup.SubType ~= TrinketType.TRINKET_NO | 32768
-			and pickup.SubType ~= TrinketType.TRINKET_PERFECTION
-			and pickup.SubType ~= TrinketType.TRINKET_PERFECTION | 32768
-			)
-		or pickup.Variant == PickupVariant.PICKUP_LIL_BATTERY
-		or (pickup.Variant == PickupVariant.PICKUP_TAROTCARD
+		--or (pickup.Variant == PickupVariant.PICKUP_TRINKET
+		--	and pickup.SubType ~= TrinketType.TRINKET_NO
+		--	and pickup.SubType ~= TrinketType.TRINKET_NO | 32768
+		--	and pickup.SubType ~= TrinketType.TRINKET_PERFECTION
+		--	and pickup.SubType ~= TrinketType.TRINKET_PERFECTION | 32768
+		--	)
+		--or pickup.Variant == PickupVariant.PICKUP_LIL_BATTERY
+		or ( pickup.Variant == PickupVariant.PICKUP_TAROTCARD
 			and pickup.SubType ~= Card.CARD_CRACKED_KEY
 			)
 		then
 			if pickup:IsShopItem() then
-				return true
-			else
-				EternalCharges = EternalCharges + 1
-				SFXManager():Play(SoundEffect.SOUND_HOLY, 1, 0, false, 1 )
-				pickup:Remove()
-				return false
+				if player:GetNumCoins() >= pickup.Price then
+					player:AddCoins(-pickup.Price)
+				else
+					return true
+				end
 			end
+			EternalCharges = EternalCharges + 1
+			SFXManager():Play(SoundEffect.SOUND_HOLY, 1, 0, false, 1 )
+			
+			
+			pickup:Remove()
+			
+			return false
 		end
+		]]
 		
 		
 		return nil
@@ -1278,6 +2051,7 @@ function hexanowMod:EvaluateCache(player, cacheFlag, tear)
 			end
 			 UpdateCostumes(player)
 		elseif cacheFlag == CacheFlag.CACHE_FAMILIARS then
+			--[[
 			local maybeFamiliars = Isaac.GetRoomEntities()
 			for m = 1, #maybeFamiliars do
 				local variant = maybeFamiliars[m].Variant
@@ -1286,14 +2060,21 @@ function hexanowMod:EvaluateCache(player, cacheFlag, tear)
 					player:AddNullCostume(hexanowHairCostume)
 				else
 					player:TryRemoveNullCostume(hexanowHairCostume)
+					player:AddNullCostume(hexanowHairCostume)
 				end
 			end
+			]]
 			
 			EnsureFamiliars(player)
+			UpdateCostumes(player)
 		elseif cacheFlag == CacheFlag.CACHE_TEARCOLOR then
 			player.TearColor = Color(1, 1, 1, 1, 0, 0, 0)
 		end
 		
+	end
+	
+	if SuperPower and cacheFlag == CacheFlag.CACHE_DAMAGE then
+		player.Damage = player.Damage * 20
 	end
 end
 hexanowMod:AddCallback(ModCallbacks.MC_EVALUATE_CACHE, hexanowMod.EvaluateCache)
@@ -1305,6 +2086,14 @@ function hexanowMod:PostUpdate()
 	local room = game:GetRoom()
 	local roomEntities = Isaac.GetRoomEntities()
 	
+	TaintedHexanowRoomOverride()
+	
+	--[[
+	if level:GetStage() == 13 and not EternalChargeSuppressed then
+		EternalChargeSuppressed = true
+		print("Suppressed!")
+	end
+	]]
 	CallForEveryPlayer(
 		function(player)
 			if player:GetPlayerType() == playerTypeHexanow then		
@@ -1345,6 +2134,11 @@ function hexanowMod:PostUpdate()
 					local wombPortalFound = false
 					local voidPortalFound = false
 					
+					local posX = math.floor((entity.Position.X + 20)/40.0)*40
+					local posY = math.floor((entity.Position.Y + 20)/40.0)*40
+					entity.Position = Vector(posX, posY)
+					entity.Velocity = Vector(0, 0)
+					
 					
 					CallForEveryEntity(
 						function(entity2)
@@ -1358,11 +2152,16 @@ function hexanowMod:PostUpdate()
 								end
 								
 								if entity2.Type == entityTypeHexanowPortal
+								and (entity2.Variant == 0 or entity2.Variant == 1)
+								and entity2.SubType ~= 1
 								then
 									portalFound = true
 								end
 								
-								if entity2.Type == 306
+								--if entity2.Type == 306
+								if entity2.Type == entityTypeHexanowPortal
+								and entity2.Variant == 2
+								and entity2.SubType ~= 1
 								then
 									voidPortalFound = true
 								end
@@ -1372,7 +2171,7 @@ function hexanowMod:PostUpdate()
 					
 					if wombPortalFound then
 						if not voidPortalFound then
-							Isaac.Spawn(306, 0, 0, entity.Position, Vector(0,0), entity)
+							Isaac.Spawn(entityTypeHexanowPortal, 2, 0, entity.Position, Vector(0,0), entity)
 						end
 					else
 						if not portalFound then
@@ -1390,9 +2189,16 @@ function hexanowMod:PostUpdate()
 	CallForEveryEntity(
 		function(entity)
 			if entity.Type == entityTypeHexanowPortal then
+				local posX = math.floor((entity.Position.X + 20)/40.0)*40
+				local posY = math.floor((entity.Position.Y + 20)/40.0)*40
+				entity.Position = Vector(posX, posY)
+				entity.Velocity = Vector(0, 0)
+				
 				if entity.Variant ~= 0
 				and entity.Variant ~= 1
+				and entity.Variant ~= 2
 				then
+					--entity.Variant = 2
 					entity:Remove()
 				end
 				
@@ -1416,8 +2222,33 @@ function hexanowMod:PostUpdate()
 					)
 				end
 				
-				if wombTeleportFound ~= 1 then
+				if wombTeleportFound ~= 1 and entity.Variant ~= 2 then
 					entity.SubType = 1
+				end
+				if wombTeleportFound < 2 and entity.Variant == 2 then
+					entity.SubType = 1
+				end
+				
+				if entity.Variant == 2 then
+					if entity.FrameCount%6 == 0 then
+						sprite:ReplaceSpritesheet(0,"gfx/effects/HexanowPortalBlue.png")
+						sprite:ReplaceSpritesheet(1,"gfx/effects/HexanowPortalBlue.png")
+						sprite:ReplaceSpritesheet(2,"gfx/effects/HexanowPortalBlue.png")
+						sprite:ReplaceSpritesheet(3,"gfx/effects/HexanowPortalBlue.png")
+						sprite:ReplaceSpritesheet(4,"gfx/effects/HexanowPortalOrange.png")
+						sprite:ReplaceSpritesheet(5,"gfx/effects/HexanowPortalOrange.png")
+						sprite:ReplaceSpritesheet(6,"gfx/effects/HexanowPortalOrange.png")
+						sprite:LoadGraphics()
+					elseif entity.FrameCount%6 == 3 then
+						sprite:ReplaceSpritesheet(0,"gfx/effects/HexanowPortalOrange.png")
+						sprite:ReplaceSpritesheet(1,"gfx/effects/HexanowPortalOrange.png")
+						sprite:ReplaceSpritesheet(2,"gfx/effects/HexanowPortalOrange.png")
+						sprite:ReplaceSpritesheet(3,"gfx/effects/HexanowPortalOrange.png")
+						sprite:ReplaceSpritesheet(4,"gfx/effects/HexanowPortalBlue.png")
+						sprite:ReplaceSpritesheet(5,"gfx/effects/HexanowPortalBlue.png")
+						sprite:ReplaceSpritesheet(6,"gfx/effects/HexanowPortalBlue.png")
+						sprite:LoadGraphics()
+					end
 				end
 				
 				if entity.SubType == 1 then
@@ -1642,7 +2473,24 @@ function hexanowMod:PostUpdate()
 		end
 	end
 	]]
-	
+	--[[
+	CallForEveryEntity(
+		function(entity)
+			local tear = entity:ToTear()
+			if tear ~= nil then
+				if tear.Parent ~= nil
+				and tear.Parent.Type == EntityType.ENTITY_PLAYER then
+					local player = tear.Parent:ToPlayer()
+					if player:GetPlayerType() == playerTypeHexanow
+					then
+						--tear.Visible = false
+						--Isaac.Spawn(1000, 59, 0, tear.Position, Vector(0, 0), player)
+					end
+				end
+			end
+		end
+	)
+	]]
 	--SaveHexanowModData()
 end
 hexanowMod:AddCallback(ModCallbacks.MC_POST_UPDATE, hexanowMod.PostUpdate)
@@ -1650,16 +2498,21 @@ hexanowMod:AddCallback(ModCallbacks.MC_POST_UPDATE, hexanowMod.PostUpdate)
 -- 渲染器，每一帧执行
 function hexanowMod:PostRender()
 	local baseOffset = Vector(3,71)
-	local offsetMod = Vector(2 * HUDoffset, 1.2 * HUDoffset)
+	local offsetModSel = Vector(2 * HUDoffset, 1.2 * HUDoffset)
+	local offsetModStat = Vector(2 * HUDoffset, 1.2 * HUDoffset)
 	
 	if PlayerTypeExistInGame(playerTypeHexanow) then
 		
 		local bet1 = PlayerTypeExistInGame(PlayerType.PLAYER_BETHANY)
 		local bet2 = PlayerTypeExistInGame(36)
 		if bet1 and bet2 then
-			offsetMod = offsetMod + Vector(0, 19)
+			offsetModStat = offsetModStat + Vector(0, 19)
 		elseif bet1 or bet2 then
-			offsetMod = offsetMod + Vector(0, 8)
+			offsetModStat = offsetModStat + Vector(0, 8)
+		end
+		
+		if PlayerTypeExistInGame(Isaac.GetPlayerTypeByName("Lairub")) then
+			offsetModSel = offsetModStat + Vector(0, 35)
 		end
 		
 		if EternalChargeForFree then
@@ -1668,8 +2521,18 @@ function hexanowMod:PostRender()
 			EternalChargeSprite:SetFrame("Base", 0)
 		end
 		--EternalChargeSprite:SetOverlayRenderPriority(true)
-		EternalChargeSprite:Render(baseOffset + offsetMod, Vector(0,0), Vector(0,0))
-		DrawSimNumbers(EternalCharges, baseOffset + Vector(12, 1) + offsetMod, true)
+		EternalChargeSprite:Render(baseOffset + offsetModStat, Vector(0,0), Vector(0,0))
+		DrawSimNumbers(EternalCharges, baseOffset + Vector(12, 1) + offsetModStat)
+		
+		local sortNum = 0
+		CallForEveryPlayer(
+			function(player)
+				if player:GetPlayerType() == playerTypeHexanow then
+					SelManageRander(baseOffset + Vector(42, -36) + offsetModSel, GetPlayerID(player), sortNum)
+					sortNum = sortNum + 1
+				end
+			end
+		)
 		
 		--Isaac.RenderScaledText("00", 35, 85, 1, 1, 255, 255, 255, 255)--tostring(00)
 		--DrawSimNumberSingle(7, Vector(35, 84), true)
@@ -1770,6 +2633,88 @@ function DrawSimNumberSingle(num, pos, bg)
 	else
 		return 6
 	end
+end
+
+-- 渲染物品选单
+function SelManageRander(pos, playerID, sortNum)
+	-- local playerID = 1
+	local FrameAnm = "Frame"
+	if sortNum >= 1 then
+		FrameAnm = "Frame2"
+	end
+	pos = pos + Vector(sortNum*35/2, 0)
+	
+	local frame1 = Sprite()
+	local frame2 = Sprite()
+	local frame3 = Sprite()
+	local frame4 = Sprite()
+	local arraw = Sprite()
+	local item1 = Sprite()
+	local item2 = Sprite()
+	local item3 = Sprite()
+	
+	frame1:Load("gfx/ui/HexanowInventory.anm2", true)
+	frame2:Load("gfx/ui/HexanowInventory.anm2", true)
+	frame3:Load("gfx/ui/HexanowInventory.anm2", true)
+	frame4:Load("gfx/ui/HexanowInventory.anm2", true)
+	arraw:Load("gfx/ui/HexanowInventory.anm2", true)
+	item1:Load("gfx/ui/HexanowInventoryItem.anm2", true)
+	item2:Load("gfx/ui/HexanowInventoryItem.anm2", true)
+	item3:Load("gfx/ui/HexanowInventoryItem.anm2", true)
+	
+	if WhiteItem[playerID][1] ~= nil then
+	local item = Isaac.GetItemConfig():GetCollectible(WhiteItem[playerID][1])
+		if item ~= nil then
+			item1:ReplaceSpritesheet(0,item.GfxFileName)
+			item1:LoadGraphics()
+		end
+	end
+	if WhiteItem[playerID][2] ~= nil then
+	local item = Isaac.GetItemConfig():GetCollectible(WhiteItem[playerID][2])
+		if item ~= nil then
+			item2:ReplaceSpritesheet(0,item.GfxFileName)
+			item2:LoadGraphics()
+		end
+	end
+	if WhiteItem[playerID][3] ~= nil then
+	local item = Isaac.GetItemConfig():GetCollectible(WhiteItem[playerID][3])
+		if item ~= nil then
+			item3:ReplaceSpritesheet(0,item.GfxFileName)
+			item3:LoadGraphics()
+		end
+	end
+	
+	--item3:ReplaceSpritesheet(0,"gfx/items/collectibles/".."Collectibles_118_Brimstone.png")
+	
+	frame1:SetFrame(FrameAnm, 0)
+	frame2:SetFrame(FrameAnm, 1)
+	frame3:SetFrame(FrameAnm, 1)
+	frame4:SetFrame(FrameAnm, 2)
+	item1:SetFrame("Base", 0)
+	item2:SetFrame("Base", 0)
+	item3:SetFrame("Base", 0)
+	
+	if SelectedWhiteItem[playerID] == 1 then
+		arraw:SetFrame("Select", 0)
+	elseif SelectedWhiteItem[playerID] == 2 then
+		arraw:SetFrame("Select", 1)
+	elseif SelectedWhiteItem[playerID] == 3 then
+		arraw:SetFrame("Select", 2)
+	else
+		arraw:SetFrame("Select", 3)
+	end
+	
+	frame1:Render(pos + Vector(0,0/2), Vector(0,0), Vector(0,0))
+	frame2:Render(pos + Vector(0,35/2), Vector(0,0), Vector(0,0))
+	frame3:Render(pos + Vector(0,70/2), Vector(0,0), Vector(0,0))
+	frame4:Render(pos + Vector(0,105/2), Vector(0,0), Vector(0,0))
+	
+	item1:Render(pos + Vector(0,0/2), Vector(0,0), Vector(0,0))
+	item2:Render(pos + Vector(0,35/2), Vector(0,0), Vector(0,0))
+	item3:Render(pos + Vector(0,70/2), Vector(0,0), Vector(0,0))
+	
+	arraw:Render(pos + Vector(0,0/2), Vector(0,0), Vector(0,0))
+	
 end
 
 -- 初始化随从

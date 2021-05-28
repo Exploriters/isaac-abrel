@@ -41,96 +41,127 @@ local TCAnimateSadTwice = true
 --== Update Tainted Phobebia's Cache==--
 local PhobebiaStatUpdateItem = Isaac.GetItemIdByName( "Phobebia Stat Trigger" )
 
+-- 为每个玩家执行目标函数
+function CallForEveryPlayer(func)
+	local numPlayers = Game():GetNumPlayers()
+	for i=0,numPlayers-1,1 do
+		func(Isaac.GetPlayer(i))
+	end
+end
+
+-- 为每个实体执行目标函数
+function CallForEveryEntity(func)
+	local roomEntities = Isaac.GetRoomEntities()
+	for i,entity in ipairs(roomEntities) do
+		func(entity)
+	end
+end
+
+-- 检测游戏中是否存在指定的玩家类型
+function PlayerTypeExistInGame(playerType)
+	local numPlayers = Game():GetNumPlayers()
+	for i=0,numPlayers-1,1 do
+		if Isaac.GetPlayer(i):GetPlayerType() == playerType then
+			return true
+		end
+	end
+	return false
+end
+
 function UpdateCache(player)
-	player:AddCacheFlags(CacheFlag.CACHE_DAMAGE)
+	-- MALFUNCTION
+	-- player:AddCacheFlags(CacheFlag.CACHE_DAMAGE)
 end
 
 function phobebia:Update()
 	local game = Game()
 	local level = game:GetLevel()
-	local player = Isaac.GetPlayer(0)
 	local room = game:GetRoom()
 	
-	--==For Phobebia==--
-	if room:GetFrameCount() == 1 and player:GetPlayerType() == playerType_Phobebia and not player:IsDead() then
-		if player:HasCollectible(CollectibleType.COLLECTIBLE_GUILLOTINE) or player:HasCollectible(CollectibleType.COLLECTIBLE_TRANSCENDENCE) then
-			player:TryRemoveNullCostume(costume_Phobebia)
-			player:AddNullCostume(costume_Phobebia)
-			if player:HasCollectible(CollectibleType.COLLECTIBLE_FATE) then
-				player:TryRemoveNullCostume(phobebiaFateCostume)
-				player:AddNullCostume(phobebiaFateCostume)
+	CallForEveryPlayer(
+		function(player)
+			if player:GetPlayerType() == playerType_Phobebia then
+				--==For Phobebia==--
+				if room:GetFrameCount() == 1 and not player:IsDead() then
+					if player:HasCollectible(CollectibleType.COLLECTIBLE_GUILLOTINE) or player:HasCollectible(CollectibleType.COLLECTIBLE_TRANSCENDENCE) then
+						player:TryRemoveNullCostume(costume_Phobebia)
+						player:AddNullCostume(costume_Phobebia)
+						if player:HasCollectible(CollectibleType.COLLECTIBLE_FATE) then
+							player:TryRemoveNullCostume(phobebiaFateCostume)
+							player:AddNullCostume(phobebiaFateCostume)
+						end
+						if player:HasCollectible(CollectibleType.COLLECTIBLE_HABIT) then
+							player:TryRemoveNullCostume(phobebiaHabitCostume)
+							player:AddNullCostume(phobebiaHabitCostume)
+						end
+						if player:HasCollectible(CollectibleType.COLLECTIBLE_ANEMIC) then
+							player:TryRemoveNullCostume(phobebiaAnemicCostume)
+							player:AddNullCostume(phobebiaAnemicCostume)
+						end
+					else
+						player:TryRemoveNullCostume(costume_Phobebia)
+						player:AddNullCostume(costume_Phobebia)
+						if player:HasCollectible(CollectibleType.COLLECTIBLE_FATE) then
+							player:TryRemoveNullCostume(phobebiaFateCostume)
+							player:AddNullCostume(phobebiaFateCostume)
+						end
+						if player:HasCollectible(CollectibleType.COLLECTIBLE_HABIT) then
+							player:TryRemoveNullCostume(phobebiaHabitCostume)
+							player:AddNullCostume(phobebiaHabitCostume)
+						end
+						if player:HasCollectible(CollectibleType.COLLECTIBLE_ANEMIC) then
+							player:TryRemoveNullCostume(phobebiaAnemicCostume)
+							player:AddNullCostume(phobebiaAnemicCostume)
+						end
+					end
+				end
+				
+				--==The Cat's Guide==--
+				if player:HasCollectible(ItemID.TheCatsGuide, true) then
+					if player:IsDead() then
+						player:Revive()
+						player:RemoveCollectible(ItemID.TheCatsGuide)
+						player:AddCollectible(ItemID.TheCatsSoul, 0, true)
+						player:AddCollectible(542, 0, true)
+						player:AddCollectible(542, 0, true)
+					end
+				end
+				
+				--==The Cat's Soul(PhobebiaII)==--
+				if room:GetFrameCount() == 1 and player:HasCollectible(ItemID.TheCatsSoul, true) and not player:IsDead() then
+					if player:HasCollectible(CollectibleType.COLLECTIBLE_GUILLOTINE) or player:HasCollectible(CollectibleType.COLLECTIBLE_TRANSCENDENCE) then
+						player:TryRemoveNullCostume(costume_PhobebiaII)
+						player:AddNullCostume(costume_PhobebiaII)
+						if player:HasCollectible(CollectibleType.COLLECTIBLE_FATE) then
+							player:TryRemoveNullCostume(phobebiaIIFateCostume)
+							player:AddNullCostume(phobebiaIIFateCostume)
+						end
+					else
+						player:TryRemoveNullCostume(costume_PhobebiaII)
+						player:AddNullCostume(costume_PhobebiaII)
+						if player:HasCollectible(CollectibleType.COLLECTIBLE_FATE) then
+							player:TryRemoveNullCostume(phobebiaIIFateCostume)
+							player:AddNullCostume(phobebiaIIFateCostume)
+						end
+					end
+				end
 			end
-			if player:HasCollectible(CollectibleType.COLLECTIBLE_HABIT) then
-				player:TryRemoveNullCostume(phobebiaHabitCostume)
-				player:AddNullCostume(phobebiaHabitCostume)
-			end
-			if player:HasCollectible(CollectibleType.COLLECTIBLE_ANEMIC) then
-				player:TryRemoveNullCostume(phobebiaAnemicCostume)
-				player:AddNullCostume(phobebiaAnemicCostume)
-			end
-		else
-			player:TryRemoveNullCostume(costume_Phobebia)
-			player:AddNullCostume(costume_Phobebia)
-			if player:HasCollectible(CollectibleType.COLLECTIBLE_FATE) then
-				player:TryRemoveNullCostume(phobebiaFateCostume)
-				player:AddNullCostume(phobebiaFateCostume)
-			end
-			if player:HasCollectible(CollectibleType.COLLECTIBLE_HABIT) then
-				player:TryRemoveNullCostume(phobebiaHabitCostume)
-				player:AddNullCostume(phobebiaHabitCostume)
-			end
-			if player:HasCollectible(CollectibleType.COLLECTIBLE_ANEMIC) then
-				player:TryRemoveNullCostume(phobebiaAnemicCostume)
-				player:AddNullCostume(phobebiaAnemicCostume)
+			--==Angel Room==--
+			if not player:HasCollectible(ItemID.TheCatsSoul, true) then
+				level:AddAngelRoomChance(100)
+			else
+				level:DisableDevilRoom()
+				level:AddAngelRoomChance(0)
 			end
 		end
-	end
+	)
 	
-	--==The Cat's Guide==--
-	if player:HasCollectible(ItemID.TheCatsGuide) then
-		if player:IsDead() then
-			player:Revive()
-			player:RemoveCollectible(ItemID.TheCatsGuide)
-			player:AddCollectible(ItemID.TheCatsSoul, 0, true)
-			player:AddCollectible(542, 0, true)
-			player:AddCollectible(542, 0, true)
-		end
-	end
-	
-	--==The Cat's Soul(PhobebiaII)==--
-	if room:GetFrameCount() == 1 and player:GetPlayerType() == playerType_Phobebia and player:HasCollectible(ItemID.TheCatsSoul) and not player:IsDead() then
-		if player:HasCollectible(CollectibleType.COLLECTIBLE_GUILLOTINE) or player:HasCollectible(CollectibleType.COLLECTIBLE_TRANSCENDENCE) then
-			player:TryRemoveNullCostume(costume_PhobebiaII)
-			player:AddNullCostume(costume_PhobebiaII)
-			if player:HasCollectible(CollectibleType.COLLECTIBLE_FATE) then
-				player:TryRemoveNullCostume(phobebiaIIFateCostume)
-				player:AddNullCostume(phobebiaIIFateCostume)
-			end
-		else
-			player:TryRemoveNullCostume(costume_PhobebiaII)
-			player:AddNullCostume(costume_PhobebiaII)
-			if player:HasCollectible(CollectibleType.COLLECTIBLE_FATE) then
-				player:TryRemoveNullCostume(phobebiaIIFateCostume)
-				player:AddNullCostume(phobebiaIIFateCostume)
-			end
-		end
-	end
-	
-	--==Angel Room==--
-	if player:GetPlayerType() == playerType_Phobebia then
-		if not player:HasCollectible(ItemID.TheCatsSoul) then
-			level:AddAngelRoomChance(100)
-		else
-			level:DisableDevilRoom()
-			level:AddAngelRoomChance(0)
-		end
-	end
 end
 phobebia:AddCallback( ModCallbacks.MC_POST_UPDATE, phobebia.Update)
 
 function phobebia:PostPlayerInit(player)
 	--==for Phobebia==--
-	if player:GetPlayerType() == playerType_Phobebia and not player:HasCollectible(ItemID.TheCatsSoul) then
+	if player:GetPlayerType() == playerType_Phobebia and not player:HasCollectible(ItemID.TheCatsSoul, true) then
 		player:TryRemoveNullCostume(costume_Phobebia)
 		player:AddNullCostume(costume_Phobebia)
 		if player:HasCollectible(CollectibleType.COLLECTIBLE_FATE) then
@@ -155,7 +186,7 @@ function phobebia:PostPlayerInit(player)
 		costumeEquipped = false
 	end
 	--==The Cat's Soul(PhobebiaII)==--
-	if player:GetPlayerType() == playerType_Phobebia and player:HasCollectible(ItemID.TheCatsSoul) then
+	if player:GetPlayerType() == playerType_Phobebia and player:HasCollectible(ItemID.TheCatsSoul, true) then
 		player:TryRemoveNullCostume(costume_PhobebiaII)
 		player:AddNullCostume(costume_PhobebiaII)
 		if player:HasCollectible(CollectibleType.COLLECTIBLE_FATE) then
@@ -241,7 +272,7 @@ function phobebia:EvaluateCache(player, cacheFlag, tear)
 		end
 	end
 	--==The Cat's Soul(PhobebiaII)==--
-	if player:GetPlayerType() == playerType_Phobebia and player:HasCollectible(ItemID.TheCatsSoul) then
+	if player:GetPlayerType() == playerType_Phobebia and player:HasCollectible(ItemID.TheCatsSoul, true) then
 		if cacheFlag == CacheFlag.CACHE_SPEED then
 			player.MoveSpeed = player.MoveSpeed + 0.2
 		elseif cacheFlag == CacheFlag.CACHE_DAMAGE then
@@ -282,76 +313,100 @@ end
 phobebia:AddCallback( ModCallbacks.MC_EVALUATE_CACHE, phobebia.EvaluateCache )
 
 function phobebia:PostUpdate()
-	local player = Isaac.GetPlayer(0)
-	local roomEntities = Isaac.GetRoomEntities()
-	if player:GetPlayerType() == playerType_Phobebia and not player:IsDead() then
-		for i,entity in ipairs(roomEntities) do
-			local tear = entity:ToTear()
-			if tear ~= nil then
-				if tear.Parent.Type == EntityType.ENTITY_PLAYER and tear.Variant ~= TearVariant.BLOOD then
-					local tearSprite = tear:GetSprite()
-					tear:ChangeVariant(TearVariant.BLOOD)
-					tearSprite:ReplaceSpritesheet(0,"gfx/Phobebia_tears.png")
-					tearSprite:LoadGraphics("gfx/Phobebia_tears.png")
-					tearSprite.Rotation = entity.Velocity:GetAngleDegrees()
-				end
-			end
-		end
-	end
-	
 	local game = Game()
 	local level = game:GetLevel()
 	local room = game:GetRoom()
-	if player:GetPlayerType() == playerType_Phobebia then
-		if room:GetBackdropType() == 58 or room:GetBackdropType() == 59 then
-			-- Do Nothing
-		else
-			if not player:HasCollectible(ItemID.TheCatsGuide) and not player:HasCollectible(ItemID.TheCatsSoul) then
-				player:AddCollectible(ItemID.TheCatsGuide, 0, true)
-			end
-			if not player:HasCollectible(179) then
-				player:AddCollectible(179, 0, true)
-			end
-			if not player:HasCollectible(313) then
-				player:AddCollectible(313, 0, true)
-			end
-	--[[		if not player:HasCollectible(536) then
-				player:AddCollectible(536, 0, true)
-			end]]--
-			if not player:HasCollectible(534) then
-				player:AddCollectible(534, 0, true)
+	local roomEntities = Isaac.GetRoomEntities()
+	
+	CallForEveryPlayer(
+		function(player)
+			if player:GetPlayerType() == playerType_Phobebia then
+				
+				if not player:IsDead() then
+				end
+			
+			
+				if room:GetBackdropType() ~= 58 and room:GetBackdropType() ~= 59 then
+					if not player:HasCollectible(ItemID.TheCatsGuide, true) and not player:HasCollectible(ItemID.TheCatsSoul, true) then
+						player:AddCollectible(ItemID.TheCatsGuide, 0, true)
+					end
+					if not player:HasCollectible(179, true) then
+						player:AddCollectible(179, 0, true)
+					end
+					if not player:HasCollectible(313, true) then
+						player:AddCollectible(313, 0, true)
+					end
+			--[[		if not player:HasCollectible(536, true) then
+						player:AddCollectible(536, 0, true)
+					end]]--
+					if not player:HasCollectible(534, true) then
+						player:AddCollectible(534, 0, true)
+					end
+				end
 			end
 		end
-	end
+	)
 end
 phobebia:AddCallback(ModCallbacks.MC_POST_UPDATE, phobebia.PostUpdate)
+
+function phobebia:PostUpdateProcessTears()
+	local roomEntities = Isaac.GetRoomEntities()
+	
+	CallForEveryEntity(
+		function(entity)
+			local tear = entity:ToTear()
+			if tear ~= nil then
+				if tear.Parent ~= nil
+				and tear.Parent.Type == EntityType.ENTITY_PLAYER
+				then
+					local player = tear.Parent:ToPlayer()
+					if player:GetPlayerType() == playerType_Phobebia
+					or player:GetPlayerType() == playerType_Tainted_Phobebia 
+					then
+						if tear.Variant ~= TearVariant.BLOOD then
+							local tearSprite = tear:GetSprite()
+							tear:ChangeVariant(TearVariant.BLOOD)
+							tearSprite:ReplaceSpritesheet(0,"gfx/Phobebia_tears.png")
+							tearSprite:LoadGraphics()
+							tearSprite.Rotation = entity.Velocity:GetAngleDegrees()
+						end
+					end
+				end
+			end
+		end
+	)
+end
+phobebia:AddCallback(ModCallbacks.MC_POST_UPDATE, phobebia.PostUpdateProcessTears)
 
 function phobebia:PostNewLevel()
 	local game = Game()
 	local level = game:GetLevel()
-	local player = Isaac.GetPlayer(0)
 	local room = game:GetRoom()
 	
-	if player:GetPlayerType() == playerType_Phobebia then
-		if level:GetStage() == (LevelStage.STAGE1_2) or level:GetStage() == (LevelStage.STAGE2_2) or level:GetStage() == (LevelStage.STAGE3_2) or level:GetStage() == (LevelStage.STAGE4_2) then
-			if not player:HasCollectible(536) then
-				player:AddCollectible(536, 0, true)
+	CallForEveryPlayer(
+		function(player)
+			if player:GetPlayerType() == playerType_Phobebia then
+				if level:GetStage() == (LevelStage.STAGE1_2) or level:GetStage() == (LevelStage.STAGE2_2) or level:GetStage() == (LevelStage.STAGE3_2) or level:GetStage() == (LevelStage.STAGE4_2) then
+					if not player:HasCollectible(536, true) then
+						player:AddCollectible(536, 0, true)
+					end
+					if not player:HasCollectible(534, true) then
+						player:AddCollectible(534, 0, true)
+					end
+		--[[		elseif level:GetCurses() == (LevelCurse.CURSE_OF_LABYRINTH) and level:GetStage() == (LevelStage.STAGE1_1) or level:GetStage() == (LevelStage.STAGE2_1) or level:GetStage() == (LevelStage.STAGE3_1) or level:GetStage() == (LevelStage.STAGE4_1) then
+					if not player:HasCollectible(536, true) then
+						player:AddCollectible(536, 0, true)
+					end
+					if not player:HasCollectible(534, true) then
+						player:AddCollectible(534, 0, true)
+					end]]--
+				else
+					player:RemoveCollectible(536)
+					player:RemoveCollectible(534)
+				end
 			end
-			if not player:HasCollectible(534) then
-				player:AddCollectible(534, 0, true)
-			end
---[[		elseif level:GetCurses() == (LevelCurse.CURSE_OF_LABYRINTH) and level:GetStage() == (LevelStage.STAGE1_1) or level:GetStage() == (LevelStage.STAGE2_1) or level:GetStage() == (LevelStage.STAGE3_1) or level:GetStage() == (LevelStage.STAGE4_1) then
-			if not player:HasCollectible(536) then
-				player:AddCollectible(536, 0, true)
-			end
-			if not player:HasCollectible(534) then
-				player:AddCollectible(534, 0, true)
-			end]]--
-		else
-			player:RemoveCollectible(536)
-			player:RemoveCollectible(534)
 		end
-	end
+	)
 end
 phobebia:AddCallback(ModCallbacks.MC_POST_NEW_LEVEL, phobebia.PostNewLevel)
 
@@ -360,71 +415,69 @@ phobebia:AddCallback(ModCallbacks.MC_POST_NEW_LEVEL, phobebia.PostNewLevel)
 function phobebia:TaintedUpdate()
 	local game = Game()
 	local level = game:GetLevel()
-	local player = Isaac.GetPlayer(0)
 	local room = game:GetRoom()
 	
-	if room:GetFrameCount() == 1 and player:GetPlayerType() == playerType_Tainted_Phobebia and not player:IsDead() then
-		if player:HasCollectible(CollectibleType.COLLECTIBLE_GUILLOTINE) or player:HasCollectible(CollectibleType.COLLECTIBLE_TRANSCENDENCE) then
-			player:AddNullCostume(costume_Tainted_Phobebia)
-			if player:HasCollectible(CollectibleType.COLLECTIBLE_HABIT) then
-				player:TryRemoveNullCostume(phobebiaHabitCostume)
-				player:AddNullCostume(phobebiaHabitCostume)
-			end
-			if player:HasCollectible(CollectibleType.COLLECTIBLE_ANEMIC) then
-				player:TryRemoveNullCostume(phobebiaAnemicCostume)
-				player:AddNullCostume(phobebiaAnemicCostume)
-			end
-			if player:HasCollectible(ItemID.TheCatsMind) then
-				player:TryRemoveNullCostume(costume_TheCat)
-				player:AddNullCostume(costume_TheCat)
-			end
-		else
-			player:TryRemoveNullCostume(costume_Tainted_Phobebia)
-			player:AddNullCostume(costume_Tainted_Phobebia)
-			if player:HasCollectible(CollectibleType.COLLECTIBLE_HABIT) then
-				player:TryRemoveNullCostume(phobebiaHabitCostume)
-				player:AddNullCostume(phobebiaHabitCostume)
-			end
-			if player:HasCollectible(CollectibleType.COLLECTIBLE_ANEMIC) then
-				player:TryRemoveNullCostume(phobebiaAnemicCostume)
-				player:AddNullCostume(phobebiaAnemicCostume)
-			end
-			if player:HasCollectible(ItemID.TheCatsMind) then
-				player:TryRemoveNullCostume(costume_TheCat)
-				player:AddNullCostume(costume_TheCat)
-				player:TryRemoveNullCostume(costume_TheCat_Head)
-				player:AddNullCostume(costume_TheCat_Head)
-				player:TryRemoveCollectibleCostume(118)
-			end
-		end
-	end
---== About Tainted Phobebia --> The Cat==--
-	if player:GetPlayerType() == playerType_Tainted_Phobebia then
-		if player:GetSoulHearts() == 1 then
-			local game = Game()
-			local level = game:GetLevel()
-			local room = game:GetRoom()
-			if room:GetBackdropType() == 58 or room:GetBackdropType() == 59 then
-				-- Do Nothing
-			else
-				if not player:HasCollectible(ItemID.TheCatsMind) then
-					player:AddCollectible(ItemID.TheCatsMind, 0, true)
+	CallForEveryPlayer(
+		function(player)
+			if player:GetPlayerType() == playerType_Tainted_Phobebia then
+				if room:GetFrameCount() == 1 and not player:IsDead() then
+					if player:HasCollectible(CollectibleType.COLLECTIBLE_GUILLOTINE) or player:HasCollectible(CollectibleType.COLLECTIBLE_TRANSCENDENCE) then
+						player:AddNullCostume(costume_Tainted_Phobebia)
+						if player:HasCollectible(CollectibleType.COLLECTIBLE_HABIT) then
+							player:TryRemoveNullCostume(phobebiaHabitCostume)
+							player:AddNullCostume(phobebiaHabitCostume)
+						end
+						if player:HasCollectible(CollectibleType.COLLECTIBLE_ANEMIC) then
+							player:TryRemoveNullCostume(phobebiaAnemicCostume)
+							player:AddNullCostume(phobebiaAnemicCostume)
+						end
+						if player:HasCollectible(ItemID.TheCatsMind) then
+							player:TryRemoveNullCostume(costume_TheCat)
+							player:AddNullCostume(costume_TheCat)
+						end
+					else
+						player:TryRemoveNullCostume(costume_Tainted_Phobebia)
+						player:AddNullCostume(costume_Tainted_Phobebia)
+						if player:HasCollectible(CollectibleType.COLLECTIBLE_HABIT) then
+							player:TryRemoveNullCostume(phobebiaHabitCostume)
+							player:AddNullCostume(phobebiaHabitCostume)
+						end
+						if player:HasCollectible(CollectibleType.COLLECTIBLE_ANEMIC) then
+							player:TryRemoveNullCostume(phobebiaAnemicCostume)
+							player:AddNullCostume(phobebiaAnemicCostume)
+						end
+						if player:HasCollectible(ItemID.TheCatsMind) then
+							player:TryRemoveNullCostume(costume_TheCat)
+							player:AddNullCostume(costume_TheCat)
+							player:TryRemoveNullCostume(costume_TheCat_Head)
+							player:AddNullCostume(costume_TheCat_Head)
+							player:TryRemoveCollectibleCostume(118)
+						end
+					end
 				end
-				if TCAnimateSadOnce == false then
-					player:AnimateSad()
-					TCAnimateSadOnce = true
-					TCAnimateSadTwice = false
-				end  
-				if not player:HasCollectible(118) then
-					player:AddCollectible(118, 0, true)
-				end
-				if player:GetSoulHearts() > 1 then
-					if player:HasCollectible(ItemID.TheCatsMind) then
+			
+		--== About Tainted Phobebia --> The Cat==--
+				if player:GetSoulHearts() <= 1 then
+					if room:GetBackdropType() ~= 58 and room:GetBackdropType() ~= 59 then
+						if not player:HasCollectible(ItemID.TheCatsMind, true) then
+							player:AddCollectible(ItemID.TheCatsMind, 0, true)
+							player:AddCollectible(118, 0, true)
+						elseif not player:HasCollectible(118, true) then
+							player:AddCollectible(118, 0, true)
+						end
+						if TCAnimateSadOnce == false then
+							player:AnimateSad()
+							TCAnimateSadOnce = true
+							TCAnimateSadTwice = false
+						end
+					end
+				else
+					if player:HasCollectible(ItemID.TheCatsMind, true) then
 						player:RemoveCollectible(ItemID.TheCatsMind)
 						TCRemoveTheCatsMindOnce = true
 					end
 					if TCRemoveTheCatsMindOnce == true then
-						if  player:HasCollectible(118) then
+						if  player:HasCollectible(118, true) then
 							player:RemoveCollectible(118)
 							TCRemoveTheCatsMindOnce = false
 						end
@@ -437,41 +490,32 @@ function phobebia:TaintedUpdate()
 				end
 			end
 		end
-	end
+	)
 end
 phobebia:AddCallback( ModCallbacks.MC_POST_UPDATE, phobebia.TaintedUpdate)
 
 function phobebia:TaintedPostUpdate()
-	local player = Isaac.GetPlayer(0)
-	local roomEntities = Isaac.GetRoomEntities()
-	if player:GetPlayerType() == playerType_Tainted_Phobebia and not player:IsDead() then
-		for i,entity in ipairs(roomEntities) do
-			local tear = entity:ToTear()
-			if tear ~= nil then
-				if tear.Parent.Type == EntityType.ENTITY_PLAYER and tear.Variant ~= TearVariant.BLOOD then
-					local tearSprite = tear:GetSprite()
-					tear:ChangeVariant(TearVariant.BLOOD)
-					tearSprite:ReplaceSpritesheet(0,"gfx/Phobebia_tears.png")
-					tearSprite:LoadGraphics("gfx/Phobebia_tears.png")
-					tearSprite.Rotation = entity.Velocity:GetAngleDegrees()
-				end
-			end
-		end
-	end
 	local game = Game()
 	local level = game:GetLevel()
 	local room = game:GetRoom()
-	if player:GetPlayerType() == playerType_Tainted_Phobebia then
-		if room:GetBackdropType() == 58 or room:GetBackdropType() == 59 then
-			-- Do Nothing
-		else
+	local roomEntities = Isaac.GetRoomEntities()
+					
+	CallForEveryPlayer(
+		function(player)
 			if player:GetPlayerType() == playerType_Tainted_Phobebia then
-				if not player:HasCollectible(313) then
-					player:AddCollectible(313, 0, true)
+				if not player:IsDead() then
+				end
+				if room:GetBackdropType() ~= 58 and room:GetBackdropType() ~= 59 then
+					if player:GetPlayerType() == playerType_Tainted_Phobebia then
+						if not player:HasCollectible(313, true) then
+							player:AddCollectible(313, 0, true)
+						end
+					end
 				end
 			end
 		end
-	end
+	)
+	
 end
 phobebia:AddCallback( ModCallbacks.MC_POST_UPDATE, phobebia.TaintedPostUpdate)
 
@@ -510,22 +554,32 @@ phobebia:AddCallback( ModCallbacks.MC_POST_PLAYER_INIT, phobebia.TaintedPostPlay
 local Deads = 0
 
 function phobebia:TaintedNPCDeath()
-	local player = Isaac.GetPlayer(0)
 	Deads = Deads + 1
-	if player:GetPlayerType() == playerType_Tainted_Phobebia then
-		player:AddCollectible(PhobebiaStatUpdateItem)
-		player:RemoveCollectible(PhobebiaStatUpdateItem)
-		UpdateCache(player)
-	end
+	
+	CallForEveryPlayer(
+		function(player)
+			if player:GetPlayerType() == playerType_Tainted_Phobebia then
+				player:RemoveCollectible(PhobebiaStatUpdateItem)
+				
+				--  NO MORE DEMANDED
+				-- player:AddCollectible(PhobebiaStatUpdateItem)
+				-- UpdateCache(player)
+			end
+		end
+	)
 end
 phobebia:AddCallback( ModCallbacks.MC_POST_NPC_DEATH, phobebia.TaintedNPCDeath)
 
 function phobebia:InitDeads()
-	local player = Isaac.GetPlayer(0)
 	Deads = 0
-	if player:GetPlayerType() == playerType_Tainted_Phobebia then
-		player:AddCacheFlags(CacheFlag.CACHE_DAMAGE)
-	end
+	
+	CallForEveryPlayer(
+		function(player)
+			if player:GetPlayerType() == playerType_Tainted_Phobebia then
+				player:RemoveCollectible(PhobebiaStatUpdateItem)
+			end
+		end
+	)
 end
 phobebia:AddCallback( ModCallbacks.MC_POST_GAME_STARTED, phobebia.InitDeads)
 
@@ -630,12 +684,16 @@ phobebia:AddCallback( ModCallbacks.MC_EVALUATE_CACHE, phobebia.TaintedEvaluateCa
 function phobebia:TaintedPostNewLevel()
 	local game = Game()
 	local level = game:GetLevel()
-	local player = Isaac.GetPlayer(0)
 	local room = game:GetRoom()
-	if player:GetPlayerType() == playerType_Tainted_Phobebia and not player:IsDead() then
-		Deads = 0
-		player:AddCacheFlags(CacheFlag.CACHE_DAMAGE)
-	end
+	
+	CallForEveryPlayer(
+		function(player)
+			if player:GetPlayerType() == playerType_Tainted_Phobebia and not player:IsDead() then
+				Deads = 0
+				player:RemoveCollectible(PhobebiaStatUpdateItem)
+			end
+		end
+	)
 end
 phobebia:AddCallback(ModCallbacks.MC_POST_NEW_LEVEL, phobebia.TaintedPostNewLevel)
 
@@ -643,7 +701,6 @@ phobebia:AddCallback(ModCallbacks.MC_POST_NEW_LEVEL, phobebia.TaintedPostNewLeve
 
 function phobebia:UniversalUpdate()
 	--==Universal==--
-	local player = Isaac.GetPlayer(0)
 	local HasRedHeartCount = 2
 	local HasBoneHearts = 1
 	local HasEternalHearts = 1
@@ -655,91 +712,99 @@ function phobebia:UniversalUpdate()
 	local TaintedChangedBlackHeartsCount = 2
 	local TaintedMaxSoulHearts = 12
 	--==Hearts Limit==--
-	if player:GetPlayerType() == playerType_Phobebia then
-		player:SetFullHearts()
-		local game = Game()
-		local level = game:GetLevel()
-		while player:GetBoneHearts() >= HasBoneHearts do
-			player:AddBoneHearts(-HasBoneHearts, true)
-			player:AddBlackHearts(ChangedBlackHeartsCount)
-		end
-		while player:GetHearts() >= HasRedHeartCount do
-			player:AddMaxHearts(-HasRedHeartCount, true)
-			player:AddBlackHearts(ChangedBlackHeartsCount)
-		end
-		while player:GetEternalHearts() >= HasEternalHearts do
-			player:AddEternalHearts(-HasEternalHearts, true)
-		end
-		if level:GetStage() == 4 then
-			if player:GetSoulHearts() > TaintedMaxSoulHearts and player:GetBlackHearts() > TaintedMaxSoulHearts then
-				player:AddBlackHearts(-MoreBlackHeartsCount, true)
-			else
-				if player:GetSoulHearts() > TaintedMaxSoulHearts and player:GetBlackHearts() <= TaintedMaxSoulHearts then
-				player:AddSoulHearts(-MoreBlackHeartsCount, true)
+	
+	CallForEveryPlayer(
+		function(player)
+			if player:GetPlayerType() == playerType_Phobebia then
+				player:SetFullHearts()
+				local game = Game()
+				local level = game:GetLevel()
+				while player:GetBoneHearts() >= HasBoneHearts do
+					player:AddBoneHearts(-HasBoneHearts, true)
+					player:AddBlackHearts(ChangedBlackHeartsCount)
+				end
+				while player:GetHearts() >= HasRedHeartCount do
+					player:AddMaxHearts(-HasRedHeartCount, true)
+					player:AddBlackHearts(ChangedBlackHeartsCount)
+				end
+				while player:GetEternalHearts() >= HasEternalHearts do
+					player:AddEternalHearts(-HasEternalHearts, true)
+				end
+				if level:GetStage() == 4 then
+					if player:GetSoulHearts() > TaintedMaxSoulHearts and player:GetBlackHearts() > TaintedMaxSoulHearts then
+						player:AddBlackHearts(-MoreBlackHeartsCount, true)
+					else
+						if player:GetSoulHearts() > TaintedMaxSoulHearts and player:GetBlackHearts() <= TaintedMaxSoulHearts then
+						player:AddSoulHearts(-MoreBlackHeartsCount, true)
+						end
+					end
+				else
+					if player:GetSoulHearts() > MaxBlackHearts and player:GetBlackHearts() > MaxBlackHearts then
+						player:AddBlackHearts(-MoreBlackHeartsCount, true)
+					else
+						if player:GetSoulHearts() > MaxBlackHearts and player:GetBlackHearts() <= MaxBlackHearts then
+						player:AddSoulHearts(-MoreBlackHeartsCount, true)
+						end
+					end
 				end
 			end
-		else
-			if player:GetSoulHearts() > MaxBlackHearts and player:GetBlackHearts() > MaxBlackHearts then
-				player:AddBlackHearts(-MoreBlackHeartsCount, true)
-			else
-				if player:GetSoulHearts() > MaxBlackHearts and player:GetBlackHearts() <= MaxBlackHearts then
-				player:AddSoulHearts(-MoreBlackHeartsCount, true)
+			
+			if player:GetPlayerType() == playerType_Tainted_Phobebia then
+				player:SetFullHearts()
+				while player:GetBoneHearts() >= HasBoneHearts do
+					player:AddBoneHearts(-HasBoneHearts, true)
+					player:AddBlackHearts(TaintedChangedBlackHeartsCount)
+				end
+				while player:GetHearts() >= HasRedHeartCount do
+					player:AddMaxHearts(-HasRedHeartCount, true)
+					player:AddBlackHearts(TaintedChangedBlackHeartsCount)
+				end
+				while player:GetEternalHearts() >= HasEternalHearts do
+					player:AddEternalHearts(-HasEternalHearts, true)
+				end
+				if player:GetSoulHearts() > TaintedMaxSoulHearts and player:GetBlackHearts() > TaintedMaxSoulHearts then
+					player:AddBlackHearts(-MoreBlackHeartsCount, true)
+				else
+					if player:GetSoulHearts() > TaintedMaxSoulHearts and player:GetBlackHearts() <= TaintedMaxSoulHearts then
+					player:AddSoulHearts(-MoreBlackHeartsCount, true)
+					end
 				end
 			end
-		end
-	end
-	
-	if player:GetPlayerType() == playerType_Tainted_Phobebia then
-		player:SetFullHearts()
-		while player:GetBoneHearts() >= HasBoneHearts do
-			player:AddBoneHearts(-HasBoneHearts, true)
-			player:AddBlackHearts(TaintedChangedBlackHeartsCount)
-		end
-		while player:GetHearts() >= HasRedHeartCount do
-			player:AddMaxHearts(-HasRedHeartCount, true)
-			player:AddBlackHearts(TaintedChangedBlackHeartsCount)
-		end
-		while player:GetEternalHearts() >= HasEternalHearts do
-			player:AddEternalHearts(-HasEternalHearts, true)
-		end
-		if player:GetSoulHearts() > TaintedMaxSoulHearts and player:GetBlackHearts() > TaintedMaxSoulHearts then
-			player:AddBlackHearts(-MoreBlackHeartsCount, true)
-		else
-			if player:GetSoulHearts() > TaintedMaxSoulHearts and player:GetBlackHearts() <= TaintedMaxSoulHearts then
-			player:AddSoulHearts(-MoreBlackHeartsCount, true)
+			
+			--==More get Judas' Shadow Chance==--
+			if player:GetPlayerType() == playerType_Phobebia or player:GetPlayerType() == playerType_Tainted_Phobebia then
+				if player:HasCollectible(ItemID.JudasShadow) then
+					player:RemoveCollectible(ItemID.JudasShadow)
+					player:AddCollectible(311, 0, true)
+				end
+			else
+				itemPool:RemoveCollectible(ItemID.JudasShadow)
 			end
+			
 		end
-	end
-	
-	--==More get Judas' Shadow Chance==--
-	if player:GetPlayerType() == playerType_Phobebia or player:GetPlayerType() == playerType_Tainted_Phobebia then
-		if player:HasCollectible(ItemID.JudasShadow) then
-			player:RemoveCollectible(ItemID.JudasShadow)
-			player:AddCollectible(311, 0, true)
-		end
-	else
-		itemPool:RemoveCollectible(ItemID.JudasShadow)
-	end
+	)
 end
 phobebia:AddCallback( ModCallbacks.MC_POST_UPDATE, phobebia.UniversalUpdate)
 
 function phobebia:UniversalPostNewRoom()
 	local game = Game()
 	local level = game:GetLevel()
-	local player = Isaac.GetPlayer(0)
 	local room = game:GetRoom()
 	--==I don't need Judas or other with cat ears!!==--
-	if player:GetPlayerType() == playerType_Phobebia or player:GetPlayerType() == playerType_Tainted_Phobebia then
-		--Do nothing!
-	else
-		player:TryRemoveNullCostume(costume_Phobebia)
-		player:TryRemoveNullCostume(costume_PhobebiaII)
-		player:TryRemoveNullCostume(costume_Tainted_Phobebia)
-		player:TryRemoveNullCostume(costume_TheCat)
-		player:TryRemoveNullCostume(costume_TheCat_Head)
-		player:TryRemoveNullCostume(phobebiaHabitCostume)
-		player:TryRemoveNullCostume(phobebiaAnemicCostume)
-	end
+	CallForEveryPlayer(
+		function(player)
+			if player:GetPlayerType() ~= playerType_Phobebia and player:GetPlayerType() ~= playerType_Tainted_Phobebia then
+				--Else Do nothing!
+				player:TryRemoveNullCostume(costume_Phobebia)
+				player:TryRemoveNullCostume(costume_PhobebiaII)
+				player:TryRemoveNullCostume(costume_Tainted_Phobebia)
+				player:TryRemoveNullCostume(costume_TheCat)
+				player:TryRemoveNullCostume(costume_TheCat_Head)
+				player:TryRemoveNullCostume(phobebiaHabitCostume)
+				player:TryRemoveNullCostume(phobebiaAnemicCostume)
+			end
+		end
+	)
 end
 phobebia:AddCallback( ModCallbacks.MC_POST_NEW_ROOM, phobebia.UniversalPostNewRoom)
 
@@ -772,57 +837,60 @@ local PhobebiasBloodBandageII_Costume = Isaac.GetCostumeIdByPath("gfx/characters
 function phobebia:JudasUpdate()
 	local game = Game()
 	local level = game:GetLevel()
-	local player = Isaac.GetPlayer(0)
 	local room = game:GetRoom()
 	
-	if room:GetFrameCount() == 1 and player:GetPlayerType() == playerType_Judas or player:GetPlayerType() == playerType_BlackJudas then
-		if player:HasCollectible(CollectibleType.COLLECTIBLE_GUILLOTINE) or player:HasCollectible(CollectibleType.COLLECTIBLE_TRANSCENDENCE) then
-			if player:HasCollectible(ItemID.PhobebiasBloodBandage) then
-				player:TryRemoveNullCostume(PhobebiasBloodBandage_Costume)
-				player:AddNullCostume(PhobebiasBloodBandage_Costume)
+	CallForEveryPlayer(
+		function(player)
+			if room:GetFrameCount() == 1 and player:GetPlayerType() == playerType_Judas or player:GetPlayerType() == playerType_BlackJudas then
+				if player:HasCollectible(CollectibleType.COLLECTIBLE_GUILLOTINE) or player:HasCollectible(CollectibleType.COLLECTIBLE_TRANSCENDENCE) then
+					if player:HasCollectible(ItemID.PhobebiasBloodBandage) then
+						player:TryRemoveNullCostume(PhobebiasBloodBandage_Costume)
+						player:AddNullCostume(PhobebiasBloodBandage_Costume)
+					end
+				else
+					if player:HasCollectible(ItemID.PhobebiasBloodBandage) then
+						player:TryRemoveNullCostume(PhobebiasBloodBandage_Costume)
+						player:AddNullCostume(PhobebiasBloodBandage_Costume)
+					end
+				end
+			else
+				itemPool:RemoveCollectible(ItemID.PhobebiasBloodBandage)
 			end
-		else
-			if player:HasCollectible(ItemID.PhobebiasBloodBandage) then
-				player:TryRemoveNullCostume(PhobebiasBloodBandage_Costume)
-				player:AddNullCostume(PhobebiasBloodBandage_Costume)
+			
+			--==BloodBandageII==--
+			if room:GetFrameCount() == 1 and player:GetPlayerType() == playerType_Judas or player:GetPlayerType() == playerType_BlackJudas then
+				if player:HasCollectible(CollectibleType.COLLECTIBLE_GUILLOTINE) or player:HasCollectible(CollectibleType.COLLECTIBLE_TRANSCENDENCE) then
+					if player:HasCollectible(ItemID.PhobebiasBloodBandageII) then
+						player:TryRemoveNullCostume(PhobebiasBloodBandageII_Costume)
+						player:AddNullCostume(PhobebiasBloodBandageII_Costume)
+					end
+				else
+					if player:HasCollectible(ItemID.PhobebiasBloodBandageII) then
+						player:TryRemoveNullCostume(PhobebiasBloodBandageII_Costume)
+						player:AddNullCostume(PhobebiasBloodBandageII_Costume)
+					end
+				end
+			else
+				itemPool:RemoveCollectible(ItemID.PhobebiasBloodBandageII)
 			end
-		end
-	else
-		itemPool:RemoveCollectible(ItemID.PhobebiasBloodBandage)
-	end
-	
-	--==BloodBandageII==--
-	if room:GetFrameCount() == 1 and player:GetPlayerType() == playerType_Judas or player:GetPlayerType() == playerType_BlackJudas then
-		if player:HasCollectible(CollectibleType.COLLECTIBLE_GUILLOTINE) or player:HasCollectible(CollectibleType.COLLECTIBLE_TRANSCENDENCE) then
-			if player:HasCollectible(ItemID.PhobebiasBloodBandageII) then
-				player:TryRemoveNullCostume(PhobebiasBloodBandageII_Costume)
-				player:AddNullCostume(PhobebiasBloodBandageII_Costume)
-			end
-		else
-			if player:HasCollectible(ItemID.PhobebiasBloodBandageII) then
-				player:TryRemoveNullCostume(PhobebiasBloodBandageII_Costume)
-				player:AddNullCostume(PhobebiasBloodBandageII_Costume)
-			end
-		end
-	else
-		itemPool:RemoveCollectible(ItemID.PhobebiasBloodBandageII)
-	end
-	
-	--==I -> II ==--
-	if player:IsDead() then
-		if player:GetPlayerType() == playerType_Judas or player:GetPlayerType() == playerType_BlackJudas then
-			if player:HasCollectible(ItemID.PhobebiasBloodBandage) then
-				player:Revive()
-				player:RemoveCollectible(ItemID.PhobebiasBloodBandage)
-				player:AddCollectible(ItemID.PhobebiasBloodBandageII, 0, true)
-				player:SetFullHearts()
-				local JudasHasRedHearts = 2
-				player:AddMaxHearts(-JudasHasRedHearts, true)
-				player:AddBlackHearts(2)
+			
+			--==I -> II ==--
+			if player:IsDead() then
+				if player:GetPlayerType() == playerType_Judas or player:GetPlayerType() == playerType_BlackJudas then
+					if player:HasCollectible(ItemID.PhobebiasBloodBandage) then
+						player:Revive()
+						player:RemoveCollectible(ItemID.PhobebiasBloodBandage)
+						player:AddCollectible(ItemID.PhobebiasBloodBandageII, 0, true)
+						player:SetFullHearts()
+						local JudasHasRedHearts = 2
+						player:AddMaxHearts(-JudasHasRedHearts, true)
+						player:AddBlackHearts(2)
+					end
 				end
 			end
 		end
-	end
+	)
+end
 phobebia:AddCallback( ModCallbacks.MC_POST_UPDATE, phobebia.JudasUpdate)
 
 function phobebia:JudasEvaluateCache(player, cacheFlag)
@@ -882,7 +950,6 @@ function phobebia:JudasEvaluateCache(player, cacheFlag)
 				end
 			end
 		end
-		
 	end
 end
 phobebia:AddCallback( ModCallbacks.MC_EVALUATE_CACHE, phobebia.JudasEvaluateCache)
