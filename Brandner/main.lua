@@ -205,7 +205,7 @@ function brandner:EvaluateCache(player, cacheFlag)
 		elseif cacheFlag == CacheFlag.CACHE_FIREDELAY then
 			player.MaxFireDelay = player.MaxFireDelay + 8
 		elseif cacheFlag == CacheFlag.CACHE_TEARFLAG then
-			player.TearFlags = player.TearFlags | 1 << 49 | 1 << 22 | 1
+			player.TearFlags = player.TearFlags | 1 << 51 | 1 << 22 | 1
 		elseif cacheFlag == CacheFlag.CACHE_SHOTSPEED then
 			player.ShotSpeed = player.ShotSpeed + 0.3
 		elseif cacheFlag == CacheFlag.CACHE_LUCK then
@@ -334,7 +334,7 @@ local costume_TaintedBrandner_FireHead = Isaac.GetCostumeIdByPath("gfx/character
 local costume_TaintedBrandner_Head = Isaac.GetCostumeIdByPath("gfx/characters/TaintedBrandnerHead.anm2")
 local costume_TaintedBrandner_HeadBone = Isaac.GetCostumeIdByPath("gfx/characters/TaintedBrandnerHeadBone.anm2")
 
-local playerType_TaintedBrandner = Isaac.GetPlayerTypeByName("Tainted Brandner")
+local playerType_TaintedBrandner = Isaac.GetPlayerTypeByName("Tainted Brandner", true)
 
 function brandner:TaintedUpdate()
 	local game = Game()
@@ -562,7 +562,7 @@ function brandner:EvaluateCache(player, cacheFlag)
 		elseif cacheFlag == CacheFlag.CACHE_FIREDELAY then
 			player.MaxFireDelay = player.MaxFireDelay + 12
 		elseif cacheFlag == CacheFlag.CACHE_TEARFLAG then
-			player.TearFlags = player.TearFlags | 1 << 49 | 1 << 22 | 1
+			player.TearFlags = player.TearFlags | 1 << 51 | 1 << 22 | 1
 		elseif cacheFlag == CacheFlag.CACHE_SHOTSPEED then
 			player.ShotSpeed = player.ShotSpeed + 0.3
 		elseif cacheFlag == CacheFlag.CACHE_LUCK then
@@ -634,7 +634,7 @@ function brandner:TaintedPostUpdate()
 				)
 			end
 			--==Tear==--
-			local tear = entity:ToTear()
+			--[[local tear = entity:ToTear()
 			if tear ~= nil then
 				if tear.Parent.Type == EntityType.ENTITY_PLAYER then
 					local FireworksEntityTear = Isaac.Spawn(EntityType.ENTITY_EFFECT, EffectVariant.FIREWORKS, 5, tear.Position, tear.Velocity, tear)
@@ -645,7 +645,8 @@ function brandner:TaintedPostUpdate()
 					FireworksEntityTear
 					)
 				end
-			end
+			end]]--
+			-- NO, THANKS >:(
 		end
 	end
 end
@@ -658,7 +659,7 @@ function brandner:TaintedPostNewLevel()
 	local room = game:GetRoom()
 	if player:GetPlayerType() == playerType_TaintedBrandner then
 		if level:GetCurses() ~= (LevelCurse.CURSE_OF_DARKNESS) then
-			level:AddCurse(LevelCurse.CURSE_OF_DARKNESS, false)
+			level:AddCurse(1, false)
 		end
 	end
 end

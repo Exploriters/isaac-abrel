@@ -3,4 +3,5 @@
   <costume anm2path="LairubHead.anm2" type="none" />
   <costume anm2path="LairubBody.anm2" type="none" />
   <costume anm2path="LairubHead_TakeSoul.anm2" type="none" />
+  <costume anm2path="LairubHead_TakeSoulBase.anm2" type="none" />
 </costumes>
