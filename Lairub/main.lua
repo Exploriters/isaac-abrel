@@ -37,6 +37,12 @@ local PressingX = false
 local PressedXOnce = false
 local LairubTeleportReadyTime = 0
 
+--==H(Help List)==--
+local ShowHelpList = false
+local PressingH = false
+local PressedHOnce = false
+local ShowedInitialTips = false
+
 --==Be Hunted Down In Stage10, BackdropType14(Sheol) And Stage11, BackdropType16(DarkRoom)==--
 --Dialogue(Sheol)--
 local DialogueOver_Sheol = false
@@ -218,35 +224,6 @@ function lairub:Update(player)
 			end
 		end
 	end
-
-	if player:GetPlayerType() == playerType_Lairub then
-		--==Hearts Limit==--
-		while player:GetMaxHearts() > 0 do
-			player:AddMaxHearts(-2, true)
-			player:AddBoneHearts(1)
-		end
-		if player:GetHearts() > 0 then
-			player:AddHearts(-player:GetHearts(), true)
-		end
-		local soulHearts = player:GetSoulHearts()
-		local blackHearts = player:GetBlackHearts()
-		local totalHearts = math.ceil(player:GetBoneHearts() + (soulHearts*0.5))
-		local boneMisArrangeState = 0
-		for i=0,totalHearts-1,1 do
-			if boneMisArrangeState == 0 and not player:IsBoneHeart(i) then
-				boneMisArrangeState = 1
-			elseif boneMisArrangeState == 1 and player:IsBoneHeart(i) then
-				boneMisArrangeState = 2
-			end
-		end
-		if boneMisArrangeState == 2
-		or blackHearts ~= 2^(math.ceil(soulHearts * 0.5)) - 1
-		then
-			player:AddSoulHearts(-soulHearts)
-			player:AddBlackHearts(soulHearts)
-		end
-		--====--
-	end
 end
 lairub:AddCallback( ModCallbacks.MC_POST_UPDATE, lairub.Update)
 
@@ -376,40 +353,103 @@ function lairub:PostRender()
 	local room = game:GetRoom()
 	local playerPos = room:WorldToScreenPosition(player.Position)
 	if player:GetPlayerType() == playerType_Lairub then
-		--==SoulSign==--
-		SoulSign:SetOverlayRenderPriority(true)
-		SoulSign:SetFrame("SoulSign", 1)
-		SoulSign:Render(Vector(64,76), Vector(0,0), Vector(0,0))
-		Isaac.RenderText(tostring(SoulCount), 78, 70, 255, 255, 255, 255)
-		--==AttackIcon==--
-		AttackIcon:SetOverlayRenderPriority(true)
-			if ShiftChanged == 1 then
-				AttackIcon:SetFrame("Normal", 1)
-			elseif ShiftChanged == 2 then
-				AttackIcon:SetFrame("Take Soul", 1)
-			end
-		AttackIcon:Render(Vector(64,52), Vector(0,0), Vector(0,0))
-		--==CrossIcon==--
-		CrossIcon:SetOverlayRenderPriority(true)
-		if SpawnedCross == true then
-			CrossIcon:SetFrame("Locking", 1)
+		--==Initial tips==--
+		if ShowedInitialTips == false then
+			Isaac.RenderText("Pressing'Tap' to hide skill icon.", playerPos.X - 96, playerPos.Y + 6, 255, 255, 255, 255)
+			Isaac.RenderText("Press'H' to show help list.", playerPos.X - 96, playerPos.Y + 16, 255, 255, 255, 255)
 		else
-			CrossIcon:SetFrame("Ready", 1)
+			--Do nothing
 		end
-		CrossIcon:Render(Vector(96,52), Vector(0,0), Vector(0,0))
-		--==ReleaseIcon==--
-		ReleaseIcon:SetOverlayRenderPriority(true)
-		if SoulCount > 0 then
-			ReleaseIcon:SetFrame("Ready", 1)
-		elseif SoulCount <= 0 then
-			ReleaseIcon:SetFrame("Locking", 1)
+		--==== Can Hide ====--
+		if not Input.IsButtonPressed(Keyboard.KEY_TAB, player.ControllerIndex) then
+			--==SoulSign==--
+			SoulSign:SetOverlayRenderPriority(true)
+			SoulSign:SetFrame("SoulSign", 1)
+			SoulSign:Render(Vector(64,76), Vector(0,0), Vector(0,0))
+			Isaac.RenderText(tostring(SoulCount), 78, 70, 255, 255, 255, 255)
+			--==AttackIcon==--
+			AttackIcon:SetOverlayRenderPriority(true)
+				if ShiftChanged == 1 then
+					AttackIcon:SetFrame("Normal", 1)
+				elseif ShiftChanged == 2 then
+					AttackIcon:SetFrame("Take Soul", 1)
+				end
+			AttackIcon:Render(Vector(64,52), Vector(0,0), Vector(0,0))
+			--==CrossIcon==--
+			CrossIcon:SetOverlayRenderPriority(true)
+			if SpawnedCross == true then
+				CrossIcon:SetFrame("Locking", 1)
+			else
+				CrossIcon:SetFrame("Ready", 1)
+			end
+			CrossIcon:Render(Vector(96,52), Vector(0,0), Vector(0,0))
+			--==ReleaseIcon==--
+			ReleaseIcon:SetOverlayRenderPriority(true)
+			if SoulCount > 0 then
+				ReleaseIcon:SetFrame("Ready", 1)
+			elseif SoulCount <= 0 then
+				ReleaseIcon:SetFrame("Locking", 1)
+			end
+			ReleaseIcon:Render(Vector(128,52), Vector(0,0), Vector(0,0))
+			--==Teleport To Devil Room==--
+			TeleportSign:SetOverlayRenderPriority(true)
+			TeleportSign:SetFrame("TeleportSign", 1)
+			TeleportSign:Render(Vector(112,76), Vector(0,0), Vector(0,0))
+			Isaac.RenderScaledText("'X'", 120, 70, 0.9, 0.9, 255, 255, 255, 255)
+			--==CountDown==--
+			if (level:GetStage() == 10 and room:GetBackdropType() == 14) or (level:GetStage() == 11 and room:GetBackdropType() == 16) then
+				if DialogueOver_Sheol == false and level:GetStage() == 10 and room:GetBackdropType() == 14 then
+					--Do nothing
+				else
+					if room:IsClear() then
+						Isaac.RenderScaledText("00", 200, 60, 2, 2, 1, 1, 1, 1)
+						Isaac.RenderScaledText("safe", 200, 80, 0.9, 0.9, 1, 1, 1, 1)
+					elseif room:GetType() == RoomType.ROOM_BOSS then
+						Isaac.RenderScaledText("00", 200, 60, 2, 2, 1, 0.5, 0.5, 0.8)
+						Isaac.RenderScaledText("BOSS", 200, 80, 0.9, 0.9, 1, 0.5, 0.5, 0.8)
+					elseif not (room:IsClear() and room:GetType() == RoomType.ROOM_BOSS) then
+						if room:GetFrameCount() <= 1800 then
+							if CountDown < 10 then
+								Isaac.RenderScaledText("0"..tostring(CountDown), 200, 60, 2, 2, 1, 0.5, 0.5, 0.8)
+							else
+								Isaac.RenderScaledText(tostring(CountDown), 200, 60, 2, 2, 1, 0.5, 0.5, 0.8)
+							end
+							Isaac.RenderScaledText("Vigilant", 190, 80, 0.9, 0.9, 1, 0.5, 0.5, 0.8)
+						elseif room:GetFrameCount() >= 1800 then
+							Isaac.RenderScaledText("0"..tostring(DMGCountDown), 200, 60, 2, 2, 1, 0, 0, 0.8)
+							Isaac.RenderScaledText("DANGER", 195, 80, 0.9, 0.9, 1, 0, 0, 0.8)
+						end
+					end
+				end
+			end
+			--== Help List ==--
+			if ShowHelpList == true then
+				-- Shift --
+				Isaac.RenderScaledText("Shift - ChangeFrom", 64, 86, 0.9, 0.9, 1, 1, 1, 0.7)
+				Isaac.RenderScaledText("Changed to 'TakeSoul' or normal.", 70, 96, 0.9, 0.9, 1, 1, 1, 0.7)
+				Isaac.RenderScaledText("When you're in 'TakeSoul', you can collect souls", 70, 106, 0.9, 0.9, 1, 1, 1, 0.7)
+				Isaac.RenderScaledText("for ReleaseSoul.", 70, 116, 0.9, 0.9, 1, 1, 1, 0.7)
+				-- Ctrl --
+				Isaac.RenderScaledText("Ctrl - SoulCross", 64, 126, 0.9, 0.9, 1, 1, 1, 0.7)
+				Isaac.RenderScaledText("Spawn a SoulCross that will attack the", 70, 136, 0.9, 0.9, 1, 1, 1, 0.7)
+				Isaac.RenderScaledText("enemy autonomously.(DMG = player.Damage * 50%)", 70, 146, 0.9, 0.9, 1, 1, 1, 0.7)
+				Isaac.RenderScaledText("When SoulCross is spawned, it can damage enemies", 70, 156, 0.9, 0.9, 1, 1, 1, 0.7)
+				Isaac.RenderScaledText("with a radius of 64 pixels.(DMG = player.Damage * 200%)", 70, 166, 0.9, 0.9, 1, 1, 1, 0.7)
+				-- Alt --
+				Isaac.RenderScaledText("Alt - ReleaseSoul", 64, 176, 0.9, 0.9, 1, 1, 1, 0.7)
+				Isaac.RenderScaledText("Consume soul and deal damage to enemies with", 70, 186, 0.9, 0.9, 1, 1, 1, 0.7)
+				Isaac.RenderScaledText("radius 192 pixels.(DMG = player.Damage)", 70, 196, 0.9, 0.9, 1, 1, 1, 0.7)
+				-- X --
+				Isaac.RenderScaledText("X - Teleport To Devil Room", 64, 206, 0.9, 0.9, 1, 1, 1, 0.7)
+				Isaac.RenderScaledText("Hold 'X' for 6 seconds and teleport to devil room.", 70, 216, 0.9, 0.9, 1, 1, 1, 0.7)
+			else
+				-- Do nothing
+			end
+			--====--
+		else
+			--Do nothing
 		end
-		ReleaseIcon:Render(Vector(128,52), Vector(0,0), Vector(0,0))
-		--==Teleport To Devil Room==--
-		TeleportSign:SetOverlayRenderPriority(true)
-		TeleportSign:SetFrame("TeleportSign", 1)
-		TeleportSign:Render(Vector(112,76), Vector(0,0), Vector(0,0))
-		Isaac.RenderScaledText("'X'", 120, 70, 0.9, 0.9, 255, 255, 255, 255)
+		--========--
 		--==Talk to player==--
 		if DialogueOver == false and level:GetStage() == 13 then
 			--Lowest Y = -64--
@@ -452,32 +492,6 @@ function lairub:PostRender()
 			elseif Dialogue_Sheol == 4 then
 				Isaac.RenderText("Lairub:", playerPos.X - 96, playerPos.Y - 84, 255, 255, 255, 255)
 				Isaac.RenderText("All right, whatever you want.", playerPos.X - 96, playerPos.Y - 74, 255, 255, 255, 255)
-			end
-		end
-		--==CountDown==--
-		if (level:GetStage() == 10 and room:GetBackdropType() == 14) or (level:GetStage() == 11 and room:GetBackdropType() == 16) then
-			if DialogueOver_Sheol == false and level:GetStage() == 10 and room:GetBackdropType() == 14 then
-				--Do nothing
-			else
-				if room:IsClear() then
-					Isaac.RenderScaledText("00", 200, 60, 2, 2, 1, 1, 1, 1)
-					Isaac.RenderScaledText("safe", 200, 80, 0.9, 0.9, 1, 1, 1, 1)
-				elseif room:GetType() == RoomType.ROOM_BOSS then
-					Isaac.RenderScaledText("00", 200, 60, 2, 2, 1, 0.5, 0.5, 0.8)
-					Isaac.RenderScaledText("BOSS", 200, 80, 0.9, 0.9, 1, 0.5, 0.5, 0.8)
-				elseif not (room:IsClear() and room:GetType() == RoomType.ROOM_BOSS) then
-					if room:GetFrameCount() <= 1800 then
-						if CountDown < 10 then
-							Isaac.RenderScaledText("0"..tostring(CountDown), 200, 60, 2, 2, 1, 0.5, 0.5, 0.8)
-						else
-							Isaac.RenderScaledText(tostring(CountDown), 200, 60, 2, 2, 1, 0.5, 0.5, 0.8)
-						end
-						Isaac.RenderScaledText("Vigilant", 190, 80, 0.9, 0.9, 1, 0.5, 0.5, 0.8)
-					elseif room:GetFrameCount() >= 1800 then
-						Isaac.RenderScaledText("0"..tostring(DMGCountDown), 200, 60, 2, 2, 1, 0, 0, 0.8)
-						Isaac.RenderScaledText("DANGER", 192, 80, 0.9, 0.9, 1, 0, 0, 0.8)
-					end
-				end
 			end
 		end
 		--====--
@@ -983,7 +997,7 @@ function lairub:Functions()
 		--==Function==--
 		if not room:IsClear() then
 			if (level:GetStage() == 10 and room:GetBackdropType() == 14) or (level:GetStage() == 11 and room:GetBackdropType() == 16) then
-				if room:GetFrameCount() >= 1800 then
+				if room:GetFrameCount() >= 1800 and not room:GetType() == RoomType.ROOM_BOSS then
 					--Damage--
 					DMGCountDown = math.ceil((DMGframeCount * DMGcount + 1800 -room:GetFrameCount()) / 30)
 					if room:GetFrameCount() == DMGframeCount * DMGcount + 1800 then
@@ -1043,6 +1057,23 @@ function lairub:Functions()
 					PressingZ = false
 					PressedZOnce = false
 				end
+			end
+		end
+		--==== Help List ====--
+		if Input.IsButtonPressed(Keyboard.KEY_H, player.ControllerIndex) then
+			PressingH = true
+			if PressedHOnce == false then
+				PressedHOnce = true
+				ShowHelpList = true
+			end
+		else
+			ShowHelpList = false
+			PressingH = false
+			PressedHOnce = false
+		end
+		if level:GetStage() == 1 and ShowedInitialTips == false then
+			if room:GetFrameCount() > 90 then
+				ShowedInitialTips = true
 			end
 		end
 		--====Remove Poof (I can't finish this..)====--
@@ -1148,6 +1179,11 @@ function lairub:PostNewGame()
 	PressedXOnce = false
 	LairubTeleportReadyTime = 0
 	
+	ShowHelpList = false
+	PressingH = false
+	PressedHOnce = false
+	ShowedInitialTips = false
+	
 	DMGcount = 0
 	CountDown = 60
 	DMGCountDown = 3
@@ -1176,25 +1212,129 @@ function lairub:PostNewGame()
 end
 lairub:AddCallback( ModCallbacks.MC_POST_GAME_STARTED, lairub.PostNewGame)
 
---==For Locking Characters==--
+--==Tainted==--
 
 local playerType_Tainted_Lairub = Isaac.GetPlayerTypeByName("Tainted Lairub", true)
+local costume_TaintedLairub_Body = Isaac.GetCostumeIdByPath("gfx/characters/TaintedLairubBody.anm2")
+local costume_TaintedLairub_Head = Isaac.GetCostumeIdByPath("gfx/characters/TaintedLairubHead.anm2")
 
-function lairub:LockingUpdate(player)
+function lairub:TaintedUpdate()
+	local game = Game()
+	local level = game:GetLevel()
 	local player = Isaac.GetPlayer(0)
-	if player:GetPlayerType() == playerType_Tainted_Lairub then
-		player.Visible = false
-		player.ControlsEnabled = false
+	local room = game:GetRoom()
+	
+	if room:GetFrameCount() == 1 and player:GetPlayerType() == playerType_Tainted_Lairub and not player:IsDead() then
+		if player:HasCollectible(CollectibleType.COLLECTIBLE_GUILLOTINE) or player:HasCollectible(CollectibleType.COLLECTIBLE_TRANSCENDENCE) then
+			player:AddNullCostume(costume_TaintedLairub_Body)
+			player:AddNullCostume(costume_TaintedLairub_Head)
+		else
+			player:TryRemoveNullCostume(costume_TaintedLairub_Body)
+			player:AddNullCostume(costume_TaintedLairub_Body)
+			player:TryRemoveNullCostume(costume_TaintedLairub_Head)
+			player:AddNullCostume(costume_TaintedLairub_Head)
+		end
 	end
 end
-lairub:AddCallback( ModCallbacks.MC_POST_UPDATE, lairub.LockingUpdate)
+lairub:AddCallback( ModCallbacks.MC_POST_UPDATE, lairub.TaintedUpdate)
+
+function lairub:TaintedPostPlayerInit(player)
+	if player:GetPlayerType() == playerType_Tainted_Lairub then
+		player:TryRemoveNullCostume(costume_TaintedLairub_Body)
+		player:AddNullCostume(costume_TaintedLairub_Body)
+		player:TryRemoveNullCostume(costume_TaintedLairub_Head)
+		player:AddNullCostume(costume_TaintedLairub_Head)
+		costumeEquipped = true
+	else
+		player:TryRemoveNullCostume(costume_TaintedLairub_Body)
+		player:TryRemoveNullCostume(costume_TaintedLairub_Head)
+		costumeEquipped = false
+	end
+end
+lairub:AddCallback( ModCallbacks.MC_POST_PLAYER_INIT, lairub.TaintedPostPlayerInit)
+
+function lairub:TaintedEvaluateCache(player, cacheFlag)
+	if player:GetPlayerType() == playerType_Tainted_Lairub then
+		if cacheFlag == CacheFlag.CACHE_SPEED then
+			player.MoveSpeed = player.MoveSpeed - 0.2
+		elseif cacheFlag == CacheFlag.CACHE_DAMAGE then
+			player.Damage = player.Damage + 1.5
+		elseif cacheFlag == CacheFlag.CACHE_LUCK then
+			player.Luck = player.Luck - 6
+		elseif cacheFlag == CacheFlag.CACHE_FIREDELAY then
+			player.MaxFireDelay = player.MaxFireDelay + 2
+		elseif cacheFlag == CacheFlag.CACHE_TEARFLAG then
+			player.TearFlags = player.TearFlags | 1 << 1 | 1 << 2 | 1 << 9
+		elseif cacheFlag == CacheFlag.CACHE_FLYING then
+			if player:HasCollectible(CollectibleType.COLLECTIBLE_TRANSCENDENCE) then
+				player:TryRemoveNullCostume(costume_TaintedLairub_Body)
+				player:AddNullCostume(costume_TaintedLairub_Body)
+				player:TryRemoveNullCostume(costume_TaintedLairub_Head)
+				player:AddNullCostume(costume_TaintedLairub_Head)
+			end
+			player.CanFly = true
+		elseif cacheFlag == CacheFlag.CACHE_FAMILIARS then
+			local maybeFamiliars = Isaac.GetRoomEntities()
+			for m = 1, #maybeFamiliars do
+				local variant = maybeFamiliars[m].Variant
+				if variant == (FamiliarVariant.GUILLOTINE) or variant == (FamiliarVariant.ISAACS_BODY) or variant == (FamiliarVariant.SCISSORS) then
+					player:TryRemoveNullCostume(costume_TaintedLairub_Body)
+					player:AddNullCostume(costume_TaintedLairub_Body)
+					player:TryRemoveNullCostume(costume_TaintedLairub_Head)
+					player:AddNullCostume(costume_TaintedLairub_Head)
+				else
+					player:TryRemoveNullCostume(costume_TaintedLairub_Body)
+					player:AddNullCostume(costume_TaintedLairub_Body)
+					player:TryRemoveNullCostume(costume_TaintedLairub_Head)
+					player:AddNullCostume(costume_TaintedLairub_Head)
+				end
+			end
+		end
+	end
+end
+lairub:AddCallback( ModCallbacks.MC_EVALUATE_CACHE, lairub.TaintedEvaluateCache )
 
 function lairub:LockingPostRender()
 	local player = Isaac.GetPlayer(0)
 	local room = Game():GetRoom()
 	if player:GetPlayerType() == playerType_Tainted_Lairub then
 		Isaac.RenderText("Character 'Tainted Lairub' is an unfinished character.", 50, 60, 255, 0, 0, 255)
-		Isaac.RenderText("Now that she is locked, please wait for the update.", 50, 70, 255, 0, 0, 255)
+		Isaac.RenderText("Now she can't play, please wait for the update.", 50, 70, 255, 0, 0, 255)
 	end
 end
 lairub:AddCallback(ModCallbacks.MC_POST_RENDER, lairub.LockingPostRender)
+
+--==Universal==--
+
+function lairub:UniversalUpdate()
+	local player = Isaac.GetPlayer(0)
+	if player:GetPlayerType() == playerType_Lairub or player:GetPlayerType() == playerType_Tainted_Lairub then
+		--==Hearts Limit==--
+		while player:GetMaxHearts() > 0 do
+			player:AddMaxHearts(-2, true)
+			player:AddBoneHearts(1)
+		end
+		if player:GetHearts() > 0 then
+			player:AddHearts(-player:GetHearts(), true)
+		end
+		local soulHearts = player:GetSoulHearts()
+		local blackHearts = player:GetBlackHearts()
+		local totalHearts = math.ceil(player:GetBoneHearts() + (soulHearts*0.5))
+		local boneMisArrangeState = 0
+		for i=0,totalHearts-1,1 do
+			if boneMisArrangeState == 0 and not player:IsBoneHeart(i) then
+				boneMisArrangeState = 1
+			elseif boneMisArrangeState == 1 and player:IsBoneHeart(i) then
+				boneMisArrangeState = 2
+			end
+		end
+		if boneMisArrangeState == 2
+		or blackHearts ~= 2^(math.ceil(soulHearts * 0.5)) - 1
+		then
+			player:AddSoulHearts(-soulHearts)
+			player:AddBlackHearts(soulHearts)
+		end
+		--====--
+	end
+end
+lairub:AddCallback( ModCallbacks.MC_POST_UPDATE, lairub.UniversalUpdate)

@@ -4,4 +4,7 @@
   <costume anm2path="LairubBody.anm2" type="none" />
   <costume anm2path="LairubHead_TakeSoul.anm2" type="none" />
   <costume anm2path="LairubHead_TakeSoulBase.anm2" type="none" />
+  <!--- -Tainted- - -->
+  <costume anm2path="TaintedLairubHead.anm2" type="none"></costume>
+  <costume anm2path="TaintedLairubBody.anm2" type="none" isFlying="true" />
 </costumes>

@@ -145,13 +145,13 @@ function phobebia:Update()
 						end
 					end
 				end
-			end
 			--==Angel Room==--
-			if not player:HasCollectible(ItemID.TheCatsSoul, true) then
-				level:AddAngelRoomChance(100)
-			else
-				level:DisableDevilRoom()
-				level:AddAngelRoomChance(0)
+				if not player:HasCollectible(ItemID.TheCatsSoul, true) then
+					level:AddAngelRoomChance(100)
+				else
+					level:DisableDevilRoom()
+					level:AddAngelRoomChance(0)
+				end
 			end
 		end
 	)
@@ -477,6 +477,8 @@ function phobebia:TaintedUpdate()
 						TCRemoveTheCatsMindOnce = true
 					end
 					if TCRemoveTheCatsMindOnce == true then
+						player:TryRemoveNullCostume(costume_TheCat)
+						player:TryRemoveNullCostume(costume_TheCat_Head)
 						if  player:HasCollectible(118, true) then
 							player:RemoveCollectible(118)
 							TCRemoveTheCatsMindOnce = false
@@ -537,6 +539,9 @@ function phobebia:TaintedPostPlayerInit(player)
 			player:TryRemoveNullCostume(costume_TheCat_Head)
 			player:AddNullCostume(costume_TheCat_Head)
 			player:TryRemoveCollectibleCostume(118)
+		else
+			player:TryRemoveNullCostume(costume_TheCat)
+			player:TryRemoveNullCostume(costume_TheCat_Head)
 		end
 		costumeEquipped = true
 	else
