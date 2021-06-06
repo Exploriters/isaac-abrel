@@ -2039,7 +2039,7 @@ function hexanowMod:EvaluateCache(player, cacheFlag, tear)
 			--player.TearFallingSpeed = player.TearFallingSpeed -- + 5.0 -- * player:GetMaxHearts() / 24.0 
 			--player.TearFallingAcceleration = math.min(player.TearFallingAcceleration, - 0.2 / 3)
 		elseif cacheFlag == CacheFlag.CACHE_TEARFLAG then
-			player.TearFlags = player.TearFlags | TearFlags.TEAR_HOMING | TearFlags.TEAR_PERSISTENT | TearFlags.TEAR_SPECTRAL
+			player.TearFlags = player.TearFlags | TearFlags.TEAR_HOMING | TearFlags.TEAR_PERSISTENT | TearFlags.TEAR_SPECTRAL | TearFlags.TEAR_ICE
 		elseif cacheFlag == CacheFlag.CACHE_FLYING then
 			--[[if Game():GetRoom():IsClear() then
 				player.CanFly = true
@@ -2127,6 +2127,26 @@ function hexanowMod:PostUpdate()
 		
 		CallForEveryEntity(
 			function(entity)
+				
+				local tear = entity:ToTear()
+				if tear ~= nil and tear.Parent ~= nil then
+					if tear.Parent.Type == EntityType.ENTITY_PLAYER then
+						local player = tear.Parent:ToPlayer()
+						if player:GetPlayerType() == playerTypeHexanow
+						then							
+							if tear.Variant ~= TearVariant.ICE then
+								tear:ChangeVariant(TearVariant.ICE)
+								
+								local tearSprite = tear:GetSprite()
+								--tearSprite:ReplaceSpritesheet(0,"gfx/Hexanow_tears.png")
+								tearSprite:ReplaceSpritesheet(0,"gfx/ice_tears.png")
+								tearSprite:LoadGraphics()
+								tearSprite.Rotation = tear.Velocity:GetAngleDegrees()
+							end
+						end
+					end
+				end
+				
 				if entity.Type == EntityType.ENTITY_EFFECT
 				and entity.Variant == EffectVariant.WOMB_TELEPORT
 				then
