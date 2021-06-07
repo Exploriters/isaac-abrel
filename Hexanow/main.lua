@@ -1490,6 +1490,48 @@ function hexanowMod:ExecuteCmd(cmd, params)
 			Isaac.ConsoleOutput("Invalid args")
 		end
 	end
+	if cmd == "flashred" then
+		local pnum = tonumber(params)
+		if pnum ~= nil then
+			local level = Game():GetLevel()
+			
+			local redsecretIndex = level:QueryRoomTypeIndex(RoomType.ROOM_ULTRASECRET, false, RNG(), true)
+			local redsecretRoom = level:GetRoomByIdx(redsecretIndex)
+			--redsecretRoom.DisplayFlags = redsecretRoom.DisplayFlags | 1 << 0 | 1 << 1 | 1 << 2 
+			redsecretRoom.DisplayFlags = redsecretRoom.DisplayFlags | pnum
+			
+			level:UpdateVisibility()
+		else
+			Isaac.ConsoleOutput("Invalid args")
+		end
+		
+		
+		--[[
+		--local rooms = level:GetRooms()
+		local targetRoomIndex = nil
+		
+		--for i = 0, rooms:__len()-1 , 1 do
+			--local roomDes = rooms:Get(i)
+		for i = 0, level:GetRoomCount()-1 , 1 do
+			local roomDes = rooms:Get(i)
+			print("test",roomDes.ListIndex,"result",roomDes.Data.Type)
+			if roomDes.Data.Type == RoomType.ROOM_ULTRASECRET then
+				targetRoomIndex = roomDes.ListIndex
+				break
+			end
+		end
+		
+		if targetRoomIndex ~= nil then
+			local currIndex = level:GetCurrentRoomIndex()
+			level:ChangeRoom(106)
+			level:ChangeRoom(currIndex)
+			print("FOUND!")
+		else
+			print("NOT FOUND!")
+		end
+		]]
+		
+	end
 	if cmd == "ffsp" then
 		SuperPower = not SuperPower
 		CallForEveryPlayer(
@@ -1671,6 +1713,11 @@ function hexanowMod:PostNewRoom()
 		level:ApplyCompassEffect()
 		level:ApplyMapEffect()
 		level:ShowMap ()
+		
+		local redsecretIndex = level:QueryRoomTypeIndex(RoomType.ROOM_ULTRASECRET, false, RNG(), true)
+		local redsecretRoom = level:GetRoomByIdx(redsecretIndex)
+		redsecretRoom.DisplayFlags = redsecretRoom.DisplayFlags | 1 << 0 | 1 << 1 | 1 << 2 
+		level:UpdateVisibility()
 		
 		CallForEveryEntity(
 			function(entity)
