@@ -573,10 +573,11 @@ local function LairubSoulCrossUpdate(_, LairubSoulCross)
 	local room = game:GetRoom()
 	local roomEntities = Isaac.GetRoomEntities()
 	
-	local posX = math.floor(LairubSoulCross.Position.X/40.0)*40
+--[[	local posX = math.floor(LairubSoulCross.Position.X/40.0)*40
 	local posY = math.floor(LairubSoulCross.Position.Y/40.0)*40
 	LairubSoulCross.Position = Vector(posX, posY)
-	LairubSoulCross.Velocity = Vector(0, 0)
+	LairubSoulCross.Velocity = Vector(0, 0)]]--
+	--!Spawned position error!--
 	
 	if LairubSoulCross.FireCooldown < 1 then
 		for i,entity in ipairs(roomEntities) do
@@ -1298,11 +1299,20 @@ function lairub:LockingPostRender()
 	local player = Isaac.GetPlayer(0)
 	local room = Game():GetRoom()
 	if player:GetPlayerType() == playerType_Tainted_Lairub then
-		Isaac.RenderText("Character 'Tainted Lairub' is an unfinished character.", 50, 60, 255, 0, 0, 255)
-		Isaac.RenderText("Now she can't play, please wait for the update.", 50, 70, 255, 0, 0, 255)
+		Isaac.RenderText("I'm trying to update!! TAT", 50, 60, 255, 0, 0, 255)
 	end
 end
 lairub:AddCallback(ModCallbacks.MC_POST_RENDER, lairub.LockingPostRender)
+
+function lairub:TaintedFunctions()
+	local level = Game():GetLevel()
+	local player = Isaac.GetPlayer(0)
+	local room = Game():GetRoom()
+	if player:GetPlayerType() == playerType_Lairub and not player:IsDead() then
+		--==== Eating Children(?Not)... Devour ====--
+	end
+end
+lairub:AddCallback( ModCallbacks.MC_POST_UPDATE, lairub.TaintedFunctions)
 
 --==Universal==--
 
