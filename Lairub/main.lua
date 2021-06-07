@@ -7,6 +7,8 @@ local costume_Lairub_Head_TakeSoul = Isaac.GetCostumeIdByPath("gfx/characters/La
 local costume_Lairub_Head_TakeSoulBase = Isaac.GetCostumeIdByPath("gfx/characters/LairubHead_TakeSoulBase.anm2")
 local playerType_Lairub = Isaac.GetPlayerTypeByName("Lairub")
 local LairubStatUpdateItem = Isaac.GetItemIdByName( "Lairub Stat Trigger" )
+
+local lairubSoulStoneID = Isaac.GetCardIdByName("Soul of Lairub")
 --==Animation==--
 local AnimationEnd = true
 local AnimationEnd_ReadySpawnCross = true
@@ -1348,3 +1350,13 @@ function lairub:UniversalUpdate()
 	end
 end
 lairub:AddCallback( ModCallbacks.MC_POST_UPDATE, lairub.UniversalUpdate)
+
+-- 使用灵魂石的效果
+function lairub:UseLairubSoulStone(cardId, player, useFlags)
+	SFXManager():Play(564, 1, 0, false, 1 )
+	SFXManager():Play(564, 1, 0, false, 1 )
+	SFXManager():Play(564, 1, 0, false, 1 )
+	SFXManager():Play(548, 1, 0, false, 1 )
+	SFXManager():Play(187, 1, 0, false, 1 )
+end
+lairub:AddCallback(ModCallbacks.MC_USE_CARD, lairub.UseLairubSoulStone, lairubSoulStoneID)

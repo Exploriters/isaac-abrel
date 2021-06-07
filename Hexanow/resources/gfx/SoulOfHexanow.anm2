@@ -2,7 +2,7 @@
 	<Info CreatedBy="siiftun1857" CreatedOn="2021-06-06 23:30:29" Version="108" Fps="30"/>
 	<Content>
 		<Spritesheets>
-			<Spritesheet Path="SoulOfLairub.png" Id="0"/>
+			<Spritesheet Path="SoulOfHexanow.png" Id="0"/>
 			<Spritesheet Path="Effects\Effect_023_StarFlash.png" Id="1"/>
 		</Spritesheets>
 		<Layers>

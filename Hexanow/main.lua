@@ -13,6 +13,8 @@ local hexanowHairCostume = Isaac.GetCostumeIdByPath("gfx/characters/HexanowHair.
 local hexanowBodyCostume = Isaac.GetCostumeIdByPath("gfx/characters/Hexanow_uranus.anm2")
 local hexanowFateCostume = Isaac.GetCostumeIdByPath("gfx/characters/Hexanow_fate.anm2")
 
+local hexanowSoulStoneID = Isaac.GetCardIdByName("Soul of Hexanow")
+
 local entityVariantHeartsBlender = Isaac.GetEntityVariantByName("Hearts Blender")
 local entityTypeHexanowPortal = Isaac.GetEntityTypeByName("Hexanow Blue Portal")
 
@@ -1581,6 +1583,16 @@ function hexanowMod:UsePortalTool(itemId, itemRng, player, useFlags, activeSlot,
 	end
 end
 hexanowMod:AddCallback(ModCallbacks.MC_USE_ITEM, hexanowMod.UsePortalTool)
+
+-- 使用灵魂石的效果
+function hexanowMod:UseHexanowSoulStone(cardId, player, useFlags)
+	SFXManager():Play(564, 1, 0, false, 1 )
+	SFXManager():Play(564, 1, 0, false, 1 )
+	SFXManager():Play(564, 1, 0, false, 1 )
+	SFXManager():Play(548, 1, 0, false, 1 )
+	SFXManager():Play(187, 1, 0, false, 1 )
+end
+hexanowMod:AddCallback(ModCallbacks.MC_USE_CARD, hexanowMod.UseHexanowSoulStone, hexanowSoulStoneID)
 
 --[[
 -- 按键事件
