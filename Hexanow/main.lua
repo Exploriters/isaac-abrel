@@ -13,8 +13,8 @@ local hexanowPortalTool = Isaac.GetItemIdByName("Eternal Portal")
 local hexanowFlightTriggerItem = Isaac.GetItemIdByName( "Hexanow flight trigger" )
 local hexanowStatTriggerItem = Isaac.GetItemIdByName( "Hexanow overall stat trigger" )
 local hexanowHairCostume = Isaac.GetCostumeIdByPath("gfx/characters/HexanowHair.anm2")
-local hexanowBodyCostume = Isaac.GetCostumeIdByPath("gfx/characters/Hexanow_uranus.anm2")
-local hexanowFateCostume = Isaac.GetCostumeIdByPath("gfx/characters/Hexanow_fate.anm2")
+local hexanowBodyCostume = Isaac.GetCostumeIdByPath("gfx/characters/HexanowBody.anm2")
+local hexanowBodyFlightCostume = Isaac.GetCostumeIdByPath("gfx/characters/HexanowFlight.anm2")
 
 local hexanowSoulStoneID = Isaac.GetCardIdByName("Soul of Hexanow")
 
@@ -1136,20 +1136,20 @@ function UpdateCostumes(player)
 		--player:TryRemoveCollectibleCostume(CollectibleType.COLLECTIBLE_URANUS, false)
 		--player:TryRemoveCollectibleCostume(CollectibleType.COLLECTIBLE_NEPTUNUS, false)
 		--player:TryRemoveNullCostume(hexanowHairCostume)
-		--player:TryRemoveNullCostume(hexanowFateCostume)
+		--player:TryRemoveNullCostume(hexanowBodyFlightCostume)
 		--player:TryRemoveNullCostume(hexanowBodyCostume)
 		
 		player:AddNullCostume(hexanowHairCostume)
 		
 		if player.CanFly then
-			player:AddNullCostume(hexanowFateCostume)
+			player:AddNullCostume(hexanowBodyFlightCostume)
 		else
-			--player:AddNullCostume(hexanowBodyCostume)
+			player:AddNullCostume(hexanowBodyCostume)
 		end
 	else
 		player:TryRemoveNullCostume(hexanowHairCostume)
 		player:TryRemoveNullCostume(hexanowBodyCostume)
-		player:TryRemoveNullCostume(hexanowFateCostume)
+		player:TryRemoveNullCostume(hexanowBodyFlightCostume)
 	end
 end
 
