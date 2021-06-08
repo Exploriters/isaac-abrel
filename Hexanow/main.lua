@@ -1327,7 +1327,7 @@ hexanowMod:AddCallback(ModCallbacks.MC_POST_PLAYER_INIT, hexanowMod.PostPlayerIn
 -- 使用传送门工具的效果
 function hexanowMod:UsePortalTool(itemId, itemRng, player, useFlags, activeSlot, customVarData)
 	local result = {
-		Discharge = true,
+		Discharge = false,
 		Remove = false,
 		ShowAnim = false,
 	}
