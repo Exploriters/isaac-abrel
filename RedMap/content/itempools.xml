@@ -1,6 +1,6 @@
 <ItemPools>
 	<Pool Name="secret">
-		<Item Name="Red Map" Weight="1" DecreaseBy="1" RemoveOn="0.1"/>
+		<Item Name="Red Map" Weight="1000" DecreaseBy="1000" RemoveOn="0.1"/>
 	</Pool>
 	<Pool Name="curse">
 		<Item Name="Red Map" Weight="1" DecreaseBy="0.5" RemoveOn="0.1"/>

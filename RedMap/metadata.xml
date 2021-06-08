@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <metadata>
     <name>Red Map</name>
-    <directory>RedMap</directory>
-    <id />
+    <directory>redmap</directory>
+    <id>2510449747</id>
     <description>Reveal Ultra secret room. By siiftun1857.</description>
-    <version>1.1</version>
-    <visibility>Public</visibility>
+    <version>1.2</version>
+    <visibility>Private</visibility>
     <tag id="Lua"/>
     <tag id="Items"/>
 </metadata>
