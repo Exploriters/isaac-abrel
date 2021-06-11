@@ -127,8 +127,8 @@ function WipeTempVar()
 	roomClearBounsEnabled = false
 	EternalChargeForFree = true
 	
-	EternalChargeSuppressed = false
-	Tainted = false
+	--EternalChargeSuppressed = false
+	--Tainted = false
 	SuperPower = false
 	
 	--WhiteHexanowCollectibleID = 0
@@ -166,6 +166,7 @@ function hexanowObjectives:Apply()
 	HUDoffset = tonumber(self:Read("HUDoffset", "10"))
 	EternalCharges = tonumber(self:Read("EternalCharges", "0"))
 	
+	--[[
 	local ECSStr = self:Read("EternalChargeSuppressed", "false")
 	if ECSStr == "true" then
 		EternalChargeSuppressed = true
@@ -184,6 +185,8 @@ function hexanowObjectives:Apply()
 	else
 		Tainted = nil
 	end
+	]]
+	
 	
 	--[[
 	local WHIStr = self:Read("WhiteHexanowItem", "")
@@ -216,8 +219,8 @@ function hexanowObjectives:Recieve()
 	
 	self:Write("HUDoffset", tostring(HUDoffset))
 	self:Write("EternalCharges", tostring(EternalCharges))
-	self:Write("EternalChargeSuppressed", tostring(EternalChargeSuppressed))
-	self:Write("HexanowTaintedStarted", tostring(Tainted))
+	--self:Write("EternalChargeSuppressed", tostring(EternalChargeSuppressed))
+	--self:Write("HexanowTaintedStarted", tostring(Tainted))
 	
 	--[[
 	if WhiteHexanowCollectibleID ~= 0 then
@@ -260,7 +263,7 @@ end
 -- 存储mod数据
 function SaveHexanowModData()
 	hexanowObjectives:Recieve()
-	local str = hexanowObjectives:ToString()
+	local str = hexanowObjectives:ToString(true)
 	-- print("Save Readout: ", str)
 	Isaac.SaveModData(hexanowMod, str)
 end
@@ -439,7 +442,7 @@ function RearrangeHearts(player)
 end
 
 function TaintedHexanowRoomOverride()
-	if not Tainted then
+	if not hexanowFlags:HasFlag("TAINTED") then
 		return nil
 	end
 	
@@ -456,8 +459,9 @@ function TaintedHexanowRoomOverride()
 			local pickup = entity:ToPickup()
 			if pickup ~= nil then
 				if pickup.Variant == PickupVariant.PICKUP_COLLECTIBLE and pickup.SubType ~= 0 then
-					if room:GetBackdropType() == 51 and pickup.SubType ~= CollectibleType.COLLECTIBLE_RED_KEY then
+					if not hexanowFlags:HasFlag("TEFFECT_REDKEY_GEN") and room:GetBackdropType() == 51 and pickup.SubType ~= CollectibleType.COLLECTIBLE_RED_KEY then
 						pickup:Morph(pickup.Type, pickup.Variant, CollectibleType.COLLECTIBLE_RED_KEY, true)
+						hexanowFlags:AddFlag("TEFFECT_REDKEY_GEN")
 					end
 					
 					if pickup.SubType == CollectibleType.COLLECTIBLE_R_KEY
@@ -467,7 +471,7 @@ function TaintedHexanowRoomOverride()
 						pickup:Morph(pickup.Type, pickup.Variant, CollectibleType.COLLECTIBLE_BREAKFAST, true)
 					end
 				end
-				if room:GetBackdropType() == 49 and 
+				if not hexanowFlags:HasFlag("TEFFECT_CHESTWIPE") and room:GetBackdropType() == 49 and 
 					 ( pickup.Variant == PickupVariant.PICKUP_CHEST 	
 					or pickup.Variant == PickupVariant.PICKUP_BOMBCHEST 	
 					or pickup.Variant == PickupVariant.PICKUP_SPIKEDCHEST 	
@@ -477,15 +481,17 @@ function TaintedHexanowRoomOverride()
 					)
 				then
 					pickup:Remove()
-					level:UpdateVisibility()
+					hexanowFlags:AddFlag("TEFFECT_CHESTWIPE")
 				end
 			end
 			
-			if entity.Type == EntityType.ENTITY_SHOPKEEPER
+			if not hexanowFlags:HasFlag("TEFFECT_DEATHCERTIFICATE_GEN") and
+			(entity.Type == EntityType.ENTITY_SHOPKEEPER
 			or (pickup ~= nil and pickup.Variant == PickupVariant.PICKUP_COLLECTIBLE and pickup.SubType == CollectibleType.COLLECTIBLE_INNER_CHILD)
-			then
+			)then
 				Isaac.Spawn(EntityType.ENTITY_PICKUP, PickupVariant.PICKUP_COLLECTIBLE, CollectibleType.COLLECTIBLE_DEATH_CERTIFICATE, entity.Position, Vector(0,0), entity)
 				entity:Remove()
+				hexanowFlags:AddFlag("TEFFECT_DEATHCERTIFICATE_GEN")
 			end
 			
 			
@@ -505,7 +511,7 @@ function InitPlayerHexanowTainted(player)
 		
 		local level = Game():GetLevel()
 		
-		if not Tainted then
+		if not hexanowFlags:HasFlag("TAINTED") then
 			--player:AddCard(Card.CARD_CRACKED_KEY)
 			--player:AddCollectible(CollectibleType.COLLECTIBLE_DEATH_CERTIFICATE, 0, false)
 			player:AddCoins(99)
@@ -529,7 +535,7 @@ function InitPlayerHexanowTainted(player)
 			else
 				Isaac.ExecuteCommand("stage 13")
 			end
-			Tainted = true
+			hexanowFlags:AddFlag("TAINTED")
 		end
 	end
 end
@@ -552,7 +558,7 @@ function InitPlayerHexanow(player)
 		--player:AddHearts(-1)
 		--player:AddCard(Card.CARD_JUSTICE)
 		--player:AddCard(Card.CARD_CRACKED_KEY)
-		if Tainted then
+		if hexanowFlags:HasFlag("TAINTED") then
 			player:AddMaxHearts(12)
 			player:AddHearts(13)
 			player:AddTrinket(TrinketType.TRINKET_PERFECTION | 32768)
@@ -589,11 +595,11 @@ end
 -- 物品谓词
 function HexanowBlackCollectiblePredicate(ID)
 	local item = Isaac.GetItemConfig():GetCollectible(ID)
-	if item ~= nil and
+	if ID ~= 0 and (item == nil or
 		(
 		item.ID == CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR
 		or item.ID == CollectibleType.COLLECTIBLE_MEGA_MUSH
-		)
+		))
 	then
 		return true
 	else
@@ -674,7 +680,7 @@ end
 function IsWhiteHexanowCollectible(player, ID)
 	local playerID = GetPlayerID(player)
 
-	if HexanowBlackCollectiblePredicate(ID) then
+	if HexanowBlackCollectiblePredicate(ID) or ID == 0 then
 		return false
 	end
 	for i=1,3 do
@@ -689,14 +695,15 @@ function SetWhiteHexanowCollectible(player, ID, slot)
 	--print("White Collectible",slot,"Now",ID)
 	local playerID = GetPlayerID(player)
 	
-	if HexanowBlackCollectiblePredicate(ID)
-	or ID == 0
-	then
-		return nil
-	end
-	
-	if HexanowCollectibleMaxAllowed(player, ID) - player:GetCollectibleNum(ID, true) > 0 then
-		return nil
+	if ID ~= 0 then
+		if HexanowBlackCollectiblePredicate(ID)
+		then
+			return nil
+		end
+		
+		if HexanowCollectibleMaxAllowed(player, ID) - player:GetCollectibleNum(ID, true) > 0 then
+			return nil
+		end
 	end
 	
 	if slot == nil then

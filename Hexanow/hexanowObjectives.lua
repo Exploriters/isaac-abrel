@@ -1,5 +1,5 @@
 
-keyValuePair = {key = "", value = ""}
+keyValuePair = {key = "", value = "", used = false}
 keyValuePair.__index = keyValuePair
 function KeyValuePair(key, value)
   return keyValuePair:ctor(key, value)
@@ -9,6 +9,7 @@ function keyValuePair:ctor(key, value)
   setmetatable(cted, keyValuePair)
   cted.key = key
   cted.value = value
+  cted.used = false
   return cted
 end
 
@@ -22,6 +23,7 @@ end
 function hexanowObjectives:Read(key, default)
 	for i,kvp in ipairs(self) do
 		if kvp.key == key then
+			kvp.used = true
 			return kvp.value
 		end
 	end
@@ -39,10 +41,12 @@ function hexanowObjectives:Write(key, value)
 	return value
 end
 
-function hexanowObjectives:ToString()
+function hexanowObjectives:ToString(ignoreUnused)
 	local str = ""
 	for i,kvp in ipairs(self) do
-		str = str..tostring(kvp.key).."="..tostring(kvp.value).."\n"
+		if ignoreUnused ~= true or kvp.used == true then
+			str = str..tostring(kvp.key).."="..tostring(kvp.value).."\n"
+		end
 	end
 	return str
 end
