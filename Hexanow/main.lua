@@ -1,3 +1,6 @@
+
+require("hexanowObjectives")
+
 --Isaac.ConsoleOutput("Init mod hexanow\n")
 
 local hexanowMod = RegisterMod("Hexanow", 1);
@@ -10,8 +13,8 @@ local hexanowPortalTool = Isaac.GetItemIdByName("Eternal Portal")
 local hexanowFlightTriggerItem = Isaac.GetItemIdByName( "Hexanow flight trigger" )
 local hexanowStatTriggerItem = Isaac.GetItemIdByName( "Hexanow overall stat trigger" )
 local hexanowHairCostume = Isaac.GetCostumeIdByPath("gfx/characters/HexanowHair.anm2")
-local hexanowBodyCostume = Isaac.GetCostumeIdByPath("gfx/characters/Hexanow_uranus.anm2")
-local hexanowFateCostume = Isaac.GetCostumeIdByPath("gfx/characters/Hexanow_fate.anm2")
+local hexanowBodyCostume = Isaac.GetCostumeIdByPath("gfx/characters/HexanowBody.anm2")
+local hexanowBodyFlightCostume = Isaac.GetCostumeIdByPath("gfx/characters/HexanowFlight.anm2")
 
 local hexanowSoulStoneID = Isaac.GetCardIdByName("Soul of Hexanow")
 
@@ -156,200 +159,11 @@ function RewindLastRoomVar()
 	--WhiteHexanowTrinketID = WhiteHexanowTrinketIDLastRoom
 end
 
-function GetPlayerID(player)
-	local numPlayers = Game():GetNumPlayers()
-	for i=0,numPlayers-1,1 do
-		if Isaac.GetPlayer(i).Index == player.Index then
-			return i + 1
-		end
-	end
-	return nil
-end
-
-function IsWhiteHexanowCollectible(player, ID)
-	local playerID = GetPlayerID(player)
-
-	if HexanowBlackCollectiblePredicate(ID) then
-		return false
-	end
-	for i=1,3 do
-		if WhiteItem[playerID][i] == ID then
-			return true
-		end
-	end
-	return false
-end
-
-function SetWhiteHexanowCollectible(player, ID, slot)
-	--print("White Collectible",slot,"Now",ID)
-	local playerID = GetPlayerID(player)
+function hexanowObjectives:Apply()
+	HUDoffset = tonumber(self:Read("HUDoffset", "10"))
+	EternalCharges = tonumber(self:Read("EternalCharges", "0"))
 	
-	if HexanowBlackCollectiblePredicate(ID)
-	or ID == 0
-	then
-		return nil
-	end
-	
-	if HexanowCollectibleMaxAllowed(player, ID) - player:GetCollectibleNum(ID, true) > 0 then
-		return nil
-	end
-	
-	if slot == nil then
-		slot = SelectedWhiteItem[playerID]
-	end
-	
-	if slot ~= 1
-	and slot ~= 2
-	and slot ~= 3
-	then
-		return nil
-	end
-	
-	WhiteItem[playerID][slot] = ID
-end
-
-function PickupWhiteHexanowCollectible(player, ID, slot)
-	local playerID = GetPlayerID(player)
-	local item = Isaac.GetItemConfig():GetCollectible(ID)
-	
-	if HexanowBlackCollectiblePredicate(ID) then
-		return nil
-	end
-	
-	if HexanowCollectibleMaxAllowed(player, ID) - player:GetCollectibleNum(ID, true) > 0 then
-		return nil
-	end
-	
-	if slot == nil then
-		slot = SelectedWhiteItem[playerID]
-	end
-	
-	if slot ~= 1
-	and slot ~= 2
-	and slot ~= 3
-	and slot ~= 4
-	then
-		return nil
-	end
-	
-	if item ~= nil and item.Type == ItemType.ITEM_ACTIVE then
-		local primaryAcItem = player:GetActiveItem(ActiveSlot.SLOT_PRIMARY)
-		if primaryAcItem ~= CollectibleType.COLLECTIBLE_NULL
-		and not ( player:HasCollectible(CollectibleType.COLLECTIBLE_SCHOOLBAG, true)
-			and player:GetActiveItem(ActiveSlot.SLOT_SECONDARY) == CollectibleType.COLLECTIBLE_NULL
-			)
-		then
-			if WhiteItem[playerID][1] == primaryAcItem then slot = 1 end
-			if WhiteItem[playerID][2] == primaryAcItem then slot = 2 end
-			if WhiteItem[playerID][3] == primaryAcItem then slot = 3 end
-		end
-	end
-	
-	if slot == 4
-	then
-		return nil
-	end
-	
-	if ID ~= CollectibleType.COLLECTIBLE_SCHOOLBAG
-	and WhiteItem[playerID][slot] == CollectibleType.COLLECTIBLE_SCHOOLBAG then
-		local secondaryID = player:GetActiveItem(ActiveSlot.SLOT_SECONDARY)
-		if secondaryID ~= CollectibleType.COLLECTIBLE_NULL then
-			if WhiteItem[playerID][1] == secondaryID then
-				WhiteItem[playerID][1] = 0
-			end
-			if WhiteItem[playerID][2] == secondaryID then
-				WhiteItem[playerID][2] = 0
-			end
-			if WhiteItem[playerID][3] == secondaryID then
-				WhiteItem[playerID][3] = 0
-			end
-		end
-	end
-	
-	SetWhiteHexanowCollectible(player, ID, slot)
-end
-
-
---[[
-function ReplaceWhiteHexanowCollectible(player, ID, slot)
-	--print("White Collectible Now",ID)
-	
-	if slot == nil then
-		slot = SelectedWhiteItem[playerID]
-	end
-	
-	if slot ~= 1
-	and slot ~= 2
-	and slot ~= 3
-	then
-		return nil
-	end
-	
-	player:RemoveCollectible(WhiteItem[playerID][slot], true)
-	
-	SetWhiteHexanowCollectible(player, ID, slot)
-end
-]]
-
---[[
-function WhiteHexanowTrinket(ID)
-	ID = ID & 32767
-	--print("White Trinket Now",ID)
-	WhiteHexanowCollectibleID = 0
-	WhiteHexanowTrinketID = ID
-	return ID
-end
-]]
-
-keyValuePair = {key = "", value = ""}
-keyValuePair.__index = keyValuePair
-function KeyValuePair(key, value)
-  return keyValuePair:ctor(key, value)
-end
-function keyValuePair:ctor(key, value)
-  local cted = {}
-  setmetatable(cted, keyValuePair)
-  cted.key = key
-  cted.value = value
-  return cted
-end
-
---[[local hexanowObjectives = {
-["damageIncrease"] = 0.0,
-}]]
-
-local hexanowObjectives = { }
-hexanowObjectives.__index = hexanowObjectives
-
-function hexanowObjectives_Wipe()
-	hexanowObjectives = { }
-end
-
-function hexanowObjectives_Read(key, default)
-	for i,kvp in ipairs(hexanowObjectives) do
-		if kvp.key == key then
-			return kvp.value
-		end
-	end
-	return default
-end
-
-function hexanowObjectives_Write(key, value)
-	for i,kvp in ipairs(hexanowObjectives) do
-		if kvp.key == key then
-			kvp.value = value
-			return value
-		end
-	end
-	table.insert(hexanowObjectives, KeyValuePair(key, value))
-	return value
-end
-
-function hexanowObjectives_Apply()
-	HUDoffset = tonumber(hexanowObjectives_Read("HUDoffset", "10"))
-	EternalCharges = tonumber(hexanowObjectives_Read("EternalCharges", "0"))
-	
-	local ECSStr = hexanowObjectives_Read("EternalChargeSuppressed", "false")
+	local ECSStr = self:Read("EternalChargeSuppressed", "false")
 	if ECSStr == "true" then
 		EternalChargeSuppressed = true
 	elseif ECSStr == "false" then
@@ -359,7 +173,7 @@ function hexanowObjectives_Apply()
 	end
 	--print("Eternal charge suppression state "..tostring(EternalChargeSuppressed))
 
-	local HTSStr = hexanowObjectives_Read("HexanowTaintedStarted", "false")
+	local HTSStr = self:Read("HexanowTaintedStarted", "false")
 	if HTSStr == "true" then
 		Tainted = true
 	elseif HTSStr == "false" then
@@ -369,7 +183,7 @@ function hexanowObjectives_Apply()
 	end
 	
 	--[[
-	local WHIStr = hexanowObjectives_Read("WhiteHexanowItem", "")
+	local WHIStr = self:Read("WhiteHexanowItem", "")
 	local WHIpoint = string.find(WHIStr, ":", 1)
 	if WHIpoint ~= nil then
 		local prefix = string.sub(WHIStr, 1, WHIpoint - 1)
@@ -384,126 +198,65 @@ function hexanowObjectives_Apply()
 	]]
 	
 	for i=1,4 do
-		SelectedWhiteItem[i] = tonumber(hexanowObjectives_Read("SelectedWhiteItem-"..tostring(i), "1"))
+		SelectedWhiteItem[i] = tonumber(self:Read("SelectedWhiteItem-"..tostring(i), "1"))
 		for j=1,3 do
-			WhiteItem[i][j] = tonumber(hexanowObjectives_Read("WhiteItem-"..tostring(i).."-"..tostring(j), "0"))
+			WhiteItem[i][j] = tonumber(self:Read("WhiteItem-"..tostring(i).."-"..tostring(j), "0"))
 		end
 	end
 	
 	UpdateLastRoomVar()
 end
 
-function hexanowObjectives_Recieve()
-	hexanowObjectives_Write("HUDoffset", tostring(HUDoffset))
-	hexanowObjectives_Write("EternalCharges", tostring(EternalCharges))
-	hexanowObjectives_Write("EternalChargeSuppressed", tostring(EternalChargeSuppressed))
-	hexanowObjectives_Write("HexanowTaintedStarted", tostring(Tainted))
+function hexanowObjectives:Recieve()
+	self:Write("HUDoffset", tostring(HUDoffset))
+	self:Write("EternalCharges", tostring(EternalCharges))
+	self:Write("EternalChargeSuppressed", tostring(EternalChargeSuppressed))
+	self:Write("HexanowTaintedStarted", tostring(Tainted))
 	
 	--[[
 	if WhiteHexanowCollectibleID ~= 0 then
-		hexanowObjectives_Write("WhiteHexanowItem", "Collectible:"..tostring(WhiteHexanowCollectibleID))
+		self:Write("WhiteHexanowItem", "Collectible:"..tostring(WhiteHexanowCollectibleID))
 	--elseif WhiteHexanowTrinketID ~= 0 then
-	--	hexanowObjectives_Write("WhiteHexanowItem", "Trinket:"..tostring(WhiteHexanowTrinketID))
+	--	self:Write("WhiteHexanowItem", "Trinket:"..tostring(WhiteHexanowTrinketID))
 	else
-		hexanowObjectives_Write("WhiteHexanowItem", "")
+		self:Write("WhiteHexanowItem", "")
 	end
 	]]
 	
 	for i=1,4 do
-		hexanowObjectives_Write("SelectedWhiteItem-"..tostring(i), tostring(SelectedWhiteItem[i]))
+		self:Write("SelectedWhiteItem-"..tostring(i), tostring(SelectedWhiteItem[i]))
 		for j=1,3 do
-			hexanowObjectives_Write("WhiteItem-"..tostring(i).."-"..tostring(j), tostring(WhiteItem[i][j]))
+			self:Write("WhiteItem-"..tostring(i).."-"..tostring(j), tostring(WhiteItem[i][j]))
 		end
 	end
 end
 
-function hexanowObjectives_ToString()
+-- 读取mod数据
+function LoadHexanowModData()
+	--Isaac.SaveModData(hexanowMod, "someThingWrong\nsomeThingWrong")
 	local str = ""
-	for i,kvp in ipairs(hexanowObjectives) do
-		str = str..tostring(kvp.key).."="..tostring(kvp.value).."\n"
+	if Isaac.HasModData(hexanowMod) then
+		str = Isaac.LoadModData(hexanowMod)
+	--	if str == nil then
+	--		print("Null readout!")
+	--	else
+	--		print("Load Readout:\n"..str)
+	--	end
+	--else
+	--	print("Data does not exist")
 	end
-	return str
+	hexanowObjectives:Wipe()
+	hexanowObjectives:LoadFromString(str)
+	hexanowObjectives:Apply()
 end
 
-function hexanowObjectives_LoadFromString(str)
-	--print("RAW:\n"..str)
-	local strTable = {}
-	local pointer1 = 0
-	local pointer2 = 0
-	local count = 1
-	while true do
-		local point = string.find(str, "\n", count)
-		if point == nil then
-			break
-		end
-		pointer1 = pointer2
-		pointer2 = point
-		
-		table.insert(strTable, string.sub(str, pointer1 + 1, pointer2 - 1))
-		
-		count = count + 1
-	end
-	--print("Splt by line complete with "..tostring(count).." lines.")
-	
-	for i,str in ipairs(strTable) do
-		local point = string.find(str, "=", 1)
-		if point ~= nil then
-			local key = string.sub(str, 1, point - 1)
-			local value = string.sub(str, point + 1, 256)
-			hexanowObjectives_Write(key, value)
-		end
-	end
-	--print("Load from string result:\n"..hexanowObjectives_ToString())
+-- 存储mod数据
+function SaveHexanowModData()
+	hexanowObjectives:Recieve()
+	local str = hexanowObjectives:ToString()
+	-- print("Save Readout: ", str)
+	Isaac.SaveModData(hexanowMod, str)
 end
-
---[[
-for i,kvp in ipairs(hexanowObjectives) do
-	Isaac.ConsoleOutput(kvp.key)
-	Isaac.ConsoleOutput("=")
-	Isaac.ConsoleOutput(kvp.value)
-	Isaac.ConsoleOutput("\n")
-end
-]]
-
-require("apioverride")
---[[ MALFUNCTIONING
-local baseEntityPlayerHasCollectible = APIOverride.GetCurrentClassFunction(EntityPlayer, "HasCollectible")
-APIOverride.OverrideClassFunction(EntityPlayer, "HasCollectible", function(interval, Type, IgnoreModifiers)	
-    local result = baseEntityPlayerHasCollectible(interval, Type, IgnoreModifiers)
-	if interval:GetPlayerType() == playerTypeHexanow
-	and (  Type == CollectibleType.COLLECTIBLE_ANALOG_STICK
-		or Type == CollectibleType.COLLECTIBLE_URANUS
-		or Type == CollectibleType.COLLECTIBLE_NEPTUNUS
-	) then
-		result = true
-	end
-	return result
-end)
-
-local baseHasCollectible = APIOverride.GetCurrentClassFunction(EntityPlayer, "HasCollectible")
-APIOverride.OverrideClassFunction(EntityPlayer, "HasCollectible", function(self, Type, IgnoreModifiers, a,b,c,d,e,f,g,h,i,j,k,l,m,n)
-	if self:GetPlayerType() == playerTypeHexanow
-	and (  Type == CollectibleType.COLLECTIBLE_ANALOG_STICK
-		or Type == CollectibleType.COLLECTIBLE_URANUS
-		or Type == CollectibleType.COLLECTIBLE_NEPTUNUS
-	) then
-		return true
-	end
-
-	return baseHasCollectible(self, Type, IgnoreModifiers, a,b,c,d,e,f,g,h,i,j,k,l,m,n)
-end)
-]]
-
---[[
-APIOverride.OverrideClassFunction(EntityPlayer, "GetMaxHearts", function()
-    return 123456789
-end)
-
-APIOverride.OverrideClassFunction(EntityPlayer, "GetPlayerType", function()
-    return PlayerType.PLAYER_AZAZEL 
-end)
-]]
-
 
 function Tears2TearDelay(Tears)
 	if Tears <= 0.77 then
@@ -529,8 +282,15 @@ function ApplyTears2TearDelay(TearDelay, Tears)
 	return Tears2TearDelay(TearDelay2Tears(TearDelay) + Tears)
 end
 
-		--return ( 770 - 77*TearDelay )/1062 临时方案
-		--return ((-10*TearDelay)+math.sqrt(3)*math.sqrt(5867-260*TearDelay)+199)/60
+function GetPlayerID(player)
+	local numPlayers = Game():GetNumPlayers()
+	for i=0,numPlayers-1,1 do
+		if Isaac.GetPlayer(i).Index == player.Index then
+			return i + 1
+		end
+	end
+	return nil
+end
 
 -- 为每个玩家执行目标函数
 function CallForEveryPlayer(func)
@@ -557,211 +317,6 @@ function PlayerTypeExistInGame(playerType)
 		end
 	end
 	return false
-end
-
---[[
-function table.tostringex (t)
-	local tableT = {"{"}
-
-	function toStringF (k, v)
-		if "number" == type(k) then
-		elseif "string" == type(k) then
-			table.insert(tableT, string.format("%s=", k))
-		elseif "table" == type(k) then
-			table.insert(tableT, string.format("table:%s=", k))
-		elseif "function" == type(k) then
-			table.insert(tableT, tostring(k))
-		end
-
-		if "table" == type(v) then
-			table.insert(tableT, table.tostringex(v))
-		elseif "number" == type(v) or "boolean" == type(v) then
-			table.insert(tableT, tostring(v))
-		else 
-			table.insert(tableT, string.format("\"%s\"", tostring(v)))
-		end
-
-		table.insert(tableT, ",")
-	end
-
-	table.foreach(t, toStringF)
-	table.remove(tableT, table.getn(tableT)) -- 删除逗号
-	table.insert(tableT, "}")
-	local tableStr = table.concat(tableT)
-	return tableStr
-end
-function table.tostring (t, tabCountedP)
-	local tableT = {"{\n"}
-	if (nil == tabCountedP) then
-		tabCounted = "    "
-	else 
-		tableT = {"\n", tabCounted, "{\n"}
-	end
-
-	function toStringF (k, v)
-		table.insert(tableT, tabCounted)
-		if "number" == type(k) then
-			table.insert(tableT, string.format("[%s] = ", k))
-		elseif "string" == type(k) then
-			table.insert(tableT, string.format("\"%s\" = ", k))
-		elseif "table" == type(k) then
-			table.insert(tableT, string.format("table: %s = ", tostring(k)))
-		end
-
-		if "table" == type(v) then
-			tabCounted = string.format("%s%s", tabCounted, "    ")
-			returnStr = table.tostring(v, tabCounted)
-			table.insert(tableT, returnStr)
-			table.insert(tableT, ",") --分步添加，方便后面删除逗号
-			table.insert(tableT, "\n")
-		else
-			table.insert(tableT, tostring(v))
-			table.insert(tableT, ",")
-			table.insert(tableT, "\n")
-		end
-	end
-
-	--table.foreach(t, toStringF)
-	for i,td in ipairs(t) do
-		toStringF(i,td)
-	end
-	--table.remove(tableT, table.getn(tableT) -1) -- 删除逗号
-	local manCount = 0
-	for k,v in pairs(t) do
-		manCount = manCount + 1
-	end
-	
-	if manCount > 0 then
-		table.remove(tableT, manCount -1) -- 删除逗号
-	end
-	tabCounted = string.sub(tabCounted, 1, -5) -- 缩进-1
-	table.insert(tableT, string.format("%s}", tabCounted))
-	local tableStr = table.concat(tableT)
-	return tableStr, tabCounted
-end
-function stringToTable (stringP)
-	local loadFunction = load("return " .. stringP)
-	local loadTable = loadFunction()
-	return loadTable
-end
-
--- 读取mod数据
-function LoadHexanowModData()
-	local str = Isaac.LoadModData(hexanowMod)
-	print("Load Readout: ", str)
-	if str ~= nil and str ~= "" then
-		hexanowObjectives = stringToTable()
-	end
-end
-
--- 存储mod数据
-function SaveHexanowModData()
-	local str = table.tostring(hexanowObjectives)
-	print("Save Readout: ", str)
-	Isaac.SaveModData(hexanowMod, str)
-end
-]]
-
--- 读取mod数据
-function LoadHexanowModData()
-	--Isaac.SaveModData(hexanowMod, "someThingWrong\nsomeThingWrong")
-	local str = ""
-	if Isaac.HasModData(hexanowMod) then
-		str = Isaac.LoadModData(hexanowMod)
-	--	if str == nil then
-	--		print("Null readout!")
-	--	else
-	--		print("Load Readout:\n"..str)
-	--	end
-	--else
-	--	print("Data does not exist")
-	end
-	hexanowObjectives_Wipe()
-	hexanowObjectives_LoadFromString(str)
-	hexanowObjectives_Apply()
-end
-
--- 存储mod数据
-function SaveHexanowModData()
-	hexanowObjectives_Recieve()
-	local str = hexanowObjectives_ToString()
-	-- print("Save Readout: ", str)
-	Isaac.SaveModData(hexanowMod, str)
-end
-
--- 在游戏被初始化后运行
-function hexanowMod:PostGameStarted(loadedFromSaves)	
-	if not loadedFromSaves then -- 仅限新游戏
-		LoadHexanowModData()
-		WipeTempVar()
-		SaveHexanowModData()
-		CallForEveryPlayer(InitPlayerHexanowTainted)
-		CallForEveryPlayer(InitPlayerHexanow)
-	else -- 仅限从存档中读取
-		WipeTempVar()
-		LoadHexanowModData()
-	end
-end
-hexanowMod:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, hexanowMod.PostGameStarted)
-
--- 在游戏退出前运行
-function hexanowMod:PreGameExit(shouldSave)
-	if not shouldSave then
-		WipeTempVar()
-	end
-	SaveHexanowModData()
-	WipeTempVar()
-end
-hexanowMod:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, hexanowMod.PreGameExit)
-
--- 测试
-function TestDoDmg(player)
-	--[[
-	if hexanowObjectives["damageIncrease"] == nil then
-		hexanowObjectives["damageIncrease"] = 0.0
-	end
-	hexanowObjectives["damageIncrease"] = hexanowObjectives["damageIncrease"] +0.01
-	player:AddCacheFlags(CacheFlag.CACHE_DAMAGE)
-	]]
-end
-
--- 更新玩家外观，按需执行
-function UpdateCostumes(player)
-	if player:GetPlayerType() == playerTypeHexanow then
-		player:ClearCostumes()
-		player:RemoveSkinCostume()
-		
-		--player:TryRemoveCollectibleCostume(CollectibleType.COLLECTIBLE_ANALOG_STICK, false)
-		--player:TryRemoveCollectibleCostume(CollectibleType.COLLECTIBLE_URANUS, false)
-		--player:TryRemoveCollectibleCostume(CollectibleType.COLLECTIBLE_NEPTUNUS, false)
-		--player:TryRemoveNullCostume(hexanowHairCostume)
-		--player:TryRemoveNullCostume(hexanowFateCostume)
-		--player:TryRemoveNullCostume(hexanowBodyCostume)
-		
-		player:AddNullCostume(hexanowHairCostume)
-		
-		if player.CanFly then
-			player:AddNullCostume(hexanowFateCostume)
-		else
-			--player:AddNullCostume(hexanowBodyCostume)
-		end
-	else
-		player:TryRemoveNullCostume(hexanowHairCostume)
-		player:TryRemoveNullCostume(hexanowBodyCostume)
-		player:TryRemoveNullCostume(hexanowFateCostume)
-	end
-end
-
--- 提交缓存更新请求
-function UpdateCache(player)
-	--[[
-	player:AddCacheFlags(CacheFlag.CACHE_DAMAGE)
-	player:AddCacheFlags(CacheFlag.CACHE_SPEED)
-	player:AddCacheFlags(CacheFlag.CACHE_SHOTSPEED)
-	player:AddCacheFlags(CacheFlag.CACHE_FIREDELAY)
-	player:AddCacheFlags(CacheFlag.CACHE_RANGE)
-	player:AddCacheFlags(CacheFlag.CACHE_FLYING)
-	]]
 end
 
 -- 给予永恒之心
@@ -1101,6 +656,109 @@ function HexanowCollectibleMaxAllowed(player, ID)
 	end
 	
 	return num
+end
+
+function IsWhiteHexanowCollectible(player, ID)
+	local playerID = GetPlayerID(player)
+
+	if HexanowBlackCollectiblePredicate(ID) then
+		return false
+	end
+	for i=1,3 do
+		if WhiteItem[playerID][i] == ID then
+			return true
+		end
+	end
+	return false
+end
+
+function SetWhiteHexanowCollectible(player, ID, slot)
+	--print("White Collectible",slot,"Now",ID)
+	local playerID = GetPlayerID(player)
+	
+	if HexanowBlackCollectiblePredicate(ID)
+	or ID == 0
+	then
+		return nil
+	end
+	
+	if HexanowCollectibleMaxAllowed(player, ID) - player:GetCollectibleNum(ID, true) > 0 then
+		return nil
+	end
+	
+	if slot == nil then
+		slot = SelectedWhiteItem[playerID]
+	end
+	
+	if slot ~= 1
+	and slot ~= 2
+	and slot ~= 3
+	then
+		return nil
+	end
+	
+	WhiteItem[playerID][slot] = ID
+end
+
+function PickupWhiteHexanowCollectible(player, ID, slot)
+	local playerID = GetPlayerID(player)
+	local item = Isaac.GetItemConfig():GetCollectible(ID)
+	
+	if HexanowBlackCollectiblePredicate(ID) then
+		return nil
+	end
+	
+	if HexanowCollectibleMaxAllowed(player, ID) - player:GetCollectibleNum(ID, true) > 0 then
+		return nil
+	end
+	
+	if slot == nil then
+		slot = SelectedWhiteItem[playerID]
+	end
+	
+	if slot ~= 1
+	and slot ~= 2
+	and slot ~= 3
+	and slot ~= 4
+	then
+		return nil
+	end
+	
+	if item ~= nil and item.Type == ItemType.ITEM_ACTIVE then
+		local primaryAcItem = player:GetActiveItem(ActiveSlot.SLOT_PRIMARY)
+		if primaryAcItem ~= CollectibleType.COLLECTIBLE_NULL
+		and not ( player:HasCollectible(CollectibleType.COLLECTIBLE_SCHOOLBAG, true)
+			and player:GetActiveItem(ActiveSlot.SLOT_SECONDARY) == CollectibleType.COLLECTIBLE_NULL
+			)
+		then
+			if WhiteItem[playerID][1] == primaryAcItem then slot = 1 end
+			if WhiteItem[playerID][2] == primaryAcItem then slot = 2 end
+			if WhiteItem[playerID][3] == primaryAcItem then slot = 3 end
+		end
+	end
+	
+	if slot == 4
+	then
+		return nil
+	end
+	
+	if ID ~= CollectibleType.COLLECTIBLE_SCHOOLBAG
+	and WhiteItem[playerID][slot] == CollectibleType.COLLECTIBLE_SCHOOLBAG then
+		local secondaryID = player:GetActiveItem(ActiveSlot.SLOT_SECONDARY)
+		if secondaryID ~= CollectibleType.COLLECTIBLE_NULL then
+			if WhiteItem[playerID][1] == secondaryID then
+				WhiteItem[playerID][1] = 0
+			end
+			if WhiteItem[playerID][2] == secondaryID then
+				WhiteItem[playerID][2] = 0
+			end
+			if WhiteItem[playerID][3] == secondaryID then
+				WhiteItem[playerID][3] = 0
+			end
+		end
+	end
+	
+	SetWhiteHexanowCollectible(player, ID, slot)
 end
 
 -- 玩家刻事件，每一帧执行
@@ -1443,6 +1101,70 @@ function TickEventHexanow(player)
 	end
 end
 
+-- 在游戏被初始化后运行
+function hexanowMod:PostGameStarted(loadedFromSaves)	
+	if not loadedFromSaves then -- 仅限新游戏
+		LoadHexanowModData()
+		WipeTempVar()
+		SaveHexanowModData()
+		CallForEveryPlayer(InitPlayerHexanowTainted)
+		CallForEveryPlayer(InitPlayerHexanow)
+	else -- 仅限从存档中读取
+		WipeTempVar()
+		LoadHexanowModData()
+	end
+end
+hexanowMod:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, hexanowMod.PostGameStarted)
+
+-- 在游戏退出前运行
+function hexanowMod:PreGameExit(shouldSave)
+	if not shouldSave then
+		WipeTempVar()
+	end
+	SaveHexanowModData()
+	WipeTempVar()
+end
+hexanowMod:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, hexanowMod.PreGameExit)
+
+-- 更新玩家外观，按需执行
+function UpdateCostumes(player)
+	if player:GetPlayerType() == playerTypeHexanow then
+		player:ClearCostumes()
+		player:RemoveSkinCostume()
+		
+		--player:TryRemoveCollectibleCostume(CollectibleType.COLLECTIBLE_ANALOG_STICK, false)
+		--player:TryRemoveCollectibleCostume(CollectibleType.COLLECTIBLE_URANUS, false)
+		--player:TryRemoveCollectibleCostume(CollectibleType.COLLECTIBLE_NEPTUNUS, false)
+		--player:TryRemoveNullCostume(hexanowHairCostume)
+		--player:TryRemoveNullCostume(hexanowBodyFlightCostume)
+		--player:TryRemoveNullCostume(hexanowBodyCostume)
+		
+		player:AddNullCostume(hexanowHairCostume)
+		
+		if player.CanFly then
+			player:AddNullCostume(hexanowBodyFlightCostume)
+		else
+			player:AddNullCostume(hexanowBodyCostume)
+		end
+	else
+		player:TryRemoveNullCostume(hexanowHairCostume)
+		player:TryRemoveNullCostume(hexanowBodyCostume)
+		player:TryRemoveNullCostume(hexanowBodyFlightCostume)
+	end
+end
+
+-- 提交缓存更新请求
+function UpdateCache(player)
+	--[[
+	player:AddCacheFlags(CacheFlag.CACHE_DAMAGE)
+	player:AddCacheFlags(CacheFlag.CACHE_SPEED)
+	player:AddCacheFlags(CacheFlag.CACHE_SHOTSPEED)
+	player:AddCacheFlags(CacheFlag.CACHE_FIREDELAY)
+	player:AddCacheFlags(CacheFlag.CACHE_RANGE)
+	player:AddCacheFlags(CacheFlag.CACHE_FLYING)
+	]]
+end
+
 -- 自定义命令行
 function hexanowMod:ExecuteCmd(cmd, params)
 	if cmd == "hudoffset" then
@@ -1489,6 +1211,48 @@ function hexanowMod:ExecuteCmd(cmd, params)
 		else
 			Isaac.ConsoleOutput("Invalid args")
 		end
+	end
+	if cmd == "flashred" then
+		local pnum = tonumber(params)
+		if pnum ~= nil then
+			local level = Game():GetLevel()
+			
+			local redsecretIndex = level:QueryRoomTypeIndex(RoomType.ROOM_ULTRASECRET, false, RNG(), true)
+			local redsecretRoom = level:GetRoomByIdx(redsecretIndex)
+			--redsecretRoom.DisplayFlags = redsecretRoom.DisplayFlags | 1 << 0 | 1 << 1 | 1 << 2 
+			redsecretRoom.DisplayFlags = redsecretRoom.DisplayFlags | pnum
+			
+			level:UpdateVisibility()
+		else
+			Isaac.ConsoleOutput("Invalid args")
+		end
+		
+		
+		--[[
+		--local rooms = level:GetRooms()
+		local targetRoomIndex = nil
+		
+		--for i = 0, rooms:__len()-1 , 1 do
+			--local roomDes = rooms:Get(i)
+		for i = 0, level:GetRoomCount()-1 , 1 do
+			local roomDes = rooms:Get(i)
+			print("test",roomDes.ListIndex,"result",roomDes.Data.Type)
+			if roomDes.Data.Type == RoomType.ROOM_ULTRASECRET then
+				targetRoomIndex = roomDes.ListIndex
+				break
+			end
+		end
+		
+		if targetRoomIndex ~= nil then
+			local currIndex = level:GetCurrentRoomIndex()
+			level:ChangeRoom(106)
+			level:ChangeRoom(currIndex)
+			print("FOUND!")
+		else
+			print("NOT FOUND!")
+		end
+		]]
+		
 	end
 	if cmd == "ffsp" then
 		SuperPower = not SuperPower
@@ -1563,7 +1327,7 @@ hexanowMod:AddCallback(ModCallbacks.MC_POST_PLAYER_INIT, hexanowMod.PostPlayerIn
 -- 使用传送门工具的效果
 function hexanowMod:UsePortalTool(itemId, itemRng, player, useFlags, activeSlot, customVarData)
 	local result = {
-		Discharge = true,
+		Discharge = false,
 		Remove = false,
 		ShowAnim = false,
 	}
@@ -1593,39 +1357,6 @@ function hexanowMod:UseHexanowSoulStone(cardId, player, useFlags)
 	SFXManager():Play(187, 1, 0, false, 1 )
 end
 hexanowMod:AddCallback(ModCallbacks.MC_USE_CARD, hexanowMod.UseHexanowSoulStone, hexanowSoulStoneID)
-
---[[
--- 按键事件
-function hexanowMod:InputAction(entity, inputHook, buttonAction)
-	if entity ~= nil then
-		local player = entity:ToPlayer()
-		if player ~= nil
-		and player:GetPlayerType() == playerTypeHexanow
-		then
-			local playerID = GetPlayerID(player)
-			
-			if buttonAction == ButtonAction.ACTION_DROP
-			and inputHook == InputHook.IS_ACTION_PRESSED
-			then
-				local slot = SelectedWhiteItem[playerID]
-				
-				if slot == 1
-				or slot == 2
-				or slot == 3
-				then
-					slot = slot + 1
-				else
-					slot = 1
-				end
-				
-				SelectedWhiteItem[playerID] = slot
-			end
-			
-		end
-	end
-end
-hexanowMod:AddCallback(ModCallbacks.MC_INPUT_ACTION, hexanowMod.InputAction, InputHook.IS_ACTION_PRESSED)
-]]
 
 -- 在玩家进入新楼层后运行
 function hexanowMod:PostNewLevel()
@@ -1672,6 +1403,11 @@ function hexanowMod:PostNewRoom()
 		level:ApplyMapEffect()
 		level:ShowMap ()
 		
+		local redsecretIndex = level:QueryRoomTypeIndex(RoomType.ROOM_ULTRASECRET, false, RNG(), true)
+		local redsecretRoom = level:GetRoomByIdx(redsecretIndex)
+		redsecretRoom.DisplayFlags = redsecretRoom.DisplayFlags | 1 << 0 | 1 << 1 | 1 << 2 
+		level:UpdateVisibility()
+		
 		CallForEveryEntity(
 			function(entity)
 				if entity.Type == EntityType.ENTITY_EFFECT
@@ -1713,34 +1449,6 @@ function hexanowMod:PreSpawnCleanAward(Rng, SpawnPos)
 	)
 end
 hexanowMod:AddCallback(ModCallbacks.MC_PRE_SPAWN_CLEAN_AWARD, hexanowMod.PreSpawnCleanAward)
-
---[[
--- 在生成物品后运行
-function hexanowMod:PostGetCollectible(SelectedCollectible, PoolType, Decrease, Seed)
-	CallForEveryPlayer(
-		function(player)
-			if player:GetPlayerType() == playerTypeHexanow then
-				SetWhiteHexanowCollectible(player, SelectedCollectible)
-				UpdateCostumes(player)
-			end
-		end
-	)
-end
-hexanowMod:AddCallback(ModCallbacks.MC_POST_GET_COLLECTIBLE, hexanowMod.PostGetCollectible)
-
--- 在生成饰品后运行
-function hexanowMod:GetTrinket(SelectedTrinket, TrinketRNG)
-	CallForEveryPlayer(
-		function(player)
-			if player:GetPlayerType() == playerTypeHexanow then
-				WhiteHexanowTrinket(SelectedTrinket)
-				UpdateCostumes(player)
-			end
-		end
-	)
-end
-hexanowMod:AddCallback(ModCallbacks.MC_GET_TRINKET, hexanowMod.GetTrinket)
-]]
 
 -- 在玩家受伤时运行
 function hexanowMod:EntityTakeDmg(TookDamage, DamageAmount, DamageFlag, DamageSource, DamageCountdownFrames)
