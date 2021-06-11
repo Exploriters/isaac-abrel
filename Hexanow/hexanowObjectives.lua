@@ -53,10 +53,11 @@ function hexanowObjectives:LoadFromString(str)
 	local pointer1 = 0
 	local pointer2 = 0
 	local count = 1
-	while true do
-		local point = string.find(str, "\n", count)
+	local length = string.len(str)
+	while pointer2 < length do
+		local point,_ = string.find(str, "\n",  pointer2 + 1)
 		if point == nil then
-			break
+			point = length + 1
 		end
 		pointer1 = pointer2
 		pointer2 = point
@@ -71,7 +72,7 @@ function hexanowObjectives:LoadFromString(str)
 		local point = string.find(str, "=", 1)
 		if point ~= nil then
 			local key = string.sub(str, 1, point - 1)
-			local value = string.sub(str, point + 1, 256)
+			local value = string.sub(str, point + 1, string.len(str))
 			self:Write(key, value)
 		end
 	end

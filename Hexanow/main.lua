@@ -1,5 +1,6 @@
 
 require("hexanowObjectives")
+require("hexanowFlags")
 
 --Isaac.ConsoleOutput("Init mod hexanow\n")
 
@@ -48,8 +49,8 @@ lastCanFly[4] = nil
 local roomClearBounsEnabled = false
 local EternalChargeForFree = true
 
-local EternalChargeSuppressed = false
-local Tainted = false
+--local EternalChargeSuppressed = false
+--local Tainted = false
 
 local SuperPower = false
 
@@ -160,6 +161,8 @@ function RewindLastRoomVar()
 end
 
 function hexanowObjectives:Apply()
+	hexanowFlags:LoadFromString(self:Read("Flags", ""))
+	
 	HUDoffset = tonumber(self:Read("HUDoffset", "10"))
 	EternalCharges = tonumber(self:Read("EternalCharges", "0"))
 	
@@ -208,6 +211,9 @@ function hexanowObjectives:Apply()
 end
 
 function hexanowObjectives:Recieve()
+	hexanowFlags:Wipe()
+	self:Write("Flags", hexanowFlags:ToString())
+	
 	self:Write("HUDoffset", tostring(HUDoffset))
 	self:Write("EternalCharges", tostring(EternalCharges))
 	self:Write("EternalChargeSuppressed", tostring(EternalChargeSuppressed))
@@ -245,6 +251,7 @@ function LoadHexanowModData()
 	--else
 	--	print("Data does not exist")
 	end
+	hexanowFlags:Wipe()
 	hexanowObjectives:Wipe()
 	hexanowObjectives:LoadFromString(str)
 	hexanowObjectives:Apply()
@@ -1320,6 +1327,32 @@ function hexanowMod:ExecuteCmd(cmd, params)
 				print(tostring(entity.Type).."."..tostring(entity.Variant).."."..tostring(entity.SubType).." "..tostring(entity.Index).." ("..tostring(entity.Position.X)..", "..tostring(entity.Position.Y)..")")
 			end
 		end
+	end
+	if cmd == "hflag" then
+		local subcmd = params
+		local subcmd_arg = ""
+		
+		local point,_ = string.find(params, " ", 1)
+		if point ~= nil then
+			subcmd = string.sub(params, 1, point - 1)
+			subcmd_arg = string.sub(params, point + 1, string.len(params))
+			--Isaac.ConsoleOutput("Invalid args\nRequires either")
+		end
+		
+		if subcmd == "" or subcmd == "report" then
+			print(hexanowFlags:ToString())
+		elseif subcmd == "add" then
+			hexanowFlags:AddFlag(subcmd_arg)
+			print(hexanowFlags:ToString())
+		elseif subcmd == "remove" then
+			hexanowFlags:RemoveFlag(subcmd_arg)
+			print(hexanowFlags:ToString())
+		elseif subcmd == "test" then
+			print(hexanowFlags:HasFlag(subcmd_arg))
+		else
+			Isaac.ConsoleOutput("Invalid args\nRequires either \"report\", \"add\", \"remove\" or \"test\".")
+		end
+		
 	end
 end
 hexanowMod:AddCallback(ModCallbacks.MC_EXECUTE_CMD, hexanowMod.ExecuteCmd);
