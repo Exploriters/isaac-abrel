@@ -470,10 +470,13 @@ function TaintedHexanowRoomOverride()
 					)
 				then
 					pickup:Remove()
+					level:UpdateVisibility()
 				end
 			end
 			
-			if entity.Type == EntityType.ENTITY_SHOPKEEPER then
+			if entity.Type == EntityType.ENTITY_SHOPKEEPER
+			or (pickup ~= nil and pickup.Variant == PickupVariant.PICKUP_COLLECTIBLE and pickup.SubType == CollectibleType.COLLECTIBLE_INNER_CHILD)
+			then
 				Isaac.Spawn(EntityType.ENTITY_PICKUP, PickupVariant.PICKUP_COLLECTIBLE, CollectibleType.COLLECTIBLE_DEATH_CERTIFICATE, entity.Position, Vector(0,0), entity)
 				entity:Remove()
 			end
@@ -491,32 +494,35 @@ function InitPlayerHexanowTainted(player)
 	--print("TType", playerTypeHexanowTainted)
 	if player:GetPlayerType() == playerTypeHexanowTainted then
 		--print("CALLED ACCEPT!")
-		local level = Game():GetLevel()
 		player:ChangePlayerType(playerTypeHexanow)
-		Tainted = true
 		
-		--player:AddCard(Card.CARD_CRACKED_KEY)
-		--player:AddCollectible(CollectibleType.COLLECTIBLE_DEATH_CERTIFICATE, 0, false)
-		player:AddCoins(99)
-		player:AddBombs(99)
-		player:AddKeys(99)
-		--player:AddEternalHearts(24)
-		EternalCharges = EternalCharges + 99
+		local level = Game():GetLevel()
 		
-		local stageType = level:GetStageType()
-		
-		-- stageType == StageType.STAGETYPE_GREEDMODE
-			--level:SetStage(LevelStage.STAGE7_GREED, stageType)
-			--level:SetNextStage()
-			--level:SetStage(13, stageType)
-			--level:SetNextStage()
+		if not Tainted then
+			--player:AddCard(Card.CARD_CRACKED_KEY)
+			--player:AddCollectible(CollectibleType.COLLECTIBLE_DEATH_CERTIFICATE, 0, false)
+			player:AddCoins(99)
+			player:AddBombs(99)
+			player:AddKeys(99)
+			--player:AddEternalHearts(24)
+			EternalCharges = EternalCharges + 99
 			
-		if Game().Difficulty == Difficulty.DIFFICULTY_GREED 
-		or Game().Difficulty == Difficulty.DIFFICULTY_GREEDIER 
-		then
-			Isaac.ExecuteCommand("stage 6")
-		else
-			Isaac.ExecuteCommand("stage 13")
+			local stageType = level:GetStageType()
+			
+			-- stageType == StageType.STAGETYPE_GREEDMODE
+				--level:SetStage(LevelStage.STAGE7_GREED, stageType)
+				--level:SetNextStage()
+				--level:SetStage(13, stageType)
+				--level:SetNextStage()
+				
+			if Game().Difficulty == Difficulty.DIFFICULTY_GREED 
+			or Game().Difficulty == Difficulty.DIFFICULTY_GREEDIER 
+			then
+				Isaac.ExecuteCommand("stage 6")
+			else
+				Isaac.ExecuteCommand("stage 13")
+			end
+			Tainted = true
 		end
 	end
 end
