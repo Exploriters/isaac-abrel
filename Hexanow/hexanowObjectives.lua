@@ -47,26 +47,17 @@ function hexanowObjectives:ToString()
 	return str
 end
 
-function hexanowObjectives:LoadFromString(str)
-	--print("RAW:\n"..str)
+function hexanowObjectives:LoadFromString(str)	
 	local strTable = {}
-	local pointer1 = 0
-	local pointer2 = 0
-	local count = 1
-	local length = string.len(str)
-	while pointer2 < length do
-		local point,_ = string.find(str, "\n",  pointer2 + 1)
-		if point == nil then
-			point = length + 1
+	local lastPoint = 0
+	while true do
+		local point1,point2 = string.find(str, "[^\n]+", lastPoint + 1)
+		if point1 == nil then
+			break
 		end
-		pointer1 = pointer2
-		pointer2 = point
-		
-		table.insert(strTable, string.sub(str, pointer1 + 1, pointer2 - 1))
-		
-		count = count + 1
+		lastPoint = point2
+		table.insert(strTable, string.sub(str, point1, point2))
 	end
-	--print("Splt by line complete with "..tostring(count).." lines.")
 	
 	for i,str in ipairs(strTable) do
 		local point = string.find(str, "=", 1)
@@ -76,5 +67,4 @@ function hexanowObjectives:LoadFromString(str)
 			self:Write(key, value)
 		end
 	end
-	--print("Load from string result:\n"..self:ToString())
 end

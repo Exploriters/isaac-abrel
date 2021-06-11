@@ -1,4 +1,26 @@
 
+	--[[
+	--print("RAW:\n"..str)
+	local strTable = {}
+	local pointer1 = 0
+	local pointer2 = 0
+	local count = 1
+	local length = string.len(str)
+	while pointer2 < length do
+		local point,_ = string.find(str, "\n",  pointer2 + 1)
+		if point == nil then
+			point = length + 1
+		end
+		pointer1 = pointer2
+		pointer2 = point
+		
+		table.insert(strTable, string.sub(str, pointer1 + 1, pointer2 - 1))
+		
+		count = count + 1
+	end
+	--print("Splt by line complete with "..tostring(count).." lines.")
+	--print("Load from string result:\n"..self:ToString())
+	]]
 
 --[[
 function ReplaceWhiteHexanowCollectible(player, ID, slot)

@@ -46,22 +46,15 @@ function hexanowFlags:LoadFromString(str)
 	--print("recieve<"..str..">")
 
 	local strTable = {}
-	local pointer1 = 0
-	local pointer2 = 0
-	local count = 1
-	local length = string.len(str)
-	while pointer2 < length do
-		local point,_ = string.find(str, ",", pointer2 + 1)
-		if point == nil then
-			point = length + 1
+	local lastPoint = 0
+	while true do
+		local point1,point2 = string.find(str, "[^,]+", lastPoint + 1)
+		if point1 == nil then
+			break
 		end
-		pointer1 = pointer2
-		pointer2 = point
-		
-		table.insert(strTable, string.sub(str, pointer1 + 1, pointer2 - 1))
-		
-		count = count + 1
-	end	
+		lastPoint = point2
+		table.insert(strTable, string.sub(str, point1, point2))
+	end
 	for i,str in ipairs(strTable) do
 		self:AddFlag(str)
 	end
