@@ -111,6 +111,8 @@ initWhiteItemArray()
 
 -- 抹除临时变量
 function WipeTempVar()
+	hexanowFlags:Wipe()
+	
 	EternalCharges = 0
 	EternalChargesLastRoom = 0
 
@@ -161,6 +163,7 @@ function RewindLastRoomVar()
 end
 
 function hexanowObjectives:Apply()
+	hexanowFlags:Wipe()
 	hexanowFlags:LoadFromString(self:Read("Flags", ""))
 	
 	HUDoffset = tonumber(self:Read("HUDoffset", "10"))
@@ -214,7 +217,6 @@ function hexanowObjectives:Apply()
 end
 
 function hexanowObjectives:Recieve()
-	hexanowFlags:Wipe()
 	self:Write("Flags", hexanowFlags:ToString())
 	
 	self:Write("HUDoffset", tostring(HUDoffset))
@@ -254,7 +256,6 @@ function LoadHexanowModData()
 	--else
 	--	print("Data does not exist")
 	end
-	hexanowFlags:Wipe()
 	hexanowObjectives:Wipe()
 	hexanowObjectives:LoadFromString(str)
 	hexanowObjectives:Apply()
@@ -860,10 +861,10 @@ function TickEventHexanow(player)
 		--end
 		
 		
+		--[[
 		local VREntityNotTraced = true
 		local VRHolding = false
 		
-		--[[
 		--if player:HasCollectible(CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR, true) then
 		if player:GetActiveItem(ActiveSlot.SLOT_PRIMARY) == CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR
 		or player:GetActiveItem(ActiveSlot.SLOT_SECONDARY) == CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR
@@ -920,45 +921,45 @@ function TickEventHexanow(player)
 			]]
 			
 			-- TestDoDmg(player)
-			
+		--[[
 		if player:IsDead() then
 			--player:Revive()
 		end
-		
+		]]
+		--[[
 		if room:GetFrameCount() == 1 then
 			ApplyEternalHearts(player)
 			UpdateCostumes(player)
 		else
-			
-			--[[ --Malfunction
-			if  ( player.Velocity.X < 0.05 and player.Velocity.X > -0.05)
-			and ( player.Velocity.Y < 0.05 and player.Velocity.Y > -0.05)
-			and ( player:GetRecentMovementVector().X < 0.05 and player:GetRecentMovementVector().X > -0.05)
-			and ( player:GetRecentMovementVector().Y < 0.05 and player:GetRecentMovementVector().Y > -0.05)
-			then
-				if player.FireDelay < 0 and not updatedCostumesOvertime then
-					UpdateCostumes(player)
-					updatedCostumesOvertime = true
-				end
-			else
-				updatedCostumesOvertime = false
-			end
-			]]
-			
-			if player:IsHoldingItem()
-			then
-				onceHoldingItem[playerID] = true
-			elseif onceHoldingItem[playerID] then
-				UpdateCostumes(player)
-				onceHoldingItem[playerID] = false
-			end
-			
-			if lastCanFly[playerID] ~= player.CanFly then
-				UpdateCostumes(player)
-				lastCanFly[playerID] = player.CanFly
-			end
-			
 		end
+		]]
+		--[[ --Malfunction
+		if  ( player.Velocity.X < 0.05 and player.Velocity.X > -0.05)
+		and ( player.Velocity.Y < 0.05 and player.Velocity.Y > -0.05)
+		and ( player:GetRecentMovementVector().X < 0.05 and player:GetRecentMovementVector().X > -0.05)
+		and ( player:GetRecentMovementVector().Y < 0.05 and player:GetRecentMovementVector().Y > -0.05)
+		then
+			if player.FireDelay < 0 and not updatedCostumesOvertime then
+				UpdateCostumes(player)
+				updatedCostumesOvertime = true
+			end
+		else
+			updatedCostumesOvertime = false
+		end
+		]]
+		if player:IsHoldingItem()
+		then
+			onceHoldingItem[playerID] = true
+		elseif onceHoldingItem[playerID] then
+			UpdateCostumes(player)
+			onceHoldingItem[playerID] = false
+		end
+		--[[
+		if lastCanFly[playerID] ~= player.CanFly then
+			UpdateCostumes(player)
+			lastCanFly[playerID] = player.CanFly
+		end
+		]]
 			
 		if room:GetAliveEnemiesCount() <= 0 then
 			ApplyEternalHearts(player)
@@ -1129,6 +1130,7 @@ function hexanowMod:PostGameStarted(loadedFromSaves)
 		SaveHexanowModData()
 		CallForEveryPlayer(InitPlayerHexanowTainted)
 		CallForEveryPlayer(InitPlayerHexanow)
+		SaveHexanowModData()
 	else -- 仅限从存档中读取
 		WipeTempVar()
 		LoadHexanowModData()
@@ -1160,11 +1162,15 @@ function UpdateCostumes(player)
 		--player:TryRemoveNullCostume(hexanowBodyCostume)
 		
 		player:AddNullCostume(hexanowHairCostume)
+		player:AddNullCostume(hexanowBodyFlightCostume)
+		player:AddNullCostume(hexanowBodyCostume)
 		
-		if player.CanFly then
-			player:AddNullCostume(hexanowBodyFlightCostume)
-		else
-			player:AddNullCostume(hexanowBodyCostume)
+		local color = player:GetColor()
+		if color.R < 1.0
+		or color.G < 1.0
+		or color.B < 1.0
+		then
+			player:SetColor(Color (1.0, 1.0, 1.0, 1.0), -1, 999999999, false, false)
 		end
 	else
 		player:TryRemoveNullCostume(hexanowHairCostume)
@@ -1481,6 +1487,8 @@ function hexanowMod:PostNewRoom()
 			end
 		)
 	end
+	
+	SaveHexanowModData()
 end
 hexanowMod:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, hexanowMod.PostNewRoom)
 
@@ -1815,7 +1823,7 @@ function hexanowMod:EvaluateCache(player, cacheFlag, tear)
 			if roomClearBounsEnabled then
 				player.CanFly = true
 			end
-			 UpdateCostumes(player)
+			-- UpdateCostumes(player)
 		elseif cacheFlag == CacheFlag.CACHE_FAMILIARS then
 			--[[
 			local maybeFamiliars = Isaac.GetRoomEntities()
@@ -1831,8 +1839,8 @@ function hexanowMod:EvaluateCache(player, cacheFlag, tear)
 			end
 			]]
 			
-			EnsureFamiliars(player)
-			UpdateCostumes(player)
+			-- EnsureFamiliars(player)
+			-- UpdateCostumes(player)
 		elseif cacheFlag == CacheFlag.CACHE_TEARCOLOR then
 			player.TearColor = Color(1, 1, 1, 1, 0, 0, 0)
 		end
