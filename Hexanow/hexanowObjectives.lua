@@ -13,15 +13,15 @@ function keyValuePair:ctor(key, value)
   return cted
 end
 
-hexanowObjectives = { }
+hexanowObjectives = { data = { } }
 hexanowObjectives.__index = hexanowObjectives
 
 function hexanowObjectives:Wipe()
-	self = { }
+	for i in next, self.data do rawset(self.data, i, nil) end
 end
 
 function hexanowObjectives:Read(key, default)
-	for i,kvp in ipairs(self) do
+	for i,kvp in ipairs(self.data) do
 		if kvp.key == key then
 			kvp.used = true
 			return kvp.value
@@ -31,19 +31,19 @@ function hexanowObjectives:Read(key, default)
 end
 
 function hexanowObjectives:Write(key, value)
-	for i,kvp in ipairs(self) do
+	for i,kvp in ipairs(self.data) do
 		if kvp.key == key then
 			kvp.value = value
 			return value
 		end
 	end
-	table.insert(self, KeyValuePair(key, value))
+	table.insert(self.data, KeyValuePair(key, value))
 	return value
 end
 
 function hexanowObjectives:ToString(ignoreUnused)
 	local str = ""
-	for i,kvp in ipairs(self) do
+	for i,kvp in ipairs(self.data) do
 		if ignoreUnused ~= true or kvp.used == true then
 			str = str..tostring(kvp.key).."="..tostring(kvp.value).."\n"
 		end

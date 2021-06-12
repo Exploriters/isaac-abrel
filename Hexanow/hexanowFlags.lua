@@ -1,13 +1,13 @@
 
-hexanowFlags = { }
+hexanowFlags = { data = { } }
 hexanowFlags.__index = hexanowFlags
 
 function hexanowFlags:Wipe()
-	self = { }
+	for i in next, self.data do rawset(self.data, i, nil) end
 end
 
 function hexanowFlags:HasFlag(flag)
-	for i,hflag in ipairs(self) do
+	for i,hflag in ipairs(self.data) do
 		if hflag == flag then
 			return true
 		end
@@ -16,18 +16,18 @@ function hexanowFlags:HasFlag(flag)
 end
 
 function hexanowFlags:AddFlag(flag)
-	for i,hflag in ipairs(self) do
+	for i,hflag in ipairs(self.data) do
 		if hflag == flag then
 			return nil
 		end
 	end
-	table.insert(self, flag)
+	table.insert(self.data, flag)
 end
 
 function hexanowFlags:RemoveFlag(flag)
-	for i,hflag in ipairs(self) do
+	for i,hflag in ipairs(self.data) do
 		if hflag == flag then
-			table.remove(self, i)
+			table.remove(self.data, i)
 			return nil
 		end
 	end
@@ -35,7 +35,7 @@ end
 
 function hexanowFlags:ToString()
 	local str = ""
-	for i,hflag in ipairs(self) do
+	for i,hflag in ipairs(self.data) do
 		str = str..hflag..","
 	end
 	str = string.sub(str, 1, string.len(str)-1)

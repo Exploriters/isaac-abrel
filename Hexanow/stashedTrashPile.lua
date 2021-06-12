@@ -1,5 +1,21 @@
 
 	--[[
+	for i in next, self do
+		if type(self[i])=="string" then
+			rawset(self, i, nil)
+		end
+	end
+	print("POST WIPE FLAG AT "..where..":"..hexanowFlags:ToString())
+	]]
+	--[[
+	for i in next, self do
+		if type(self[i])=="userdata" and self[i].__index == keyValuePair then
+			rawset(self, i, nil)
+		end
+	end
+	print("POST WIPE OBJ:"..string.len(hexanowObjectives:ToString()))
+	]]
+	--[[
 	--print("RAW:\n"..str)
 	local strTable = {}
 	local pointer1 = 0
