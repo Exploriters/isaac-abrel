@@ -27,6 +27,7 @@ function hexanowObjectives:Read(key, default)
 			return kvp.value
 		end
 	end
+	hexanowObjectives:Write(key, default).used = true
 	return default
 end
 
@@ -34,11 +35,12 @@ function hexanowObjectives:Write(key, value)
 	for i,kvp in ipairs(self.data) do
 		if kvp.key == key then
 			kvp.value = value
-			return value
+			return kvp
 		end
 	end
-	table.insert(self.data, KeyValuePair(key, value))
-	return value
+	local ret = KeyValuePair(key, value)
+	table.insert(self.data, ret)
+	return ret
 end
 
 function hexanowObjectives:ToString(ignoreUnused)
