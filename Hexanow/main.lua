@@ -1566,6 +1566,14 @@ function hexanowMod:PostPickupSelection(Pickup, Variant, SubType)
 end
 hexanowMod:AddCallback(ModCallbacks.MC_POST_PICKUP_SELECTION , hexanowMod.PostPickupSelection)
 
+-- 干涉诅咒选择
+function hexanowMod:PostCurseEval(curses)
+	if PlayerTypeExistInGame(playerTypeHexanow) then
+		return ~( ~curses | LevelCurse.CURSE_OF_DARKNESS | LevelCurse.CURSE_OF_MAZE | LevelCurse.CURSE_OF_THE_UNKNOWN | LevelCurse.CURSE_OF_BLIND | LevelCurse.CURSE_OF_THE_LOST )
+	end
+end
+hexanowMod:AddCallback(ModCallbacks.MC_POST_CURSE_EVAL , hexanowMod.PostCurseEval)
+
 -- 改变玩家碰撞行为
 function hexanowMod:PrePlayerCollision(player, collider, low)
 	if player:GetPlayerType() == playerTypeHexanow then
@@ -1879,6 +1887,10 @@ function hexanowMod:PostUpdate()
 	)
 	
 	if PlayerTypeExistInGame(playerTypeHexanow) then
+		if (level:GetCurses() & (LevelCurse.CURSE_OF_DARKNESS | LevelCurse.CURSE_OF_MAZE | LevelCurse.CURSE_OF_THE_UNKNOWN | LevelCurse.CURSE_OF_BLIND | LevelCurse.CURSE_OF_THE_LOST)) ~= 0 then
+			level:RemoveCurses(LevelCurse.CURSE_OF_DARKNESS | LevelCurse.CURSE_OF_MAZE | LevelCurse.CURSE_OF_THE_UNKNOWN | LevelCurse.CURSE_OF_BLIND | LevelCurse.CURSE_OF_THE_LOST)
+		end
+		
 		--if room:GetType() == RoomType.PLANETARIUM then
 		--[[
 		if room:GetType() == 24 then
