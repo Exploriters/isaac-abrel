@@ -513,6 +513,7 @@ function InitPlayerHexanowTainted(player)
 		local level = Game():GetLevel()
 		
 		if not hexanowFlags:HasFlag("TAINTED") then
+			hexanowFlags:AddFlag("TAINTED")
 			--player:AddCard(Card.CARD_CRACKED_KEY)
 			--player:AddCollectible(CollectibleType.COLLECTIBLE_DEATH_CERTIFICATE, 0, false)
 			player:AddCoins(99)
@@ -535,8 +536,8 @@ function InitPlayerHexanowTainted(player)
 				Isaac.ExecuteCommand("stage 6")
 			else
 				Isaac.ExecuteCommand("stage 13")
-			end
-			hexanowFlags:AddFlag("TAINTED")
+			end			
+			TaintedHexanowRoomOverride()
 		end
 	end
 end
@@ -1595,16 +1596,17 @@ function hexanowMod:PrePickupCollision(pickup, collider, low)
 	if player ~= nil
 	and player:GetPlayerType() == playerTypeHexanow
 	then
-		if pickup.Variant == PickupVariant.PICKUP_COLLECTIBLE then
-			if pickup.SubType == CollectibleType.COLLECTIBLE_DEATH_CERTIFICATE
-			and not pickup:IsShopItem()
-			then
-				player:UseActiveItem(CollectibleType.COLLECTIBLE_DEATH_CERTIFICATE,false,false,true,false, -1)
-				--player:RemoveCollectible(WhiteHexanowCollectibleID, true)
-				--SetWhiteHexanowCollectible(player, 0)
-				pickup:Remove()
-				return false
-			end
+		if hexanowFlags:HasFlag("TAINTED") and not hexanowFlags:HasFlag("TEFFECT_DEATHCERTIFICATE_USED")
+		and pickup.Variant == PickupVariant.PICKUP_COLLECTIBLE
+		and pickup.SubType == CollectibleType.COLLECTIBLE_DEATH_CERTIFICATE
+		and not pickup:IsShopItem()
+		then
+			hexanowFlags:AddFlag("TEFFECT_DEATHCERTIFICATE_USED")
+			player:UseActiveItem(CollectibleType.COLLECTIBLE_DEATH_CERTIFICATE,false,false,true,false, -1)
+			--player:RemoveCollectible(WhiteHexanowCollectibleID, true)
+			--SetWhiteHexanowCollectible(player, 0)
+			pickup:Remove()
+			return false
 		end
 	
 		if pickup.Variant == PickupVariant.PICKUP_HEART then
