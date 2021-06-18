@@ -1,5 +1,5 @@
 
-keyValuePair = {key = "", value = ""}
+keyValuePair = {key = "", value = "", used = false}
 keyValuePair.__index = keyValuePair
 function KeyValuePair(key, value)
   return keyValuePair:ctor(key, value)
@@ -9,71 +9,68 @@ function keyValuePair:ctor(key, value)
   setmetatable(cted, keyValuePair)
   cted.key = key
   cted.value = value
+  cted.used = false
   return cted
 end
 
-hexanowObjectives = { }
+hexanowObjectives = { data = { } }
 hexanowObjectives.__index = hexanowObjectives
 
 function hexanowObjectives:Wipe()
-	self = { }
+	for i in next, self.data do rawset(self.data, i, nil) end
 end
 
 function hexanowObjectives:Read(key, default)
-	for i,kvp in ipairs(self) do
+	for i,kvp in ipairs(self.data) do
 		if kvp.key == key then
+			kvp.used = true
 			return kvp.value
 		end
 	end
+	hexanowObjectives:Write(key, default).used = true
 	return default
 end
 
 function hexanowObjectives:Write(key, value)
-	for i,kvp in ipairs(self) do
+	for i,kvp in ipairs(self.data) do
 		if kvp.key == key then
 			kvp.value = value
-			return value
+			return kvp
 		end
 	end
-	table.insert(self, KeyValuePair(key, value))
-	return value
+	local ret = KeyValuePair(key, value)
+	table.insert(self.data, ret)
+	return ret
 end
 
-function hexanowObjectives:ToString()
+function hexanowObjectives:ToString(ignoreUnused)
 	local str = ""
-	for i,kvp in ipairs(self) do
-		str = str..tostring(kvp.key).."="..tostring(kvp.value).."\n"
+	for i,kvp in ipairs(self.data) do
+		if ignoreUnused ~= true or kvp.used == true then
+			str = str..tostring(kvp.key).."="..tostring(kvp.value).."\n"
+		end
 	end
 	return str
 end
 
-function hexanowObjectives:LoadFromString(str)
-	--print("RAW:\n"..str)
+function hexanowObjectives:LoadFromString(str)	
 	local strTable = {}
-	local pointer1 = 0
-	local pointer2 = 0
-	local count = 1
+	local lastPoint = 0
 	while true do
-		local point = string.find(str, "\n", count)
-		if point == nil then
+		local point1,point2 = string.find(str, "[^\n]+", lastPoint + 1)
+		if point1 == nil then
 			break
 		end
-		pointer1 = pointer2
-		pointer2 = point
-		
-		table.insert(strTable, string.sub(str, pointer1 + 1, pointer2 - 1))
-		
-		count = count + 1
+		lastPoint = point2
+		table.insert(strTable, string.sub(str, point1, point2))
 	end
-	--print("Splt by line complete with "..tostring(count).." lines.")
 	
 	for i,str in ipairs(strTable) do
 		local point = string.find(str, "=", 1)
 		if point ~= nil then
 			local key = string.sub(str, 1, point - 1)
-			local value = string.sub(str, point + 1, 256)
+			local value = string.sub(str, point + 1, string.len(str))
 			self:Write(key, value)
 		end
 	end
-	--print("Load from string result:\n"..self:ToString())
 end
