@@ -26,6 +26,8 @@ local EternalChargeSprite = Sprite()
 EternalChargeSprite:Load("gfx/ui/EternalCharge.anm2", true)
 local SimNumbersPath = "gfx/ui/SimNumbers.anm2"
 
+local gameInited = false
+
 local MC_ENTITY_TAKE_DMG_Room = 0
 local MC_ENTITY_TAKE_DMG_Forever = 0
 
@@ -112,6 +114,7 @@ initWhiteItemArray()
 -- 抹除临时变量
 function WipeTempVar()
 	hexanowFlags:Wipe()
+	gameInited = false
 	
 	EternalCharges = 0
 	EternalChargesLastRoom = 0
@@ -1125,17 +1128,15 @@ end
 
 -- 在游戏被初始化后运行
 function hexanowMod:PostGameStarted(loadedFromSaves)	
+	WipeTempVar()
+	LoadHexanowModData()
 	if not loadedFromSaves then -- 仅限新游戏
-		LoadHexanowModData()
 		WipeTempVar()
-		SaveHexanowModData()
 		CallForEveryPlayer(InitPlayerHexanowTainted)
 		CallForEveryPlayer(InitPlayerHexanow)
 		SaveHexanowModData()
-	else -- 仅限从存档中读取
-		WipeTempVar()
-		LoadHexanowModData()
 	end
+	gameInited = true
 end
 hexanowMod:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, hexanowMod.PostGameStarted)
 
@@ -1146,6 +1147,7 @@ function hexanowMod:PreGameExit(shouldSave)
 	end
 	SaveHexanowModData()
 	WipeTempVar()
+	gameInited = false
 end
 hexanowMod:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, hexanowMod.PreGameExit)
 
@@ -1408,6 +1410,9 @@ function hexanowMod:UseHexanowSoulStone(cardId, player, useFlags)
 	SFXManager():Play(564, 1, 0, false, 1 )
 	SFXManager():Play(548, 1, 0, false, 1 )
 	SFXManager():Play(187, 1, 0, false, 1 )
+	
+	--player:AddBrokenHearts(100)
+	hexanowFlags:AddFlag("HEXANOW_SOULSTONE_P"..tostring(GetPlayerID(player)).."_ACTIVED")
 end
 hexanowMod:AddCallback(ModCallbacks.MC_USE_CARD, hexanowMod.UseHexanowSoulStone, hexanowSoulStoneID)
 
@@ -1489,7 +1494,9 @@ function hexanowMod:PostNewRoom()
 		)
 	end
 	
-	SaveHexanowModData()
+	if gameInited then
+		SaveHexanowModData()
+	end
 end
 hexanowMod:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, hexanowMod.PostNewRoom)
 
