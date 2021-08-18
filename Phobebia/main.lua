@@ -775,7 +775,7 @@ function phobebia:UniversalUpdate()
 					end
 				end
 			end
-			
+
 			--==More get Judas' Shadow Chance==--
 			if player:GetPlayerType() == playerType_Phobebia or player:GetPlayerType() == playerType_Tainted_Phobebia then
 				if player:HasCollectible(ItemID.JudasShadow) then
@@ -812,6 +812,25 @@ function phobebia:UniversalPostNewRoom()
 	)
 end
 phobebia:AddCallback( ModCallbacks.MC_POST_NEW_ROOM, phobebia.UniversalPostNewRoom)
+
+function phobebia:UniversalPostRender()
+	local game = Game()
+	local level = game:GetLevel()
+	local room = game:GetRoom()
+	local BackdropType = Game():GetRoom():GetBackdropType()
+	CallForEveryPlayer(
+		function(player)
+		local playerPos = room:WorldToScreenPosition(player.Position)
+		local PlayerDMG = player.Damage
+		if player:GetPlayerType() == playerType_Phobebia or player:GetPlayerType() == playerType_Tainted_Phobebia then
+				if BackdropType == 55 or BackdropType == 56 or BackdropType == 57 then
+					Isaac.RenderText("DAMAGE:"..tostring(math.ceil(PlayerDMG)), playerPos.X - 25, playerPos.Y - 58, 1, 0.7, 0.7, 0.5)
+				end
+			end
+		end
+	)
+end
+phobebia:AddCallback(ModCallbacks.MC_POST_RENDER, phobebia.UniversalPostRender)
 
 function phobebia:UniversalPrePickupCollision(pickup, collider, low)
 	local player = collider:ToPlayer()
