@@ -41,37 +41,14 @@ local TCAnimateSadTwice = true
 --== Update Tainted Phobebia's Cache==--
 local PhobebiaStatUpdateItem = Isaac.GetItemIdByName( "Phobebia Stat Trigger" )
 
--- 为每个玩家执行目标函数
-function CallForEveryPlayer(func)
-	local numPlayers = Game():GetNumPlayers()
-	for i=0,numPlayers-1,1 do
-		func(Isaac.GetPlayer(i))
-	end
-end
+local Deads = 0
 
--- 为每个实体执行目标函数
-function CallForEveryEntity(func)
-	local roomEntities = Isaac.GetRoomEntities()
-	for i,entity in ipairs(roomEntities) do
-		func(entity)
-	end
-end
+--==For Judas==--
+local playerType_Judas = Isaac.GetPlayerTypeByName("Judas")
+local playerType_BlackJudas = Isaac.GetPlayerTypeByName("Black Judas")
 
--- 检测游戏中是否存在指定的玩家类型
-function PlayerTypeExistInGame(playerType)
-	local numPlayers = Game():GetNumPlayers()
-	for i=0,numPlayers-1,1 do
-		if Isaac.GetPlayer(i):GetPlayerType() == playerType then
-			return true
-		end
-	end
-	return false
-end
-
-function UpdateCache(player)
-	-- MALFUNCTION
-	-- player:AddCacheFlags(CacheFlag.CACHE_DAMAGE)
-end
+local PhobebiasBloodBandage_Costume = Isaac.GetCostumeIdByPath("gfx/characters/PhobebiasBloodBandage.anm2")
+local PhobebiasBloodBandageII_Costume = Isaac.GetCostumeIdByPath("gfx/characters/PhobebiasBloodBandageII.anm2")
 
 function phobebia:Update()
 	local game = Game()
@@ -556,8 +533,6 @@ function phobebia:TaintedPostPlayerInit(player)
 end
 phobebia:AddCallback( ModCallbacks.MC_POST_PLAYER_INIT, phobebia.TaintedPostPlayerInit)
 
-local Deads = 0
-
 function phobebia:TaintedNPCDeath()
 	Deads = Deads + 1
 	
@@ -850,13 +825,6 @@ function phobebia:UniversalPrePickupCollision(pickup, collider, low)
 	end
 end
 phobebia:AddCallback(ModCallbacks.MC_PRE_PICKUP_COLLISION, phobebia.UniversalPrePickupCollision)
-
---==For Judas==--
-local playerType_Judas = Isaac.GetPlayerTypeByName("Judas")
-local playerType_BlackJudas = Isaac.GetPlayerTypeByName("Black Judas")
-
-local PhobebiasBloodBandage_Costume = Isaac.GetCostumeIdByPath("gfx/characters/PhobebiasBloodBandage.anm2")
-local PhobebiasBloodBandageII_Costume = Isaac.GetCostumeIdByPath("gfx/characters/PhobebiasBloodBandageII.anm2")
 
 function phobebia:JudasUpdate()
 	local game = Game()

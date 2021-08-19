@@ -4,6 +4,10 @@
 
 --Isaac.ConsoleOutput("Init mod hexanow\n")
 
+------------------------------------------------------------
+---------- 变量初始化
+----------
+
 local hexanowFlags = Explorite.NewExploriteFlags()
 local hexanowObjectives = Explorite.NewExploriteObjectives()
 
@@ -77,7 +81,7 @@ local WhiteItemSelectPressed = {}
 local WhiteItemLastRoom = {}
 local SelectedWhiteItemLastRoom = {}
 
-function initWhiteItemArray()
+local function InitWhiteItemArray()
 	WhiteItem[1] = {}
 	WhiteItem[2] = {}
 	WhiteItem[3] = {}
@@ -112,10 +116,23 @@ function initWhiteItemArray()
 	WhiteItemLastRoom = WhiteItem
 end
 
-initWhiteItemArray()
+InitWhiteItemArray()
+
+------------------------------------------------------------
+---------- 变量处理
+----------
+
+local function UpdateLastRoomVar()
+	EternalChargesLastRoom = EternalCharges
+	WhiteItemLastRoom = WhiteItem
+	SelectedWhiteItemLastRoom = SelectedWhiteItem
+	
+	--WhiteHexanowCollectibleIDLastRoom = WhiteHexanowCollectibleID
+	--WhiteHexanowTrinketIDLastRoom = WhiteHexanowTrinketID
+end
 
 -- 抹除临时变量
-function WipeTempVar()
+local function WipeTempVar()
 	hexanowFlags:Wipe()
 	gameInited = false
 	
@@ -146,20 +163,11 @@ function WipeTempVar()
 	portalOrange = nil
 	teledProjectiles = {}
 	
-	initWhiteItemArray()
+	InitWhiteItemArray()
 	UpdateLastRoomVar()
 end
 
-function UpdateLastRoomVar()
-	EternalChargesLastRoom = EternalCharges
-	WhiteItemLastRoom = WhiteItem
-	SelectedWhiteItemLastRoom = SelectedWhiteItem
-	
-	--WhiteHexanowCollectibleIDLastRoom = WhiteHexanowCollectibleID
-	--WhiteHexanowTrinketIDLastRoom = WhiteHexanowTrinketID
-end
-
-function RewindLastRoomVar()
+local function RewindLastRoomVar()
 	EternalCharges = EternalChargesLastRoom
 	WhiteItem = WhiteItemLastRoom
 	SelectedWhiteItem = SelectedWhiteItemLastRoom
@@ -248,8 +256,12 @@ function hexanowObjectives:Recieve()
 	end
 end
 
+------------------------------------------------------------
+---------- 数据存档
+----------
+
 -- 读取mod数据
-function LoadHexanowModData()
+local function LoadHexanowModData()
 	--Isaac.SaveModData(hexanowMod, "someThingWrong\nsomeThingWrong")
 	local str = ""
 	if Isaac.HasModData(hexanowMod) then
@@ -268,83 +280,69 @@ function LoadHexanowModData()
 end
 
 -- 存储mod数据
-function SaveHexanowModData()
+local function SaveHexanowModData()
 	hexanowObjectives:Recieve()
 	local str = hexanowObjectives:ToString(true)
 	-- print("Save Readout: ", str)
 	Isaac.SaveModData(hexanowMod, str)
 end
 
-function Tears2TearDelay(Tears)
-	if Tears <= 0.77 then
-		return 16 - 6 * Tears
-	elseif Tears < 0 then
-		return 16 - 6 * math.sqrt( Tears * 1.3 + 1 ) - 6 * Tears
-	else
-		return 16 - 6 * math.sqrt( Tears * 1.3 + 1 )
-	end
-end
+------------------------------------------------------------
+---------- 游戏功能
+----------
 
-function TearDelay2Tears(TearDelay)
-	if TearDelay <= 10 then
-		return ( ( - ( TearDelay - 16 ) / 6 )^2 - 1 )/1.3
-	elseif TearDelay < 20.62 then
-		return -(10*TearDelay+math.sqrt(3)*math.sqrt(5867-260*TearDelay)-199)/60
-	else
-		return ( 16 - TearDelay ) / 6
-	end
-end
-
-function ApplyTears2TearDelay(TearDelay, Tears)
-	return Tears2TearDelay(TearDelay2Tears(TearDelay) + Tears)
-end
-
-function GetPlayerID(player)
-	local numPlayers = Game():GetNumPlayers()
-	for i=0,numPlayers-1,1 do
-		if Isaac.GetPlayer(i).Index == player.Index then
-			return i + 1
+-- 更新玩家外观，按需执行
+local function UpdateCostumes(player)
+	if player:GetPlayerType() == playerTypeHexanow then
+		player:ClearCostumes()
+		player:RemoveSkinCostume()
+		
+		--player:TryRemoveCollectibleCostume(CollectibleType.COLLECTIBLE_ANALOG_STICK, false)
+		--player:TryRemoveCollectibleCostume(CollectibleType.COLLECTIBLE_URANUS, false)
+		--player:TryRemoveCollectibleCostume(CollectibleType.COLLECTIBLE_NEPTUNUS, false)
+		--player:TryRemoveNullCostume(hexanowHairCostume)
+		--player:TryRemoveNullCostume(hexanowBodyFlightCostume)
+		--player:TryRemoveNullCostume(hexanowBodyCostume)
+		
+		player:AddNullCostume(hexanowHairCostume)
+		player:AddNullCostume(hexanowBodyFlightCostume)
+		player:AddNullCostume(hexanowBodyCostume)
+		
+		local color = player:GetColor()
+		if color.R < 1.0
+		or color.G < 1.0
+		or color.B < 1.0
+		then
+			player:SetColor(Color (1.0, 1.0, 1.0, 1.0), -1, 999999999, false, false)
 		end
-	end
-	return nil
-end
-
--- 为每个玩家执行目标函数
-function CallForEveryPlayer(func)
-	local numPlayers = Game():GetNumPlayers()
-	for i=0,numPlayers-1,1 do
-		func(Isaac.GetPlayer(i))
+	else
+		player:TryRemoveNullCostume(hexanowHairCostume)
+		player:TryRemoveNullCostume(hexanowBodyCostume)
+		player:TryRemoveNullCostume(hexanowBodyFlightCostume)
 	end
 end
 
--- 为每个实体执行目标函数
-function CallForEveryEntity(func)
-	local roomEntities = Isaac.GetRoomEntities()
-	for i,entity in ipairs(roomEntities) do
-		func(entity)
-	end
-end
-
--- 检测游戏中是否存在指定的玩家类型
-function PlayerTypeExistInGame(playerType)
-	local numPlayers = Game():GetNumPlayers()
-	for i=0,numPlayers-1,1 do
-		if Isaac.GetPlayer(i):GetPlayerType() == playerType then
-			return true
-		end
-	end
-	return false
+-- 提交缓存更新请求
+local function UpdateCache(player)
+	--[[
+	player:AddCacheFlags(CacheFlag.CACHE_DAMAGE)
+	player:AddCacheFlags(CacheFlag.CACHE_SPEED)
+	player:AddCacheFlags(CacheFlag.CACHE_SHOTSPEED)
+	player:AddCacheFlags(CacheFlag.CACHE_FIREDELAY)
+	player:AddCacheFlags(CacheFlag.CACHE_RANGE)
+	player:AddCacheFlags(CacheFlag.CACHE_FLYING)
+	]]
 end
 
 -- 给予永恒之心
-function ApplyEternalHearts(player)
+local function ApplyEternalHearts(player)
 	if player:GetEternalHearts() <= 0 then
 		player:AddEternalHearts(1)
 	end
 end
 
 -- 给予永恒充能
-function ApplyEternalCharge(player)
+local function ApplyEternalCharge(player)
 	if player:GetEternalHearts() <= 0 and EternalCharges > 0then
 		player:AddEternalHearts(1)
 		EternalCharges = EternalCharges - 1
@@ -367,7 +365,7 @@ APIOverride.OverrideClassFunction(EntityPlayer, "HasCollectible", function(inter
 end)]]
 
 -- 确保随从数量
-function EnsureFamiliars(player)
+local function EnsureFamiliars(player)
 	local roomEntities = Isaac.GetRoomEntities()
 	local HBcount = 0
 	local HBcountTarget = 0
@@ -387,7 +385,7 @@ function EnsureFamiliars(player)
 end
 
 -- 移除红心外的所有心
-function RearrangeHearts(player)
+local function RearrangeHearts(player)
 	local soulHearts = player:GetSoulHearts()
 	local blackHeartsByte = player:GetBlackHearts()
 	
@@ -463,7 +461,7 @@ function RearrangeHearts(player)
 	
 end
 
-function TaintedHexanowRoomOverride()
+local function TaintedHexanowRoomOverride()
 	if not hexanowFlags:HasFlag("TAINTED") then
 		return nil
 	end
@@ -523,7 +521,7 @@ function TaintedHexanowRoomOverride()
 end
 
 -- 初始化人物
-function InitPlayerHexanowTainted(player)
+local function InitPlayerHexanowTainted(player)
 	--print("CALLED!")
 	--print("PType", player:GetPlayerType())
 	--print("TType", playerTypeHexanowTainted)
@@ -564,7 +562,7 @@ function InitPlayerHexanowTainted(player)
 end
 
 -- 初始化人物
-function InitPlayerHexanow(player)
+local function InitPlayerHexanow(player)
 	if player:GetPlayerType() == playerTypeHexanow then
 		local itemPool = Game():GetItemPool()
 		
@@ -616,7 +614,7 @@ function InitPlayerHexanow(player)
 end
 
 -- 物品谓词
-function HexanowBlackCollectiblePredicate(ID)
+local function HexanowBlackCollectiblePredicate(ID)
 	local item = Isaac.GetItemConfig():GetCollectible(ID)
 	if ID ~= 0 and (item == nil or
 		(
@@ -631,7 +629,7 @@ function HexanowBlackCollectiblePredicate(ID)
 end
 
 -- 物品谓词
-function HexanowWhiteCollectiblePredicate(ID, ignoreEnsured)
+local function HexanowWhiteCollectiblePredicate(ID, ignoreEnsured)
 	local item = Isaac.GetItemConfig():GetCollectible(ID)
 	if item ~= nil and
 		(	item:HasTags(ItemConfig.TAG_QUEST)
@@ -669,7 +667,7 @@ function HexanowWhiteCollectiblePredicate(ID, ignoreEnsured)
 end
 
 -- 返回物品持有数量上限
-function HexanowCollectibleMaxAllowed(player, ID)
+local function HexanowCollectibleMaxAllowed(player, ID)
 	local playerID = GetPlayerID(player)
 	local num = 0
 	
@@ -700,7 +698,7 @@ function HexanowCollectibleMaxAllowed(player, ID)
 	return num
 end
 
-function IsWhiteHexanowCollectible(player, ID)
+local function IsWhiteHexanowCollectible(player, ID)
 	local playerID = GetPlayerID(player)
 
 	if HexanowBlackCollectiblePredicate(ID) or ID == 0 then
@@ -714,7 +712,7 @@ function IsWhiteHexanowCollectible(player, ID)
 	return false
 end
 
-function SetWhiteHexanowCollectible(player, ID, slot)
+local function SetWhiteHexanowCollectible(player, ID, slot)
 	--print("White Collectible",slot,"Now",ID)
 	local playerID = GetPlayerID(player)
 	
@@ -743,7 +741,7 @@ function SetWhiteHexanowCollectible(player, ID, slot)
 	WhiteItem[playerID][slot] = ID
 end
 
-function PickupWhiteHexanowCollectible(player, ID, slot)
+local function PickupWhiteHexanowCollectible(player, ID, slot)
 	local playerID = GetPlayerID(player)
 	local item = Isaac.GetItemConfig():GetCollectible(ID)
 	
@@ -805,7 +803,10 @@ function PickupWhiteHexanowCollectible(player, ID, slot)
 end
 
 -- 玩家刻事件，每一帧执行
-function TickEventHexanow(player)
+local function TickEventHexanow(player)
+	if player:GetPlayerType() == playerTypeHexanowTainted then
+		player:ChangePlayerType(playerTypeHexanow)
+	end
 	if player:GetPlayerType() == playerTypeHexanow then
 		local game = Game()
 		local level = game:GetLevel()
@@ -1144,6 +1145,178 @@ function TickEventHexanow(player)
 	end
 end
 
+------------------------------------------------------------
+---------- 渲染器功能
+----------
+
+-- 渲染物品选单
+local function SelManageRander(pos, playerID, sortNum)
+	-- local playerID = 1
+	local FrameAnm = "Frame"
+	if sortNum >= 1 then
+		FrameAnm = "Frame2"
+	end
+	pos = pos + Vector(sortNum*35/2, 0)
+	
+	local frame1 = Sprite()
+	local frame2 = Sprite()
+	local frame3 = Sprite()
+	local frame4 = Sprite()
+	local arraw = Sprite()
+	local item1 = Sprite()
+	local item2 = Sprite()
+	local item3 = Sprite()
+	
+	frame1:Load("gfx/ui/HexanowInventory.anm2", true)
+	frame2:Load("gfx/ui/HexanowInventory.anm2", true)
+	frame3:Load("gfx/ui/HexanowInventory.anm2", true)
+	frame4:Load("gfx/ui/HexanowInventory.anm2", true)
+	arraw:Load("gfx/ui/HexanowInventory.anm2", true)
+	item1:Load("gfx/ui/HexanowInventoryItem.anm2", true)
+	item2:Load("gfx/ui/HexanowInventoryItem.anm2", true)
+	item3:Load("gfx/ui/HexanowInventoryItem.anm2", true)
+	
+	if WhiteItem[playerID][1] ~= nil then
+	local item = Isaac.GetItemConfig():GetCollectible(WhiteItem[playerID][1])
+		if item ~= nil then
+			item1:ReplaceSpritesheet(0,item.GfxFileName)
+			item1:LoadGraphics()
+		end
+	end
+	if WhiteItem[playerID][2] ~= nil then
+	local item = Isaac.GetItemConfig():GetCollectible(WhiteItem[playerID][2])
+		if item ~= nil then
+			item2:ReplaceSpritesheet(0,item.GfxFileName)
+			item2:LoadGraphics()
+		end
+	end
+	if WhiteItem[playerID][3] ~= nil then
+	local item = Isaac.GetItemConfig():GetCollectible(WhiteItem[playerID][3])
+		if item ~= nil then
+			item3:ReplaceSpritesheet(0,item.GfxFileName)
+			item3:LoadGraphics()
+		end
+	end
+	
+	--item3:ReplaceSpritesheet(0,"gfx/items/collectibles/".."Collectibles_118_Brimstone.png")
+	
+	frame1:SetFrame(FrameAnm, 0)
+	frame2:SetFrame(FrameAnm, 1)
+	frame3:SetFrame(FrameAnm, 1)
+	frame4:SetFrame(FrameAnm, 2)
+	item1:SetFrame("Base", 0)
+	item2:SetFrame("Base", 0)
+	item3:SetFrame("Base", 0)
+	
+	if SelectedWhiteItem[playerID] == 1 then
+		arraw:SetFrame("Select", 0)
+	elseif SelectedWhiteItem[playerID] == 2 then
+		arraw:SetFrame("Select", 1)
+	elseif SelectedWhiteItem[playerID] == 3 then
+		arraw:SetFrame("Select", 2)
+	else
+		arraw:SetFrame("Select", 3)
+	end
+	
+	frame1:Render(pos + Vector(0,0/2), Vector(0,0), Vector(0,0))
+	frame2:Render(pos + Vector(0,35/2), Vector(0,0), Vector(0,0))
+	frame3:Render(pos + Vector(0,70/2), Vector(0,0), Vector(0,0))
+	frame4:Render(pos + Vector(0,105/2), Vector(0,0), Vector(0,0))
+	
+	item1:Render(pos + Vector(0,0/2), Vector(0,0), Vector(0,0))
+	item2:Render(pos + Vector(0,35/2), Vector(0,0), Vector(0,0))
+	item3:Render(pos + Vector(0,70/2), Vector(0,0), Vector(0,0))
+	
+	arraw:Render(pos + Vector(0,0/2), Vector(0,0), Vector(0,0))
+	
+end
+
+-- 渲染单个数字
+local function DrawSimNumberSingle(num, pos, bg)
+	local sprite = Sprite()
+	sprite:Load(SimNumbersPath, true)
+	local AnimationName = "Base"
+	
+	if type(num) ~= "number" then
+		num = 10
+	else
+		num = math.floor(num)
+	end
+	if num == -1 then
+		num = 11
+	elseif num < 0 or num > 9 then
+		num = 10
+	end
+	
+	if bg == true then
+		AnimationName = "Background"
+		pos = pos + Vector(2,2)
+	end
+	sprite:SetFrame(AnimationName, num)
+	sprite:Render(pos, Vector(0,0), Vector(0,0))
+	
+	if num == 1 then
+		return 4
+	else
+		return 6
+	end
+end
+
+-- 渲染数字组
+local function DrawSimNumberSeries(nums, pos, bg)
+	local posp = 0
+	for i,num in ipairs(nums) do
+		posp = posp + DrawSimNumberSingle(num, pos + Vector(posp, 0), bg)
+	end
+end
+
+-- 渲染多个数字
+local function DrawSimNumbers(num, pos)
+	local nums = {}
+	local inum = 0
+	local negative = false
+	local lessThanTen = false
+	
+	
+	if type(num) ~= "number" then
+		table.insert(nums, -2)
+		table.insert(nums, -2)
+	else
+		inum = math.floor(num)
+		if inum < 0 then
+			negative = true
+			inum = inum * -1
+		end
+		if inum < 10 then
+			lessThanTen = true
+		end
+		
+		while true do
+			table.insert(nums, inum%10)
+			inum = math.floor(inum/10)
+			if inum == 0 then
+				break
+			end
+		end
+		
+		if negative then
+			table.insert(nums, -1)
+		elseif lessThanTen then
+			table.insert(nums, 0)
+		end
+		
+		nums = ReverseTable(nums)
+	end
+	
+	
+	DrawSimNumberSeries(nums, pos, true)
+	DrawSimNumberSeries(nums, pos, false)
+end
+
+------------------------------------------------------------
+---------- 注册事件
+----------
+
 -- 在游戏被初始化后运行
 function hexanowMod:PostGameStarted(loadedFromSaves)	
 	WipeTempVar()
@@ -1168,49 +1341,6 @@ function hexanowMod:PreGameExit(shouldSave)
 	gameInited = false
 end
 hexanowMod:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, hexanowMod.PreGameExit)
-
--- 更新玩家外观，按需执行
-function UpdateCostumes(player)
-	if player:GetPlayerType() == playerTypeHexanow then
-		player:ClearCostumes()
-		player:RemoveSkinCostume()
-		
-		--player:TryRemoveCollectibleCostume(CollectibleType.COLLECTIBLE_ANALOG_STICK, false)
-		--player:TryRemoveCollectibleCostume(CollectibleType.COLLECTIBLE_URANUS, false)
-		--player:TryRemoveCollectibleCostume(CollectibleType.COLLECTIBLE_NEPTUNUS, false)
-		--player:TryRemoveNullCostume(hexanowHairCostume)
-		--player:TryRemoveNullCostume(hexanowBodyFlightCostume)
-		--player:TryRemoveNullCostume(hexanowBodyCostume)
-		
-		player:AddNullCostume(hexanowHairCostume)
-		player:AddNullCostume(hexanowBodyFlightCostume)
-		player:AddNullCostume(hexanowBodyCostume)
-		
-		local color = player:GetColor()
-		if color.R < 1.0
-		or color.G < 1.0
-		or color.B < 1.0
-		then
-			player:SetColor(Color (1.0, 1.0, 1.0, 1.0), -1, 999999999, false, false)
-		end
-	else
-		player:TryRemoveNullCostume(hexanowHairCostume)
-		player:TryRemoveNullCostume(hexanowBodyCostume)
-		player:TryRemoveNullCostume(hexanowBodyFlightCostume)
-	end
-end
-
--- 提交缓存更新请求
-function UpdateCache(player)
-	--[[
-	player:AddCacheFlags(CacheFlag.CACHE_DAMAGE)
-	player:AddCacheFlags(CacheFlag.CACHE_SPEED)
-	player:AddCacheFlags(CacheFlag.CACHE_SHOTSPEED)
-	player:AddCacheFlags(CacheFlag.CACHE_FIREDELAY)
-	player:AddCacheFlags(CacheFlag.CACHE_RANGE)
-	player:AddCacheFlags(CacheFlag.CACHE_FLYING)
-	]]
-end
 
 -- 自定义命令行
 function hexanowMod:ExecuteCmd(cmd, params)
@@ -2376,188 +2506,14 @@ function hexanowMod:PostRender()
 end
 hexanowMod:AddCallback(ModCallbacks.MC_POST_RENDER, hexanowMod.PostRender)
 
--- 渲染多个数字
-function DrawSimNumbers(num, pos)
-	local nums = {}
-	local inum = 0
-	local negative = false
-	local lessThanTen = false
-	
-	
-	if type(num) ~= "number" then
-		table.insert(nums, -2)
-		table.insert(nums, -2)
-	else
-		inum = math.floor(num)
-		if inum < 0 then
-			negative = true
-			inum = inum * -1
-		end
-		if inum < 10 then
-			lessThanTen = true
-		end
-		
-		while true do
-			table.insert(nums, inum%10)
-			inum = math.floor(inum/10)
-			if inum == 0 then
-				break
-			end
-		end
-		
-		if negative then
-			table.insert(nums, -1)
-		elseif lessThanTen then
-			table.insert(nums, 0)
-		end
-		
-		nums = reverseTable(nums)
-	end
-	
-	
-	DrawSimNumberSeries(nums, pos, true)
-	DrawSimNumberSeries(nums, pos, false)
-end
-
-function reverseTable(tab)
-	local tmp = {}
-	for i = 1, #tab do
-		local key = #tab
-		tmp[i] = table.remove(tab)
-	end
-
-	return tmp
-end
-
--- 渲染数字组
-function DrawSimNumberSeries(nums, pos, bg)
-	local posp = 0
-	for i,num in ipairs(nums) do
-		posp = posp + DrawSimNumberSingle(num, pos + Vector(posp, 0), bg)
-	end
-end
-
--- 渲染单个数字
-function DrawSimNumberSingle(num, pos, bg)
-	local sprite = Sprite()
-	sprite:Load(SimNumbersPath, true)
-	local AnimationName = "Base"
-	
-	if type(num) ~= "number" then
-		num = 10
-	else
-		num = math.floor(num)
-	end
-	if num == -1 then
-		num = 11
-	elseif num < 0 or num > 9 then
-		num = 10
-	end
-	
-	if bg == true then
-		AnimationName = "Background"
-		pos = pos + Vector(2,2)
-	end
-	sprite:SetFrame(AnimationName, num)
-	sprite:Render(pos, Vector(0,0), Vector(0,0))
-	
-	if num == 1 then
-		return 4
-	else
-		return 6
-	end
-end
-
--- 渲染物品选单
-function SelManageRander(pos, playerID, sortNum)
-	-- local playerID = 1
-	local FrameAnm = "Frame"
-	if sortNum >= 1 then
-		FrameAnm = "Frame2"
-	end
-	pos = pos + Vector(sortNum*35/2, 0)
-	
-	local frame1 = Sprite()
-	local frame2 = Sprite()
-	local frame3 = Sprite()
-	local frame4 = Sprite()
-	local arraw = Sprite()
-	local item1 = Sprite()
-	local item2 = Sprite()
-	local item3 = Sprite()
-	
-	frame1:Load("gfx/ui/HexanowInventory.anm2", true)
-	frame2:Load("gfx/ui/HexanowInventory.anm2", true)
-	frame3:Load("gfx/ui/HexanowInventory.anm2", true)
-	frame4:Load("gfx/ui/HexanowInventory.anm2", true)
-	arraw:Load("gfx/ui/HexanowInventory.anm2", true)
-	item1:Load("gfx/ui/HexanowInventoryItem.anm2", true)
-	item2:Load("gfx/ui/HexanowInventoryItem.anm2", true)
-	item3:Load("gfx/ui/HexanowInventoryItem.anm2", true)
-	
-	if WhiteItem[playerID][1] ~= nil then
-	local item = Isaac.GetItemConfig():GetCollectible(WhiteItem[playerID][1])
-		if item ~= nil then
-			item1:ReplaceSpritesheet(0,item.GfxFileName)
-			item1:LoadGraphics()
-		end
-	end
-	if WhiteItem[playerID][2] ~= nil then
-	local item = Isaac.GetItemConfig():GetCollectible(WhiteItem[playerID][2])
-		if item ~= nil then
-			item2:ReplaceSpritesheet(0,item.GfxFileName)
-			item2:LoadGraphics()
-		end
-	end
-	if WhiteItem[playerID][3] ~= nil then
-	local item = Isaac.GetItemConfig():GetCollectible(WhiteItem[playerID][3])
-		if item ~= nil then
-			item3:ReplaceSpritesheet(0,item.GfxFileName)
-			item3:LoadGraphics()
-		end
-	end
-	
-	--item3:ReplaceSpritesheet(0,"gfx/items/collectibles/".."Collectibles_118_Brimstone.png")
-	
-	frame1:SetFrame(FrameAnm, 0)
-	frame2:SetFrame(FrameAnm, 1)
-	frame3:SetFrame(FrameAnm, 1)
-	frame4:SetFrame(FrameAnm, 2)
-	item1:SetFrame("Base", 0)
-	item2:SetFrame("Base", 0)
-	item3:SetFrame("Base", 0)
-	
-	if SelectedWhiteItem[playerID] == 1 then
-		arraw:SetFrame("Select", 0)
-	elseif SelectedWhiteItem[playerID] == 2 then
-		arraw:SetFrame("Select", 1)
-	elseif SelectedWhiteItem[playerID] == 3 then
-		arraw:SetFrame("Select", 2)
-	else
-		arraw:SetFrame("Select", 3)
-	end
-	
-	frame1:Render(pos + Vector(0,0/2), Vector(0,0), Vector(0,0))
-	frame2:Render(pos + Vector(0,35/2), Vector(0,0), Vector(0,0))
-	frame3:Render(pos + Vector(0,70/2), Vector(0,0), Vector(0,0))
-	frame4:Render(pos + Vector(0,105/2), Vector(0,0), Vector(0,0))
-	
-	item1:Render(pos + Vector(0,0/2), Vector(0,0), Vector(0,0))
-	item2:Render(pos + Vector(0,35/2), Vector(0,0), Vector(0,0))
-	item3:Render(pos + Vector(0,70/2), Vector(0,0), Vector(0,0))
-	
-	arraw:Render(pos + Vector(0,0/2), Vector(0,0), Vector(0,0))
-	
-end
-
 -- 初始化随从
-local function FamiliarInit(_, fam)
+function hexanowMod:FamiliarInit(_, fam)
 	print("Initiating Hearts Blender")
 end
-hexanowMod:AddCallback(ModCallbacks.MC_FAMILIAR_INIT, FamiliarInit, entityVariantHeartsBlender)
+hexanowMod:AddCallback(ModCallbacks.MC_FAMILIAR_INIT, hexanowMod.FamiliarInit, entityVariantHeartsBlender)
 
 -- 更新随从行为
-local function FamiliarUpdate(_, fam)
+function hexanowMod:FamiliarUpdate(_, fam)
 	local roomEntities = Isaac.GetRoomEntities()
 	
 	local targetPos = nil
@@ -2614,7 +2570,7 @@ local function FamiliarUpdate(_, fam)
     if fam.FrameCount%300 == 0 then
     end
 end
-hexanowMod:AddCallback(ModCallbacks.MC_FAMILIAR_UPDATE, FamiliarUpdate, entityVariantHeartsBlender)
+hexanowMod:AddCallback(ModCallbacks.MC_FAMILIAR_UPDATE, hexanowMod.FamiliarUpdate, entityVariantHeartsBlender)
 
 -- 更新眼泪行为，在每一帧后执行
 function hexanowMod:PostTearUpdate(tear)
