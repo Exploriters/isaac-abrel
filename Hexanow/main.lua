@@ -348,6 +348,21 @@ function ApplyEternalCharge(player)
 	end
 end
 
+--[[
+require("apioverride")
+local baseEntityPlayerHasCollectible = APIOverride.GetCurrentClassFunction(EntityPlayer, "HasCollectible")
+APIOverride.OverrideClassFunction(EntityPlayer, "HasCollectible", function(interval, Type, IgnoreModifiers)	
+    local result = baseEntityPlayerHasCollectible(interval, Type, IgnoreModifiers)
+	if interval:GetPlayerType() == playerTypeHexanow
+	and (  Type == CollectibleType.COLLECTIBLE_ANALOG_STICK
+		or Type == CollectibleType.COLLECTIBLE_URANUS
+		or Type == CollectibleType.COLLECTIBLE_NEPTUNUS
+	) then
+		result = true
+	end
+	return result
+end)]]
+
 -- 确保随从数量
 function EnsureFamiliars(player)
 	local roomEntities = Isaac.GetRoomEntities()
