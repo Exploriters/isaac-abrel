@@ -1,20 +1,29 @@
 
-keyValuePair = {key = "", value = "", used = false}
+local keyValuePair = {key = "", value = "", used = false}
 keyValuePair.__index = keyValuePair
-function KeyValuePair(key, value)
-  return keyValuePair:ctor(key, value)
+function Explorite.KeyValuePair(key, value)
+	return keyValuePair:ctor(key, value)
 end
 function keyValuePair:ctor(key, value)
-  local cted = {}
-  setmetatable(cted, keyValuePair)
-  cted.key = key
-  cted.value = value
-  cted.used = false
-  return cted
+	local cted = {}
+	setmetatable(cted, keyValuePair)
+	cted.key = key
+	cted.value = value
+	cted.used = false
+	return cted
 end
 
-hexanowObjectives = { data = { } }
+local hexanowObjectives = { data = { } }
 hexanowObjectives.__index = hexanowObjectives
+function Explorite.NewExploriteObjectives()
+	return hexanowObjectives:ctor()
+end
+function hexanowObjectives:ctor()
+	local cted = {}
+	setmetatable(cted, hexanowObjectives)
+	cted.data = { }
+	return cted
+end
 
 function hexanowObjectives:Wipe()
 	for i in next, self.data do rawset(self.data, i, nil) end
@@ -38,7 +47,7 @@ function hexanowObjectives:Write(key, value)
 			return kvp
 		end
 	end
-	local ret = KeyValuePair(key, value)
+	local ret = Explorite.KeyValuePair(key, value)
 	table.insert(self.data, ret)
 	return ret
 end

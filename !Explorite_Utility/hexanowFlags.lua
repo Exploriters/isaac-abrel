@@ -1,6 +1,15 @@
 
-hexanowFlags = { data = { } }
+local hexanowFlags = { data = { } }
 hexanowFlags.__index = hexanowFlags
+function Explorite.NewExploriteFlags()
+	return hexanowFlags:ctor()
+end
+function hexanowFlags:ctor()
+	local cted = {}
+	setmetatable(cted, hexanowFlags)
+	cted.data = { }
+	return cted
+end
 
 function hexanowFlags:Wipe()
 	for i in next, self.data do rawset(self.data, i, nil) end

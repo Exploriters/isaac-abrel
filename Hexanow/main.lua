@@ -1,8 +1,11 @@
 
-require("hexanowObjectives")
-require("hexanowFlags")
+--require("hexanowObjectives")
+--require("hexanowFlags")
 
 --Isaac.ConsoleOutput("Init mod hexanow\n")
+
+local hexanowFlags = Explorite.NewExploriteFlags()
+local hexanowObjectives = Explorite.NewExploriteObjectives()
 
 local hexanowMod = RegisterMod("Hexanow", 1);
 

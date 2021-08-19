@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata>
+    <name>!Explorite Utility</name>
+    <directory>!explorite_utility</directory>
+    <id />
+    <description>Explorite Utility.</description>
+    <version>1.0</version>
+    <visibility>Public</visibility>
+    <tag id="Lua"/>
+</metadata>
