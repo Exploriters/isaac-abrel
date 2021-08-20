@@ -620,6 +620,8 @@ local function HexanowBlackCollectiblePredicate(ID)
 		(
 		item.ID == CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR
 		or item.ID == CollectibleType.COLLECTIBLE_MEGA_MUSH
+		or item.ID == CollectibleType.COLLECTIBLE_ANKH
+		or item.ID == CollectibleType.COLLECTIBLE_JUDAS_SHADOW
 		))
 	then
 		return true
