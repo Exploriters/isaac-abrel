@@ -1,5 +1,5 @@
 <AnimatedActor>
-	<Info CreatedBy="Unknown" CreatedOn="2021/4/8 3:48:42" Version="2" Fps="30"/>
+	<Info CreatedBy="Unknown" CreatedOn="2021/8/21 20:56:35" Version="3" Fps="30"/>
 	<Content>
 		<Spritesheets>
 			<Spritesheet Path="characters\costumes\character_Phobebia.png" Id="0"/>
@@ -22,14 +22,14 @@
 			<Layer Name="ghost" Id="13" SpritesheetId="1"/>
 		</Layers>
 		<Nulls>
-			<Null Name="pickup item" Id="0"/>
-			<Null Name="LeftEye" Id="1"/>
-			<Null Name="RightEye" Id="2"/>
-			<Null Name="Forehead" Id="3"/>
-			<Null Name="Mouth" Id="4"/>
-			<Null Name="MomsEye" Id="5"/>
-			<Null Name="Tractor" Id="6"/>
-			<Null Name="ItemWalk" Id="7"/>
+			<Null Name="pickup item" Id="0" ShowRect="false"/>
+			<Null Name="LeftEye" Id="1" ShowRect="false"/>
+			<Null Name="RightEye" Id="2" ShowRect="false"/>
+			<Null Name="Forehead" Id="3" ShowRect="false"/>
+			<Null Name="Mouth" Id="4" ShowRect="false"/>
+			<Null Name="MomsEye" Id="5" ShowRect="false"/>
+			<Null Name="Tractor" Id="6" ShowRect="false"/>
+			<Null Name="ItemWalk" Id="7" ShowRect="false"/>
 		</Nulls>
 		<Events/>
 	</Content>

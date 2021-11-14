@@ -1,0 +1,8 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<entities anm2root="gfx/" version="5">
+  <!--- -SoulStone- - -->
+  <entity anm2path="Pickups_SoulOfPhobebia.anm2" baseHP="0" boss="0" champion="0" collisionDamage="0" collisionMass="3" collisionRadius="12" friction="1" name="Soul of Phobebia" numGridCollisionPoints="24" shadowSize="16" stageHP="0" variant="300" subtype="75851">
+    <gibs amount="0" blood="0" bone="0" eye="0" gut="0" large="0" />
+    <preload-snd id="8" />
+  </entity>
+</entities>
