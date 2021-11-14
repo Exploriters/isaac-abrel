@@ -461,158 +461,6 @@ local function RearrangeHearts(player)
 	
 end
 
-local function TaintedHexanowRoomOverride()
-	if not hexanowFlags:HasFlag("TAINTED") then
-		return nil
-	end
-	
-	local game = Game()
-	local level = game:GetLevel()
-	local room = game:GetRoom()
-	local roomEntities = Isaac.GetRoomEntities()
-	
-	if Game().Difficulty ~= Difficulty.DIFFICULTY_GREED 
-	and Game().Difficulty ~= Difficulty.DIFFICULTY_GREEDIER
-	then
-		for i,entity in ipairs(roomEntities) do
-			
-			local pickup = entity:ToPickup()
-			if pickup ~= nil then
-				if pickup.Variant == PickupVariant.PICKUP_COLLECTIBLE and pickup.SubType ~= 0 then
-					if not hexanowFlags:HasFlag("TEFFECT_REDKEY_GEN") and room:GetBackdropType() == 51 and pickup.SubType ~= CollectibleType.COLLECTIBLE_RED_KEY then
-						pickup:Morph(pickup.Type, pickup.Variant, CollectibleType.COLLECTIBLE_RED_KEY, true)
-						hexanowFlags:AddFlag("TEFFECT_REDKEY_GEN")
-					end
-					
-					if pickup.SubType == CollectibleType.COLLECTIBLE_R_KEY
-					or pickup.SubType == CollectibleType.COLLECTIBLE_SPINDOWN_DICE
-					or pickup.SubType == CollectibleType.COLLECTIBLE_CLICKER
-					then
-						pickup:Morph(pickup.Type, pickup.Variant, CollectibleType.COLLECTIBLE_BREAKFAST, true)
-					end
-				end
-				if not hexanowFlags:HasFlag("TEFFECT_CHESTWIPE") and room:GetBackdropType() == 49 and 
-					 ( pickup.Variant == PickupVariant.PICKUP_CHEST 	
-					or pickup.Variant == PickupVariant.PICKUP_BOMBCHEST 	
-					or pickup.Variant == PickupVariant.PICKUP_SPIKEDCHEST 	
-					or pickup.Variant == PickupVariant.PICKUP_ETERNALCHEST 	
-					or pickup.Variant == PickupVariant.PICKUP_MIMICCHEST 	
-					or pickup.Variant == PickupVariant.PICKUP_LOCKEDCHEST 
-					)
-				then
-					pickup:Remove()
-					hexanowFlags:AddFlag("TEFFECT_CHESTWIPE")
-				end
-			end
-			
-			if not hexanowFlags:HasFlag("TEFFECT_DEATHCERTIFICATE_GEN") and
-			(entity.Type == EntityType.ENTITY_SHOPKEEPER
-			or (pickup ~= nil and pickup.Variant == PickupVariant.PICKUP_COLLECTIBLE and pickup.SubType == CollectibleType.COLLECTIBLE_INNER_CHILD)
-			)then
-				Isaac.Spawn(EntityType.ENTITY_PICKUP, PickupVariant.PICKUP_COLLECTIBLE, CollectibleType.COLLECTIBLE_DEATH_CERTIFICATE, entity.Position, Vector(0,0), entity)
-				entity:Remove()
-				hexanowFlags:AddFlag("TEFFECT_DEATHCERTIFICATE_GEN")
-			end
-			
-			
-		end
-	end
-	
-end
-
--- 初始化人物
-local function InitPlayerHexanowTainted(player)
-	--print("CALLED!")
-	--print("PType", player:GetPlayerType())
-	--print("TType", playerTypeHexanowTainted)
-	if player:GetPlayerType() == playerTypeHexanowTainted then
-		--print("CALLED ACCEPT!")
-		player:ChangePlayerType(playerTypeHexanow)
-		
-		local level = Game():GetLevel()
-		
-		if not hexanowFlags:HasFlag("TAINTED") then
-			hexanowFlags:AddFlag("TAINTED")
-			--player:AddCard(Card.CARD_CRACKED_KEY)
-			--player:AddCollectible(CollectibleType.COLLECTIBLE_DEATH_CERTIFICATE, 0, false)
-			player:AddCoins(99)
-			player:AddBombs(99)
-			player:AddKeys(99)
-			--player:AddEternalHearts(24)
-			EternalCharges = EternalCharges + 99
-			
-			local stageType = level:GetStageType()
-			
-			-- stageType == StageType.STAGETYPE_GREEDMODE
-				--level:SetStage(LevelStage.STAGE7_GREED, stageType)
-				--level:SetNextStage()
-				--level:SetStage(13, stageType)
-				--level:SetNextStage()
-				
-			if Game().Difficulty == Difficulty.DIFFICULTY_GREED 
-			or Game().Difficulty == Difficulty.DIFFICULTY_GREEDIER 
-			then
-				Isaac.ExecuteCommand("stage 6")
-			else
-				Isaac.ExecuteCommand("stage 13")
-			end			
-			TaintedHexanowRoomOverride()
-		end
-	end
-end
-
--- 初始化人物
-local function InitPlayerHexanow(player)
-	if player:GetPlayerType() == playerTypeHexanow then
-		local itemPool = Game():GetItemPool()
-		
-		player:AddHearts(-player:GetHearts())
-		player:AddMaxHearts(-player:GetMaxHearts())
-		player:AddMaxHearts(12)
-		player:AddHearts(11)
-		
-		player:AddGoldenKey()
-		player:AddGoldenBomb()
-		-- player:AddGoldenHearts(0)
-		ApplyEternalHearts(player)
-		
-		--player:AddHearts(-1)
-		--player:AddCard(Card.CARD_JUSTICE)
-		--player:AddCard(Card.CARD_CRACKED_KEY)
-		if hexanowFlags:HasFlag("TAINTED") then
-			player:AddMaxHearts(12)
-			player:AddHearts(13)
-			player:AddTrinket(TrinketType.TRINKET_PERFECTION | 32768)
-		else
-			player:AddTrinket(TrinketType.TRINKET_NO | 32768)
-		end
-		-- player:AddCard(Card.CARD_SUN)
-		-- player:AddTrinket(TrinketType.TRINKET_BIBLE_TRACT)
-		
-		-- print("PostGameStarted for", player:GetName())
-		
-		itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_ANALOG_STICK)
-		itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_URANUS)
-		itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_NEPTUNUS)
-		--itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_SOL)
-		itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR)
-		--itemPool:RemoveTrinket(TrinketType.TRINKET_NO)
-		
-		for i=0, PillColor.NUM_PILLS - 1, 1 do
-			itemPool:IdentifyPill(i)
-		end
-		
-		if player:GetActiveItem(ActiveSlot.SLOT_POCKET) ~= hexanowPortalTool -- CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR
-		then
-			--player:SetPocketActiveItem(CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR, ActiveSlot.SLOT_POCKET, false)
-			player:SetPocketActiveItem(hexanowPortalTool, ActiveSlot.SLOT_POCKET, false)
-		end
-		
-		TickEventHexanow(player)
-		UpdateCostumes(player)
-	end
-end
-
 -- 物品谓词
 local function HexanowBlackCollectiblePredicate(ID)
 	local item = Isaac.GetItemConfig():GetCollectible(ID)
@@ -802,6 +650,65 @@ local function PickupWhiteHexanowCollectible(player, ID, slot)
 	end
 	
 	SetWhiteHexanowCollectible(player, ID, slot)
+end
+
+local function TaintedHexanowRoomOverride()
+	if not hexanowFlags:HasFlag("TAINTED") then
+		return nil
+	end
+	
+	local game = Game()
+	local level = game:GetLevel()
+	local room = game:GetRoom()
+	local roomEntities = Isaac.GetRoomEntities()
+	
+	if Game().Difficulty ~= Difficulty.DIFFICULTY_GREED 
+	and Game().Difficulty ~= Difficulty.DIFFICULTY_GREEDIER
+	then
+		for i,entity in ipairs(roomEntities) do
+			
+			local pickup = entity:ToPickup()
+			if pickup ~= nil then
+				if pickup.Variant == PickupVariant.PICKUP_COLLECTIBLE and pickup.SubType ~= 0 then
+					if not hexanowFlags:HasFlag("TEFFECT_REDKEY_GEN") and room:GetBackdropType() == 51 and pickup.SubType ~= CollectibleType.COLLECTIBLE_RED_KEY then
+						pickup:Morph(pickup.Type, pickup.Variant, CollectibleType.COLLECTIBLE_RED_KEY, true)
+						hexanowFlags:AddFlag("TEFFECT_REDKEY_GEN")
+					end
+					
+					if pickup.SubType == CollectibleType.COLLECTIBLE_R_KEY
+					or pickup.SubType == CollectibleType.COLLECTIBLE_SPINDOWN_DICE
+					or pickup.SubType == CollectibleType.COLLECTIBLE_CLICKER
+					then
+						pickup:Morph(pickup.Type, pickup.Variant, CollectibleType.COLLECTIBLE_BREAKFAST, true)
+					end
+				end
+				if not hexanowFlags:HasFlag("TEFFECT_CHESTWIPE") and room:GetBackdropType() == 49 and 
+					 ( pickup.Variant == PickupVariant.PICKUP_CHEST 	
+					or pickup.Variant == PickupVariant.PICKUP_BOMBCHEST 	
+					or pickup.Variant == PickupVariant.PICKUP_SPIKEDCHEST 	
+					or pickup.Variant == PickupVariant.PICKUP_ETERNALCHEST 	
+					or pickup.Variant == PickupVariant.PICKUP_MIMICCHEST 	
+					or pickup.Variant == PickupVariant.PICKUP_LOCKEDCHEST 
+					)
+				then
+					pickup:Remove()
+					hexanowFlags:AddFlag("TEFFECT_CHESTWIPE")
+				end
+			end
+			
+			if not hexanowFlags:HasFlag("TEFFECT_DEATHCERTIFICATE_GEN") and
+			(entity.Type == EntityType.ENTITY_SHOPKEEPER
+			or (pickup ~= nil and pickup.Variant == PickupVariant.PICKUP_COLLECTIBLE and pickup.SubType == CollectibleType.COLLECTIBLE_INNER_CHILD)
+			)then
+				Isaac.Spawn(EntityType.ENTITY_PICKUP, PickupVariant.PICKUP_COLLECTIBLE, CollectibleType.COLLECTIBLE_DEATH_CERTIFICATE, entity.Position, Vector(0,0), entity)
+				entity:Remove()
+				hexanowFlags:AddFlag("TEFFECT_DEATHCERTIFICATE_GEN")
+			end
+			
+			
+		end
+	end
+	
 end
 
 -- 玩家刻事件，每一帧执行
@@ -1144,6 +1051,99 @@ local function TickEventHexanow(player)
 		end
 		
 		--player.ItemHoldCooldown = 0
+	end
+end
+
+-- 初始化人物
+local function InitPlayerHexanowTainted(player)
+	--print("CALLED!")
+	--print("PType", player:GetPlayerType())
+	--print("TType", playerTypeHexanowTainted)
+	if player:GetPlayerType() == playerTypeHexanowTainted then
+		--print("CALLED ACCEPT!")
+		player:ChangePlayerType(playerTypeHexanow)
+		
+		local level = Game():GetLevel()
+		
+		if not hexanowFlags:HasFlag("TAINTED") then
+			hexanowFlags:AddFlag("TAINTED")
+			--player:AddCard(Card.CARD_CRACKED_KEY)
+			--player:AddCollectible(CollectibleType.COLLECTIBLE_DEATH_CERTIFICATE, 0, false)
+			player:AddCoins(99)
+			player:AddBombs(99)
+			player:AddKeys(99)
+			--player:AddEternalHearts(24)
+			EternalCharges = EternalCharges + 99
+			
+			local stageType = level:GetStageType()
+			
+			-- stageType == StageType.STAGETYPE_GREEDMODE
+				--level:SetStage(LevelStage.STAGE7_GREED, stageType)
+				--level:SetNextStage()
+				--level:SetStage(13, stageType)
+				--level:SetNextStage()
+				
+			if Game().Difficulty == Difficulty.DIFFICULTY_GREED 
+			or Game().Difficulty == Difficulty.DIFFICULTY_GREEDIER 
+			then
+				Isaac.ExecuteCommand("stage 6")
+			else
+				Isaac.ExecuteCommand("stage 13")
+			end			
+			TaintedHexanowRoomOverride()
+		end
+	end
+end
+
+-- 初始化人物
+local function InitPlayerHexanow(player)
+	if player:GetPlayerType() == playerTypeHexanow then
+		local itemPool = Game():GetItemPool()
+		
+		player:AddHearts(-player:GetHearts())
+		player:AddMaxHearts(-player:GetMaxHearts())
+		player:AddMaxHearts(12)
+		player:AddHearts(11)
+		
+		player:AddGoldenKey()
+		player:AddGoldenBomb()
+		-- player:AddGoldenHearts(0)
+		ApplyEternalHearts(player)
+		
+		--player:AddHearts(-1)
+		--player:AddCard(Card.CARD_JUSTICE)
+		--player:AddCard(Card.CARD_CRACKED_KEY)
+		if hexanowFlags:HasFlag("TAINTED") then
+			player:AddMaxHearts(12)
+			player:AddHearts(13)
+			player:AddTrinket(TrinketType.TRINKET_PERFECTION | 32768)
+		else
+			player:AddTrinket(TrinketType.TRINKET_NO | 32768)
+		end
+		-- player:AddCard(Card.CARD_SUN)
+		-- player:AddTrinket(TrinketType.TRINKET_BIBLE_TRACT)
+		
+		-- print("PostGameStarted for", player:GetName())
+		
+		itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_ANALOG_STICK)
+		itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_URANUS)
+		itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_NEPTUNUS)
+		--itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_SOL)
+		itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR)
+		--itemPool:RemoveTrinket(TrinketType.TRINKET_NO)
+		
+		for i=0, PillColor.NUM_PILLS - 1, 1 do
+			itemPool:IdentifyPill(i)
+		end
+		
+		if player:GetActiveItem(ActiveSlot.SLOT_POCKET) ~= hexanowPortalTool -- CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR
+		then
+			--player:SetPocketActiveItem(CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR, ActiveSlot.SLOT_POCKET, false)
+			player:SetPocketActiveItem(hexanowPortalTool, ActiveSlot.SLOT_POCKET, false)
+		end
+		
+		TickEventHexanow(player)
+		UpdateCostumes(player)
 	end
 end
 
