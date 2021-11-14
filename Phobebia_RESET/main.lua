@@ -4,10 +4,11 @@ local Phobebia_Reset = RegisterMod("Phobebia_Reset", 1);
 --About Player and Costume--
 local costume_Phobebia = Isaac.GetCostumeIdByPath("gfx/characters/character_PhobebiaHair.anm2")
 local playerType_Phobebia = Isaac.GetPlayerTypeByName("Phobebia")
-local InvincibleEnd = false
-local Invincible = true
-local InvincibleFrame = 0
-local InvincibleAnimated = false
+local FristDamageFrameInRoom = {}
+FristDamageFrameInRoom[1] = -1
+FristDamageFrameInRoom[2] = -1
+FristDamageFrameInRoom[3] = -1
+FristDamageFrameInRoom[4] = -1
 --Items--
 local ItemID = {
 TheCatsGuide = Isaac.GetItemIdByName("Cat's Teeth")
@@ -24,20 +25,74 @@ local TriggerDelay = 1
 local BaseFrameCount = 0
 local BaseGameFrameCount = 0
 --==============--
+--==LOCAL UTILITY==--
+
+-- 抹除临时变量
+local function WipeTempVar()
+	UsedPhobebiaSoulStone = false
+	PhobebiaSoulStone_Damaged = false
+	PhobebiaSoulStone_KillCount = 0
+	TriggeredCount = 0
+	TriggerDelay = 1
+	BaseFrameCount = 0
+	BaseGameFrameCount = 0
+	FristDamageFrameInRoom = {}
+	FristDamageFrameInRoom[1] = -1
+	FristDamageFrameInRoom[2] = -1
+	FristDamageFrameInRoom[3] = -1
+	FristDamageFrameInRoom[4] = -1
+end
+
+WipeTempVar()
+
+--== Invincible the first damage in everyroom, then flight ==--
+local function IsInvincible(player)
+	local playerID = GetPlayerID(player)
+	return FristDamageFrameInRoom[playerID] == -1 or Game():GetFrameCount() < (FristDamageFrameInRoom[playerID] + 15)
+end
+
+local function IsHurtsflightEnabled(player)
+	local playerID = GetPlayerID(player)
+	return FristDamageFrameInRoom[playerID] ~= -1
+end
+
+local function EndInvincible(player)
+	local playerID = GetPlayerID(player)
+	if FristDamageFrameInRoom[playerID] == -1 then
+		FristDamageFrameInRoom[playerID] = Game():GetFrameCount()
+		player:AnimateSad()
+		player:RemoveCollectible(StatUpdateItem)
+	end
+end
+
+local function ResetHurtsflight(player)
+	local playerID = GetPlayerID(player)
+	FristDamageFrameInRoom[playerID] = -1
+	player:RemoveCollectible(StatUpdateItem)
+end
+
+local function UpdateCostumes(player)
+	if player:GetPlayerType() == playerType_Phobebia then
+		-- TODO: flight costume
+		if player.CanFly then
+			player:TryRemoveNullCostume(costume_Phobebia)
+			player:AddNullCostume(costume_Phobebia)
+		else
+			player:TryRemoveNullCostume(costume_Phobebia)
+			player:AddNullCostume(costume_Phobebia)
+		end
+	else
+		player:TryRemoveNullCostume(costume_Phobebia)
+	end
+end
 
 --==PLAYERS==--
 --==============--
 function Phobebia_Reset:playerDamage(tookDamage, damage, damageFlags, damageSourceRef)
-	local player = Isaac.GetPlayer(0)
-	if player:GetPlayerType() == playerType_Phobebia then
-		if Invincible == true then
-			if InvincibleAnimated == false then
-				player:AnimateSad()
-				InvincibleAnimated = true
-			end
-			InvincibleEnd = true
-			InvincibleFrame = Game():GetFrameCount()
-			player:RemoveCollectible(StatUpdateItem)
+	local player = tookDamage:ToPlayer()
+	if tookDamage ~= nil and player:GetPlayerType() == playerType_Phobebia then
+		if IsInvincible(player) then
+			EndInvincible(player)
 			return false
 		end
 	end
@@ -58,25 +113,11 @@ function Phobebia_Reset:Update(player)
 			player:AddNullCostume(costume_Phobebia)
 		end
 	end
-	--== Invincible the first damage in everyroom ==--
-	if InvincibleEnd == true then
-		if Game():GetFrameCount() == (InvincibleFrame + 15) then
-			Invincible = false
-			player:RemoveCollectible(StatUpdateItem)
-		end
-	end
 end
 Phobebia_Reset:AddCallback( ModCallbacks.MC_POST_UPDATE, Phobebia_Reset.Update)
 
 function Phobebia_Reset:PostPlayerInit(player)
-	if player:GetPlayerType() == playerType_Phobebia then
-		player:TryRemoveNullCostume(costume_Phobebia)
-		player:AddNullCostume(costume_Phobebia)
-		costumeEquipped = true
-	else
-		player:TryRemoveNullCostume(costume_Phobebia)
-		costumeEquipped = false
-	end
+	UpdateCostumes(player)
 end
 Phobebia_Reset:AddCallback( ModCallbacks.MC_POST_PLAYER_INIT, Phobebia_Reset.PostPlayerInit)
 
@@ -91,23 +132,12 @@ function Phobebia_Reset:EvaluateCache(player, cacheFlag)
 		elseif cacheFlag == CacheFlag.CACHE_LUCK then
 			player.Luck = player.Luck - 1
 		elseif cacheFlag == CacheFlag.CACHE_FLYING then
-			if player:HasCollectible(CollectibleType.COLLECTIBLE_TRANSCENDENCE) then
-				player:TryRemoveNullCostume(costume_Phobebia)
-				player:AddNullCostume(costume_Phobebia)
-			end
-		elseif cacheFlag == CacheFlag.CACHE_FLYING then
---[[			print "CAN YOU FUCKING HEAR ME!?"
-			if Invincible == false then
-				print "Fly!"
+			--print "CAN YOU FUCKING HEAR ME!?"
+			if IsHurtsflightEnabled(player) then
+				--print "Fly!"
 				player.CanFly = true
-			end]]--
-			if player:HasCollectible(CollectibleType.COLLECTIBLE_TRANSCENDENCE) then
-				player:TryRemoveNullCostume(costume_Phobebia)
-				player:AddNullCostume(costume_Phobebia)
 			end
-			player:TryRemoveNullCostume(costume_Phobebia)
-			player:AddNullCostume(costume_Phobebia)
---			player.CanFly = true
+			UpdateCostumes(player)
 		elseif cacheFlag == CacheFlag.CACHE_FAMILIARS then
 			local maybeFamiliars = Isaac.GetRoomEntities()
 			for m = 1, #maybeFamiliars do
@@ -126,7 +156,6 @@ Phobebia_Reset:AddCallback( ModCallbacks.MC_EVALUATE_CACHE, Phobebia_Reset.Evalu
 --==============--
 function Phobebia_Reset:UsePhobebiaSoulStone(cardId, player, useFlags)
 	local level = Game():GetLevel()
-	local player = Isaac.GetPlayer(0)
 	local room = Game():GetRoom()
 	local TotalHeartCount = player:GetMaxHearts() + player:GetBlackHearts() + player:GetSoulHearts()
 	BaseFrameCount = room:GetFrameCount()
@@ -180,43 +209,16 @@ end
 Phobebia_Reset:AddCallback( ModCallbacks.MC_EVALUATE_CACHE, Phobebia_Reset.SoulStoneEvaluateCache)
 
 function Phobebia_Reset:PostNewRoom()
-	InvincibleEnd = false
-	Invincible = true
-	InvincibleFrame = 0
-	InvincibleAnimated = false
+	CallForEveryPlayer(ResetHurtsflight)
 end
 Phobebia_Reset:AddCallback( ModCallbacks.MC_POST_NEW_ROOM, Phobebia_Reset.PostNewRoom)
 
 function Phobebia_Reset:PostNewLevel()
-	local player = Isaac.GetPlayer(0)
-	UsedPhobebiaSoulStone = false
-	PhobebiaSoulStone_Damaged = false
-	PhobebiaSoulStone_KillCount = 0
-	TriggeredCount = 0
-	TriggerDelay = 1
-	BaseFrameCount = 0
-	BaseGameFrameCount = 0
-	InvincibleEnd = false
-	Invincible = true
-	InvincibleFrame = 0
-	InvincibleAnimated = false
-	player:RemoveCollectible(StatUpdateItem)
+	WipeTempVar()
 end
 Phobebia_Reset:AddCallback( ModCallbacks.MC_POST_NEW_LEVEL, Phobebia_Reset.PostNewLevel)
 
 function Phobebia_Reset:PostNewGame()
-	local player = Isaac.GetPlayer(0)
-	UsedPhobebiaSoulStone = false
-	PhobebiaSoulStone_Damaged = false
-	PhobebiaSoulStone_KillCount = 0
-	TriggeredCount = 0
-	TriggerDelay = 1
-	BaseFrameCount = 0
-	BaseGameFrameCount = 0
-	InvincibleEnd = false
-	Invincible = true
-	InvincibleFrame = 0
-	InvincibleAnimated = false
-	player:RemoveCollectible(StatUpdateItem)
+	WipeTempVar()
 end
 Phobebia_Reset:AddCallback( ModCallbacks.MC_POST_GAME_STARTED, Phobebia_Reset.PostNewGame)
