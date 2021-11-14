@@ -1,0 +1,4 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<items gfxroot="gfx/items/" version="1">
+  <passive cache="damage firedelay" description="Stats changed" hidden="true" gfx="Nothing.png" name="Damage Stat Trigger" />
+</items>
