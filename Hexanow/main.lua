@@ -184,24 +184,10 @@ function hexanowObjectives:Apply()
 	EternalCharges = tonumber(self:Read("EternalCharges", "0"))
 	
 	--[[
-	local ECSStr = self:Read("EternalChargeSuppressed", "false")
-	if ECSStr == "true" then
-		EternalChargeSuppressed = true
-	elseif ECSStr == "false" then
-		EternalChargeSuppressed = false
-	else
-		EternalChargeSuppressed = nil
-	end
+	EternalChargeSuppressed = StringConvertToBoolean(self:Read("EternalChargeSuppressed", "false"))
 	--print("Eternal charge suppression state "..tostring(EternalChargeSuppressed))
 
-	local HTSStr = self:Read("HexanowTaintedStarted", "false")
-	if HTSStr == "true" then
-		Tainted = true
-	elseif HTSStr == "false" then
-		Tainted = false
-	else
-		Tainted = nil
-	end
+	Tainted = StringConvertToBoolean(self:Read("HexanowTaintedStarted", "false"))
 	]]
 	
 	

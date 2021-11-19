@@ -60,6 +60,20 @@ function PlayerTypeExistInGame(playerType)
 	return false
 end
 
+function StringConvertToBoolean(str)
+    if str == nil then
+        return false
+	end
+	str = string.lower(str)
+	if str == 'true' then
+		return true
+    elseif str == 'false' then
+		return false
+	else
+		return nil
+	end
+end
+
 function ReverseTable(tab)
 	local tmp = {}
 	for i = 1, #tab do
