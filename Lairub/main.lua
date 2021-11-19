@@ -64,110 +64,35 @@ local FinishedTalkAnmPart = 0
 local FinishedTalkAnmPart_Sheol = 0
 
 --==== Store mod Data ====--
-keyValuePair = {key = "", value = ""}
-keyValuePair.__index = keyValuePair
+local LairubFlags = Explorite.NewExploriteFlags()
+local LairubObjectives = Explorite.NewExploriteObjectives()
 
-local LairubObjectives = { }
-LairubObjectives.__index = LairubObjectives
+function LairubObjectives:Apply()
+	LairubFlags:Wipe()
+	LairubFlags:LoadFromString(self:Read("Flags", ""))
 
-function KeyValuePair(key, value)
-	return keyValuePair:ctor(key, value)
+	DialogueOver = StringConvertToBoolean(self:Read("DialogueOver", "false"))
 end
 
-function keyValuePair:ctor(key, value)
-	local cted = {}
-	setmetatable(cted, keyValuePair)
-	cted.key = key
-	cted.value = value
-	return cted
+function LairubObjectives:Recieve()
+	self:Write("Flags", LairubFlags:ToString())
+	self:Write("DialogueOver", tostring(DialogueOver))
 end
 
-function LairubObjectives_Wipe()
-	LairubObjectives = { }
-end
-
-function LairubObjectives_Read(key, default)
-	for i, kvp in ipairs(LairubObjectives) do
-		if kvp.key == key then
-			return kvp.value
-		end
-	end
-	return default
-end
-
-function LairubObjectives_Write(key, value)
-	for i, kvp in ipairs(LairubObjectives) do
-		if kvp.key  == key then
-			kvp.value = value
-			return value
-		end
-	end
-	table.insert(LairubObjectives, KeyValuePair(key, value))
-	return value
-end
-
-function LairubObjectives_Apply()
-	local DialogueOverStr = LairubObjectives_Read("DialogueOver", "false")
-	if DialogueOverStr == "true" then
-		DialogueOver = true
-	elseif DialogueOverStr == "false" then
-		DialogueOver = false
-	else
-		DialogueOver = nil
-	end
-end
-
-function LairubObjectives_Recieve()
-	LairubObjectives_Write("DialogueOver", tostring(DialogueOver))
-end
-
-function LairubObjectives_ToString()
-	local str = ""
-	for i,kvp in ipairs(LairubObjectives) do
-		str = str..tostring(kvp.key).."="..tostring(kvp.value).."\n"
-	end
-	return str
-end
-
-function LairubObjectives_LoadFromString(str)
-	local strTable = {}
-	local pointer1 = 0
-	local pointer2 = 0
-	local count = 1
-	while true do
-		local point = string.find(str, "\n", count)
-		if point == nil then
-			break
-		end
-		pointer1 = pointer2
-		pointer2 = point
-		table.insert(strTable, string.sub(str, pointer1 + 1, pointer2 -1))
-		count = count + 1
-	end
-	for i, str in ipairs(strTable) do
-		local point = string.find(str, "=", 1)
-		if point ~= nil then
-			local key = string.sub(str, 1, point - 1)
-			local value = string.sub(str, point + 1, 256)
-			LairubObjectives_Write(key, value)
-			
-		end
-	end
-end
 --==Read==--
 function LoadLairubModData()
 	local str = "Error"
 	if Isaac.HasModData(lairub) then
 		str = Isaac.LoadModData(lairub, "ERROR\nERROR\nERROR\nI HATE YOU")
 	end
-	LairubObjectives_Wipe()
-	LairubObjectives_LoadFromString(str)
-	LairubObjectives_Apply()
+	LairubObjectives:Wipe()
+	LairubObjectives:LoadFromString(str)
+	LairubObjectives:Apply()
 end
 --==Write==--
 function SaveLairubModData()
-	LairubObjectives_Recieve()
-	local str = LairubObjectives_ToString()
+	LairubObjectives:Recieve()
+	local str = LairubObjectives:ToString()
 	Isaac.SaveModData(lairub, str)
 end
 --==Post game started==--
