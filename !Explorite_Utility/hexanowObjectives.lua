@@ -36,7 +36,7 @@ function hexanowObjectives:Read(key, default)
 			return kvp.value
 		end
 	end
-	hexanowObjectives:Write(key, default).used = true
+	self:Write(key, default).used = true
 	return default
 end
 
