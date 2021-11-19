@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <items gfxroot="gfx/items/" version="1">
 	<passive cache="speed damage flying firedelay" description="Stats changed" hidden="true" gfx="Nothing.png" name="Stat Trigger" />
-	<active cache="damage firedelay" description="Deep pain." hidden="true" gfx="CatTeech.png" name="Cat's Teech" maxcharges="1" />
+	<active cache="damage firedelay" description="Deep pain." hidden="true" gfx="CatTeeth.png" name="Cat's Teeth" maxcharges="1" />
 </items>

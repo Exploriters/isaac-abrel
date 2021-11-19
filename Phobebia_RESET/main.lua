@@ -11,7 +11,7 @@ FristDamageFrameInRoom[3] = -1
 FristDamageFrameInRoom[4] = -1
 --Items--
 local ItemID = {
-TheCatsGuide = Isaac.GetItemIdByName("Cat's Teeth")
+Item_CatsTeeth = Isaac.GetItemIdByName("Cat's Teeth")
 }
 --Stat Trigger--
 local StatUpdateItem = Isaac.GetItemIdByName("Stat Trigger")
@@ -102,7 +102,6 @@ Phobebia_Reset:AddCallback(ModCallbacks.MC_ENTITY_TAKE_DMG, Phobebia_Reset.playe
 function Phobebia_Reset:Update(player)
 	local game = Game()
 	local level = game:GetLevel()
-	local player = Isaac.GetPlayer(0)
 	local room = game:GetRoom()
 	--==Costume==--
 	if room:GetFrameCount() == 1 and player:GetPlayerType() == playerType_Phobebia and not player:IsDead() then
@@ -118,6 +117,9 @@ Phobebia_Reset:AddCallback( ModCallbacks.MC_POST_UPDATE, Phobebia_Reset.Update)
 
 function Phobebia_Reset:PostPlayerInit(player)
 	UpdateCostumes(player)
+	if player:GetPlayerType() == playerType_Phobebia and player:GetActiveItem(ActiveSlot.SLOT_POCKET) ~= Item_CatsTeeth then
+		player:SetPocketActiveItem(ItemID.Item_CatsTeeth, ActiveSlot.SLOT_POCKET, false)
+	end
 end
 Phobebia_Reset:AddCallback( ModCallbacks.MC_POST_PLAYER_INIT, Phobebia_Reset.PostPlayerInit)
 
@@ -151,6 +153,12 @@ function Phobebia_Reset:EvaluateCache(player, cacheFlag)
 	end
 end
 Phobebia_Reset:AddCallback( ModCallbacks.MC_EVALUATE_CACHE, Phobebia_Reset.EvaluateCache)
+--==============--
+
+--==Items==--
+--==============--
+
+--==============--
 
 --==SOUL STONE==--
 --==============--
@@ -182,7 +190,7 @@ function Phobebia_Reset:PhobebiaSoulStoneFunction()
 		end
 		for i, Effect in pairs(roomEntities) do
 			if Effect.Type == EntityType.ENTITY_EFFECT and Effect.Variant == 111 then
-				Effect:SetColor(Color(1, 1, 1, 0.4, 0.5, 0.2, 0.2), 0, 999, true, true)
+				Effect:SetColor(Color(0.5, 0.2, 0.2, 0.4, 1, 1, 1), 0, 999, true, true)
 			end
 		end
 	end
@@ -197,10 +205,10 @@ end
 Phobebia_Reset:AddCallback( ModCallbacks.MC_POST_NPC_DEATH, Phobebia_Reset.SoulStoneNPCDeath)
 
 function Phobebia_Reset:SoulStoneEvaluateCache(player, cacheFlag)
-	local player = Isaac.GetPlayer(0)
 	if UsedPhobebiaSoulStone == true then
 		if cacheFlag == CacheFlag.CACHE_DAMAGE then
-			player.Damage = player.Damage + 0.5 + (PhobebiaSoulStone_KillCount * 0.01)
+			player.Damage = player.Damage + 0.5
+--			+ (PhobebiaSoulStone_KillCount * 0.01)
 		elseif cacheFlag == CacheFlag.CACHE_FIREDELAY then
 			player.MaxFireDelay = player.MaxFireDelay - 3
 		end
@@ -210,15 +218,21 @@ Phobebia_Reset:AddCallback( ModCallbacks.MC_EVALUATE_CACHE, Phobebia_Reset.SoulS
 
 function Phobebia_Reset:PostNewRoom()
 	CallForEveryPlayer(ResetHurtsflight)
+	player = Isaac.GetPlayer(0)
+	player:RemoveCollectible(StatUpdateItem)
 end
 Phobebia_Reset:AddCallback( ModCallbacks.MC_POST_NEW_ROOM, Phobebia_Reset.PostNewRoom)
 
 function Phobebia_Reset:PostNewLevel()
 	WipeTempVar()
+	player = Isaac.GetPlayer(0)
+	player:RemoveCollectible(StatUpdateItem)
 end
 Phobebia_Reset:AddCallback( ModCallbacks.MC_POST_NEW_LEVEL, Phobebia_Reset.PostNewLevel)
 
 function Phobebia_Reset:PostNewGame()
 	WipeTempVar()
+	player = Isaac.GetPlayer(0)
+	player:RemoveCollectible(StatUpdateItem)
 end
 Phobebia_Reset:AddCallback( ModCallbacks.MC_POST_GAME_STARTED, Phobebia_Reset.PostNewGame)

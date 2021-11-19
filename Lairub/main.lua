@@ -1,5 +1,7 @@
 local lairub = RegisterMod("Lairub", 1);
 
+--==CW==--
+local Mark_Mom = false
 --==Costume and something else==--
 --Wait, something else???????
 local costume_Lairub_Body = Isaac.GetCostumeIdByPath("gfx/characters/LairubBody.anm2")
@@ -115,10 +117,20 @@ function LairubObjectives_Apply()
 	else
 		DialogueOver = nil
 	end
+	--====--
+	local Mark_MomStr = LairubObjectives_Read("Mark_Mom", "false")
+	if Mark_Mom == "true" then
+		Mark_Mom = true
+	elseif Mark_Mom == "false" then
+		Mark_Mom = false
+	else
+		Mark_Mom = nil
+	end
 end
 
 function LairubObjectives_Recieve()
 	LairubObjectives_Write("DialogueOver", tostring(DialogueOver))
+	LairubObjectives_Write("Mark_Mom", tostring(Mark_Mom))
 end
 
 function LairubObjectives_ToString()
@@ -173,11 +185,13 @@ end
 --==Post game started==--
 function lairub:PostGameStarted(loadedFromSaves)
 	if not loadedFromSaves then
+		Mark_Mom = false
 		LoadLairubModData()
 		DialogueOver = false
 		SaveLairubModData()
 	else
 		DialogueOver = false
+		Mark_Mom = false
 		LoadLairubModData()
 	end
 end
@@ -186,6 +200,7 @@ lairub:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, lairub.PostGameStarted)
 function lairub:PreGameExit(shouldSave)
 	SaveLairubModData()
 	DialogueOver = false
+	Mark_Mom = false
 end
 lairub:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, lairub.PreGameExit)
 --================================--
@@ -229,6 +244,11 @@ function lairub:Update(player)
 				player:AddNullCostume(costume_Lairub_Head_TakeSoulBase)
 			end
 		end
+	end
+	--==Remove Costume if player isn't Lairub==--
+	if player:GetPlayerType() ~= playerType_Lairub then
+		player:TryRemoveNullCostume(costume_Lairub_Body)
+		player:TryRemoveNullCostume(costume_Lairub_Head)
 	end
 end
 lairub:AddCallback( ModCallbacks.MC_POST_UPDATE, lairub.Update)
@@ -338,6 +358,84 @@ function lairub:EvaluateCache(player, cacheFlag)
 	end
 end
 lairub:AddCallback( ModCallbacks.MC_EVALUATE_CACHE, lairub.EvaluateCache)
+
+--==completion widget==--
+local CW_Small = Sprite()
+CW_Small:Load("gfx/ui/Lairub_CW_Small.anm2", true)
+local CW_Big = Sprite()
+CW_Big:Load("gfx/ui/Lairub_CW_Big.anm2", true)
+local ShowCWBig = false
+local NShowCWBig = true
+
+function lairub:PostRender_CW()
+	local game = Game()
+	local level = game:GetLevel()
+	local player = Isaac.GetPlayer(0)
+	local room = game:GetRoom()
+	local playerPos = room:WorldToScreenPosition(player.Position)
+	local CWPos = room:WorldToScreenPosition(Vector(80,238))
+	--==CW_Small==--
+	if room:GetFrameCount() >= 3 and level:GetStage() == 1 and level:GetCurrentRoomIndex() == level:GetStartingRoomIndex() then
+		CW_Small:SetOverlayRenderPriority(true)
+		CW_Small:SetFrame("CW_Small", 1)
+		CW_Small:Render(Vector(80,230), Vector(0,0), Vector(0,0))
+	end
+	if CWPos.Y - playerPos.Y < -96 and CWPos.X - playerPos.X < -16 and CWPos.X - playerPos.X > -48 then
+		if ShowCWBig ~= true then
+			Isaac.RenderText("(Press 'Z' to survey)", playerPos.X - 64, playerPos.Y - 64, 255, 255, 255, 255)
+		end
+	end
+	--==CW_Big==--
+	if ShowCWBig == true then
+		CW_Big:SetOverlayRenderPriority(true)
+		CW_Big:SetFrame("CW_Big", 0)
+		CW_Big:Render(Vector(192,128), Vector(0,0), Vector(0,0))
+		Isaac.RenderText("(Press 'Z' again to back)", 123, 192, 255, 255, 255, 255)
+		if Mark_Mom == true then
+			CW_Big:SetLayerFrame(12, 1)
+		end
+	end
+end
+lairub:AddCallback(ModCallbacks.MC_POST_RENDER, lairub.PostRender_CW)
+
+function lairub:ShowCW()
+	local game = Game()
+	local level = game:GetLevel()
+	local player = Isaac.GetPlayer(0)
+	local room = game:GetRoom()
+	local playerPos = room:WorldToScreenPosition(player.Position)
+	local CWPos = room:WorldToScreenPosition(Vector(80,238))
+	if level:GetStage() == 1 and level:GetCurrentRoomIndex() == level:GetStartingRoomIndex() and CWPos.Y - playerPos.Y < -96 and CWPos.X - playerPos.X < -16 and CWPos.X - playerPos.X > -48 then
+		if Input.IsButtonPressed(Keyboard.KEY_Z, player.ControllerIndex) then
+			PressingZ = true
+			if PressedZOnce == false then
+				PressedZOnce = true
+				if ShowCWBig == false then
+					ShowCWBig = true
+					player.ControlsEnabled = false
+				else
+					ShowCWBig = false
+					player.ControlsEnabled = true
+				end
+			end
+		else
+			PressingZ = false
+			PressedZOnce = false
+		end
+	end
+--==GiveMark==--
+	local roomEntities = Isaac.GetRoomEntities()
+	if level:GetStage() == 6 and room:GetType() == RoomType.ROOM_BOSS then
+		for i, entity in pairs(roomEntities) do
+			local NPC = entity:ToNPC()
+			if NPC ~= nil and NPC.Type == 45 and NPC:IsDead() then
+				Mark_Mom = true
+			end
+		end
+	end
+end
+lairub:AddCallback(ModCallbacks.MC_POST_UPDATE, lairub.ShowCW)
+--========--
 
 local AttackIcon = Sprite()
 AttackIcon:Load("gfx/Lairub_AttackIcon.anm2", true)
@@ -1603,6 +1701,8 @@ function lairub:PostNewLevel()
 	RoomKillCount = 0
 	LevelDevourOnce = false
 	BoneCount = 0
+	ShowCWBig = false
+	NShowCWBig = true
 	local level = Game():GetLevel()
 	local player = Isaac.GetPlayer(0)
 	local room = Game():GetRoom()
@@ -1633,6 +1733,9 @@ function lairub:PostNewRoom()
 	
 	RoomKillCount = 0
 	BoneCount = 0
+	
+	ShowCWBig = false
+	NShowCWBig = true
 	
 	for i, entity in pairs(roomEntities) do
 		if entity.Type == EntityType.ENTITY_FAMILIAR then
@@ -1708,6 +1811,9 @@ function lairub:PostNewGame()
 	RoomKillCount = 0
 	LevelDevourOnce = false
 	BoneCount = 0
+	
+	ShowCWBig = false
+	NShowCWBig = true
 
 	local game = Game()
 	local level = game:GetLevel()
