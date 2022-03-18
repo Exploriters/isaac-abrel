@@ -85,3 +85,5 @@ function ExploriteMod:CompletionMarksUtility_PostRender()
     --DrawCompletionWidget(baseOffset - hudOffset, 0)
 end
 ExploriteMod:AddCallback(ModCallbacks.MC_POST_RENDER, ExploriteMod.CompletionMarksUtility_PostRender)
+
+local Database = Explorite.ExploriteMod

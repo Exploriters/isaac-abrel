@@ -65,6 +65,7 @@ local FinishedTalkAnmPart_Sheol = 0
 
 --[[
 --==== Store mod Data ====--
+--[[
 local LairubFlags = Explorite.NewExploriteFlags()
 local LairubObjectives = Explorite.NewExploriteObjectives()
 
@@ -115,6 +116,7 @@ function lairub:PreGameExit(shouldSave)
 	DialogueOver = false
 end
 lairub:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, lairub.PreGameExit)
+]]--
 --================================--
 ]]--
 
