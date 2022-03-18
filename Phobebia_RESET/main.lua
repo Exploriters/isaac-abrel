@@ -4,9 +4,11 @@ local Phobebia_Reset = RegisterMod("Phobebia_Reset", 1);
 --Resources reference--
 local costume_Phobebia = Isaac.GetCostumeIdByPath("gfx/characters/character_PhobebiaHair.anm2")
 local playerType_Phobebia = Isaac.GetPlayerTypeByName("Phobebia")
+--Items--
 local ItemID = {
 Item_CatsTeeth = Isaac.GetItemIdByName("Cat's Teeth")
 }
+--Stat Trigger--
 local StatUpdateItem = Isaac.GetItemIdByName("Stat Trigger")
 local PhobebiaSoulStoneID = Isaac.GetCardIdByName("Soul of Phobebia")
 --Vars--
@@ -21,11 +23,14 @@ local phobebiaObjectives = Explorite.NewExploriteObjectives()
 
 	--Hurts flight--
 	--Soul Stone--
+	--Cats Teeth--
 local PlayerVarsStruct = {
 	FristDamageFrameInRoom = -1,
 	UsedPhobebiaSoulStone = false,
 	PhobebiaSoulStone_Damaged = false,
-	PhobebiaSoulStone_KillCount = 0,
+	UsedCatTeeth = false,
+	CatTeethFireDelayDown = false,
+	Phobebia_KillCount = 0,
 	TriggeredCount = 0,
 	BaseFrameCount = 0,
 	BaseGameFrameCount = 0
@@ -186,7 +191,9 @@ function Phobebia_Reset:PostNewRoom()
 	if gameInited then
 		SavePhobebiaModData()
 	end
-
+	PlayerVars.CallForEvery(function(vars)
+		vars.CatTeethFireDelayDown = false
+	end)
 	CallForEveryPlayer(ResetHurtsflight)
 end
 Phobebia_Reset:AddCallback( ModCallbacks.MC_POST_NEW_ROOM, Phobebia_Reset.PostNewRoom)
@@ -195,7 +202,8 @@ function Phobebia_Reset:PostNewLevel()
 	PlayerVars.CallForEvery(function(vars)
 		vars.UsedPhobebiaSoulStone = false
 		vars.PhobebiaSoulStone_Damaged = false
-		vars.PhobebiaSoulStone_KillCount = 0
+		vars.UsedCatTeeth = false
+		vars.Phobebia_KillCount = 0
 		vars.TriggeredCount = 0
 		vars.BaseFrameCount = 0
 		vars.BaseGameFrameCount = 0
@@ -226,6 +234,8 @@ function Phobebia_Reset:Update()
 		CallForEveryPlayer(
 			function(player)
 				if player:GetPlayerType() == playerType_Phobebia and not player:IsDead() then
+					player:TryRemoveNullCostume(costume_Phobebia)
+					player:AddNullCostume(costume_Phobebia)
 					if player:HasCollectible(CollectibleType.COLLECTIBLE_GUILLOTINE) or player:HasCollectible(CollectibleType.COLLECTIBLE_TRANSCENDENCE) then
 						player:AddNullCostume(costume_Phobebia)
 					else
@@ -236,10 +246,10 @@ function Phobebia_Reset:Update()
 			end
 		)
 	end
-
 	CallForEveryPlayer(
 		function(player)
 			if player:GetPlayerType() == playerType_Phobebia then
+				--==Hearts==--
 				player:AddSoulHearts(math.min(0,2-player:GetSoulHearts()))
 				player:AddBoneHearts(-player:GetBoneHearts())
 				player:AddHearts(-player:GetHearts())
@@ -293,8 +303,48 @@ Phobebia_Reset:AddCallback( ModCallbacks.MC_EVALUATE_CACHE, Phobebia_Reset.Evalu
 --==Items==--
 --==============--
 
---==============--
+function Phobebia_Reset:UsedActiveItem_CatsTeeth(itemID,_,player)
+	local level = Game():GetLevel()
+	local room = Game():GetRoom()
+	local playerID = GetPlayerID(player)
+	local TotalHeartCount = player:GetMaxHearts() + player:GetBlackHearts() + player:GetSoulHearts()
+	PlayerVars[playerID].UsedCatTeeth = true
+	PlayerVars[playerID].CatTeethFireDelayDown = true
+	player:TakeDamage((math.ceil(TotalHeartCount/2)), 0, EntityRef(player), 0)
+	player:RemoveCollectible(StatUpdateItem)
+end
+Phobebia_Reset:AddCallback( ModCallbacks.MC_USE_ITEM, Phobebia_Reset.UsedActiveItem_CatsTeeth, Item_CatsTeeth)
 
+function Phobebia_Reset:CatTeethNPCDeath()
+	CallForEveryPlayer(
+		function(player)
+			local playerID = GetPlayerID(player)
+			if PlayerVars[playerID].UsedCatTeeth == true then
+				PlayerVars[playerID].Phobebia_KillCount = PlayerVars[playerID].Phobebia_KillCount + 1
+				player:RemoveCollectible(StatUpdateItem)
+			end
+		end
+	)
+end
+Phobebia_Reset:AddCallback( ModCallbacks.MC_POST_NPC_DEATH, Phobebia_Reset.CatTeethNPCDeath)
+
+function Phobebia_Reset:CatTeethEvaluateCache(player, cacheFlag)
+	local playerID = GetPlayerID(player)
+	if PlayerVars[playerID].UsedCatTeeth == true then
+		print "?"
+		if cacheFlag == CacheFlag.CACHE_DAMAGE then
+			player.Damage = player.Damage + (PlayerVars[playerID].Phobebia_KillCount * 0.01)
+		end
+	end
+	if CatTeethFireDelayDown == true then
+		print "??"
+		if cacheFlag == CacheFlag.CACHE_FIREDELAY then
+			player.MaxFireDelay = player.MaxFireDelay - 1
+		end
+	end
+end
+Phobebia_Reset:AddCallback( ModCallbacks.MC_EVALUATE_CACHE, Phobebia_Reset.CatTeethEvaluateCache)
+--==============--
 
 -- Pickup collision
 function Phobebia_Reset:PrePickupCollision(pickup, collider, low)
@@ -385,6 +435,7 @@ function Phobebia_Reset:PhobebiaSoulStoneFunction()
 					end
 				end
 			end
+
 		end
 	)
 end
@@ -395,7 +446,7 @@ function Phobebia_Reset:SoulStoneNPCDeath()
 		function(player)
 			local playerID = GetPlayerID(player)
 			if PlayerVars[playerID].UsedPhobebiaSoulStone == true then
-				PlayerVars[playerID].PhobebiaSoulStone_KillCount = PlayerVars[playerID].PhobebiaSoulStone_KillCount + 1
+				PlayerVars[playerID].Phobebia_KillCount = PlayerVars[playerID].Phobebia_KillCount + 1
 				player:RemoveCollectible(StatUpdateItem)
 			end
 		end
@@ -407,7 +458,7 @@ function Phobebia_Reset:SoulStoneEvaluateCache(player, cacheFlag)
 	local playerID = GetPlayerID(player)
 	if PlayerVars[playerID].UsedPhobebiaSoulStone == true then
 		if cacheFlag == CacheFlag.CACHE_DAMAGE then
-			player.Damage = player.Damage + 0.5 -- + (PlayerVars[playerID].PhobebiaSoulStone_KillCount * 0.01)
+			player.Damage = player.Damage + 0.5 -- + (PlayerVars[playerID].Phobebia_KillCount * 0.01)
 		elseif cacheFlag == CacheFlag.CACHE_FIREDELAY then
 			player.MaxFireDelay = player.MaxFireDelay - 3
 		end
