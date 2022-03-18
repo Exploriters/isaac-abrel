@@ -65,7 +65,6 @@ local FinishedTalkAnmPart_Sheol = 0
 
 --[[
 --==== Store mod Data ====--
---[[
 local LairubFlags = Explorite.NewExploriteFlags()
 local LairubObjectives = Explorite.NewExploriteObjectives()
 
@@ -117,9 +116,6 @@ function lairub:PreGameExit(shouldSave)
 end
 lairub:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, lairub.PreGameExit)
 ]]--
---================================--
-]]--
-
 --================================--
 
 function UpdateCache(player)
