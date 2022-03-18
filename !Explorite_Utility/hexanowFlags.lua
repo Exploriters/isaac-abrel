@@ -1,21 +1,21 @@
 
-local hexanowFlags = { data = { } }
-hexanowFlags.__index = hexanowFlags
+local exploriteFlags = { data = { } }
+exploriteFlags.__index = exploriteFlags
 function Explorite.NewExploriteFlags()
-	return hexanowFlags:ctor()
+	return exploriteFlags:ctor()
 end
-function hexanowFlags:ctor()
+function exploriteFlags:ctor()
 	local cted = {}
-	setmetatable(cted, hexanowFlags)
+	setmetatable(cted, exploriteFlags)
 	cted.data = { }
 	return cted
 end
 
-function hexanowFlags:Wipe()
+function exploriteFlags:Wipe()
 	for i in next, self.data do rawset(self.data, i, nil) end
 end
 
-function hexanowFlags:HasFlag(flag)
+function exploriteFlags:HasFlag(flag)
 	for i,hflag in ipairs(self.data) do
 		if hflag == flag then
 			return true
@@ -24,7 +24,7 @@ function hexanowFlags:HasFlag(flag)
 	return false
 end
 
-function hexanowFlags:AddFlag(flag)
+function exploriteFlags:AddFlag(flag)
 	for i,hflag in ipairs(self.data) do
 		if hflag == flag then
 			return nil
@@ -33,7 +33,7 @@ function hexanowFlags:AddFlag(flag)
 	table.insert(self.data, flag)
 end
 
-function hexanowFlags:RemoveFlag(flag)
+function exploriteFlags:RemoveFlag(flag)
 	for i,hflag in ipairs(self.data) do
 		if hflag == flag then
 			table.remove(self.data, i)
@@ -42,7 +42,7 @@ function hexanowFlags:RemoveFlag(flag)
 	end
 end
 
-function hexanowFlags:ToString()
+function exploriteFlags:ToString()
 	local str = ""
 	for i,hflag in ipairs(self.data) do
 		str = str..hflag..","
@@ -51,7 +51,7 @@ function hexanowFlags:ToString()
 	return str
 end
 
-function hexanowFlags:LoadFromString(str)
+function exploriteFlags:LoadFromString(str)
 	--print("recieve<"..str..">")
 
 	local strTable = {}

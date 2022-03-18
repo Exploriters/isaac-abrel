@@ -13,23 +13,23 @@ function keyValuePair:ctor(key, value)
 	return cted
 end
 
-local hexanowObjectives = { data = { } }
-hexanowObjectives.__index = hexanowObjectives
+local exploriteObjectives = { data = { } }
+exploriteObjectives.__index = exploriteObjectives
 function Explorite.NewExploriteObjectives()
-	return hexanowObjectives:ctor()
+	return exploriteObjectives:ctor()
 end
-function hexanowObjectives:ctor()
+function exploriteObjectives:ctor()
 	local cted = {}
-	setmetatable(cted, hexanowObjectives)
+	setmetatable(cted, exploriteObjectives)
 	cted.data = { }
 	return cted
 end
 
-function hexanowObjectives:Wipe()
+function exploriteObjectives:Wipe()
 	for i in next, self.data do rawset(self.data, i, nil) end
 end
 
-function hexanowObjectives:Read(key, default)
+function exploriteObjectives:Read(key, default)
 	for i,kvp in ipairs(self.data) do
 		if kvp.key == key then
 			kvp.used = true
@@ -40,7 +40,7 @@ function hexanowObjectives:Read(key, default)
 	return default
 end
 
-function hexanowObjectives:Write(key, value)
+function exploriteObjectives:Write(key, value)
 	for i,kvp in ipairs(self.data) do
 		if kvp.key == key then
 			kvp.value = value
@@ -52,7 +52,7 @@ function hexanowObjectives:Write(key, value)
 	return ret
 end
 
-function hexanowObjectives:ToString(ignoreUnused)
+function exploriteObjectives:ToString(ignoreUnused)
 	local str = ""
 	for i,kvp in ipairs(self.data) do
 		if ignoreUnused ~= true or kvp.used == true then
@@ -62,7 +62,7 @@ function hexanowObjectives:ToString(ignoreUnused)
 	return str
 end
 
-function hexanowObjectives:LoadFromString(str)	
+function exploriteObjectives:LoadFromString(str)	
 	local strTable = {}
 	local lastPoint = 0
 	while true do
