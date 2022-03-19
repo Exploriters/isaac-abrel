@@ -118,6 +118,103 @@ lairub:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, lairub.PreGameExit)
 ]]--
 --================================--
 
+local HuntedDownThreshold = 60 * 30 -- Exceeded this value result damage overtime
+local HuntedDownDamageRate = 3 * 30 -- For ever amount of frames, dealt damage
+local HuntedDownDamagePerShot = 2 -- Damage value
+
+local HuntedDownFrame = -1
+local HuntedDownReadout = "none" -- none, safe, BOSS, Vigilant, DANGER
+local HuntedDownReadoutNumber = 0
+
+local function HuntedDownInterval()
+	local game = Game()
+	local level = game:GetLevel()
+	local player = Isaac.GetPlayer(0)
+	local room = game:GetRoom()
+
+	-- if not in Sheol or Dark Room, hide timer
+	if not ((DialogueOver_Sheol and level:GetStage() == 10 and room:GetBackdropType() == 14) or (level:GetStage() == 11 and room:GetBackdropType() == 16)) then
+		HuntedDownReadout = "none"
+		HuntedDownReadoutNumber = 0
+		HuntedDownFrame = -1
+		return nil
+	end
+
+	-- if room is clear, stop timer
+	if room:IsClear() then
+		HuntedDownReadout = "safe"
+		HuntedDownReadoutNumber = math.ceil(HuntedDownThreshold / 30)
+		HuntedDownFrame = -1
+		return nil
+	end
+
+	-- if room is boss room, stop timer
+	if room:GetType() == RoomType.ROOM_BOSS then
+		HuntedDownReadout = "BOSS"
+		HuntedDownReadoutNumber = 0
+		HuntedDownFrame = -1
+		return nil
+	end
+
+	-- if all invalid testing are passed, timing
+
+	HuntedDownFrame = HuntedDownFrame + 1
+
+	-- if time below threshold, stop trigger damage
+	if HuntedDownFrame < HuntedDownThreshold then
+		HuntedDownReadout = "Vigilant"
+		HuntedDownReadoutNumber = math.ceil((HuntedDownThreshold - HuntedDownFrame) / 30)
+		return nil
+	end
+
+	-- execute damage
+	HuntedDownReadout = "DANGER"
+	HuntedDownReadoutNumber = math.ceil((HuntedDownDamageRate - (HuntedDownFrame - HuntedDownThreshold) % HuntedDownDamageRate) / 30)
+
+	if (HuntedDownFrame - HuntedDownThreshold) % HuntedDownDamageRate == 0 then
+		player:TakeDamage(HuntedDownDamagePerShot, DamageFlag.DAMAGE_DEVIL | DamageFlag.DAMAGE_INVINCIBLE , EntityRef(player), 0)
+	end
+	
+end
+
+local function HuntedDownRendering()
+	if HuntedDownReadout ~= "none" then
+		-- safe: white
+		-- BOSS: pink
+		-- Vigilant: pink
+		-- DANGER: red
+		local R = 1
+		local G = 1
+		local B = 1
+		local A = 1
+		if HuntedDownReadout == "BOSS" or HuntedDownReadout == "Vigilant" then
+			R = 1
+			G = 0.5
+			B = 0.5
+			A = 0.8
+		end
+		if HuntedDownReadout == "DANGER" then
+			R = 1
+			G = 0
+			B = 0
+			A = 0.8
+		end
+
+		-- use computed result from game interval function, instead of compute them in render function
+		local displayNumber
+		if HuntedDownReadoutNumber < 10 then
+			displayNumber = "0"..tostring(HuntedDownReadoutNumber)
+		else
+			displayNumber = tostring(HuntedDownReadoutNumber)
+		end
+		
+		Isaac.RenderScaledText(displayNumber, 212 - Isaac.GetTextWidth (displayNumber) * 2 / 2, 60, 2, 2, R, G, B, A)
+		Isaac.RenderScaledText(HuntedDownReadout, 212 - Isaac.GetTextWidth (HuntedDownReadout) * 0.9 / 2, 80, 0.9, 0.9, R, G, B, A)
+	end
+end
+
+--================================--
+
 function UpdateCache(player)
 	player:AddCacheFlags(CacheFlag.CACHE_DAMAGE)
 	player:AddCacheFlags(CacheFlag.CACHE_SPEED)
@@ -335,7 +432,10 @@ function lairub:PostRender()
 			TeleportSign:SetFrame("TeleportSign", 1)
 			TeleportSign:Render(Vector(112,76), Vector(0,0), Vector(0,0))
 			Isaac.RenderScaledText("'X'", 120, 70, 0.9, 0.9, 255, 255, 255, 255)
+			--==Hunted down readout==--
+			HuntedDownRendering()
 			--==CountDown==--
+			--[[
 			if (level:GetStage() == 10 and room:GetBackdropType() == 14) or (level:GetStage() == 11 and room:GetBackdropType() == 16) then
 				if DialogueOver_Sheol == false and level:GetStage() == 10 and room:GetBackdropType() == 14 then
 					--Do nothing
@@ -361,6 +461,8 @@ function lairub:PostRender()
 					end
 				end
 			end
+			]]--
+			
 			--== Help List ==--
 			if ShowHelpList == true then
 				-- Shift --
@@ -933,7 +1035,10 @@ function lairub:Functions()
 			PressingX = false
 			PressedXOnce = false
 		end
+
 		--====Be Hunted Down In Stage10, BackdropType14(Sheol) And Stage11, BackdropType16(DarkRoom)====-
+		HuntedDownInterval()
+		--[[
 		--==Function==--
 		if not room:IsClear() then
 			if (level:GetStage() == 10 and room:GetBackdropType() == 14) or (level:GetStage() == 11 and room:GetBackdropType() == 16) then
@@ -958,6 +1063,9 @@ function lairub:Functions()
 			CountDown = 60
 			DMGCountDown = 3
 		end
+		]]--
+
+
 		--==Dialogue(Sheol)==--
 		if level:GetStage() == 10 and room:GetBackdropType() == 14 then
 			if DialogueOver_Sheol == false then

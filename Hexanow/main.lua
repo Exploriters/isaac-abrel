@@ -1,3 +1,4 @@
+local hexanowMod = RegisterMod("Hexanow", 1);
 
 --require("hexanowObjectives")
 --require("hexanowFlags")
@@ -11,7 +12,6 @@
 local hexanowFlags = Explorite.NewExploriteFlags()
 local hexanowObjectives = Explorite.NewExploriteObjectives()
 
-local hexanowMod = RegisterMod("Hexanow", 1);
 
 local playerTypeHexanow = Isaac.GetPlayerTypeByName("Hexanow")
 local playerTypeHexanowTainted = Isaac.GetPlayerTypeByName("Tainted Hexanow", true)

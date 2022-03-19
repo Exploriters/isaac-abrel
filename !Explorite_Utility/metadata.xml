@@ -2,9 +2,9 @@
 <metadata>
     <name>!Explorite Utility</name>
     <directory>!explorite_utility</directory>
-    <id />
-    <description>Explorite Utility.</description>
-    <version>1.0</version>
+    <id>2780875807</id>
+    <description>Explorite Utility is a lib that providing functions for multiple mods to use.</description>
+    <version>1.1</version>
     <visibility>Public</visibility>
     <tag id="Lua"/>
 </metadata>
