@@ -55,7 +55,7 @@ local DialogueOver_Sheol = false
 local Dialogue_Sheol = 0
 --Function--
 local DMGframeCount = 90
-local DMGcount = 0
+local DMGcount = 1
 local CountDown = 60
 local DMGCountDown = 3
 
@@ -937,7 +937,10 @@ function lairub:Functions()
 		--==Function==--
 		if not room:IsClear() then
 			if (level:GetStage() == 10 and room:GetBackdropType() == 14) or (level:GetStage() == 11 and room:GetBackdropType() == 16) then
-				if room:GetFrameCount() >= 1800 and not room:GetType() == RoomType.ROOM_BOSS then
+				if room:GetType() == RoomType.ROOM_BOSS then
+					--Do nothing
+				end
+				if room:GetFrameCount() > 1800 then
 					--Damage--
 					DMGCountDown = math.ceil((DMGframeCount * DMGcount + 1800 -room:GetFrameCount()) / 30)
 					if room:GetFrameCount() == DMGframeCount * DMGcount + 1800 then
@@ -951,7 +954,7 @@ function lairub:Functions()
 				end
 			end
 		elseif room:IsClear() or room:GetType() == RoomType.ROOM_BOSS then
-			DMGcount = 0
+			DMGcount = 1
 			CountDown = 60
 			DMGCountDown = 3
 		end
@@ -1645,7 +1648,7 @@ function lairub:PostNewGame()
 	PressedHOnce = false
 	ShowedInitialTips = false
 	
-	DMGcount = 0
+	DMGcount = 1
 	CountDown = 60
 	DMGCountDown = 3
 	
