@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <metadata>
-    <name>Hexanow</name>
+    <name>hexanow</name>
     <directory>hexanow</directory>
-    <id />
-    <description>Hexanow.</description>
-    <version>1.1</version>
+    <id>2780893356</id>
+    <description>Add a player character Hexanow, with extremely high surviving ability but can only hold three items.</description>
+    <version>1.0</version>
     <visibility>Public</visibility>
     <tag id="Lua"/>
     <tag id="Player Characters"/>
