@@ -183,21 +183,12 @@ local function HuntedDownRendering()
 		-- BOSS: pink
 		-- Vigilant: pink
 		-- DANGER: red
-		local R = 1
-		local G = 1
-		local B = 1
-		local A = 1
+		local R, G, B, A = 1, 1, 1, 1
 		if HuntedDownReadout == "BOSS" or HuntedDownReadout == "Vigilant" then
-			R = 1
-			G = 0.5
-			B = 0.5
-			A = 0.8
+			R, G, B, A = 1, 0.5, 0.5, 0.8
 		end
 		if HuntedDownReadout == "DANGER" then
-			R = 1
-			G = 0
-			B = 0
-			A = 0.8
+			R, G, B, A = 1, 0, 0, 0.8
 		end
 
 		-- use computed result from game interval function, instead of compute them in render function
