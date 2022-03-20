@@ -257,6 +257,8 @@ function lairub:Update(player)
 	if player:GetPlayerType() ~= playerType_Lairub then
 		player:TryRemoveNullCostume(costume_Lairub_Body)
 		player:TryRemoveNullCostume(costume_Lairub_Head)
+		player:TryRemoveNullCostume(costume_Lairub_Head_TakeSoul)
+		player:TryRemoveNullCostume(costume_Lairub_Head_TakeSoulBase)
 	end
 end
 lairub:AddCallback( ModCallbacks.MC_POST_UPDATE, lairub.Update)
