@@ -3,6 +3,30 @@ local lairub = RegisterMod("Lairub", 1);
 local playerType_Lairub = Isaac.GetPlayerTypeByName("Lairub")
 local playerType_Tainted_Lairub = Isaac.GetPlayerTypeByName("Tainted Lairub", true)
 
+function lairub:checkMissingExploriteStart(loadedFromSaves)
+	if Explorite == nil then
+		local numPlayers = Game():GetNumPlayers()
+		for i=0,numPlayers-1,1 do
+			local player = Isaac.GetPlayer(i)
+			if player:GetPlayerType() == playerType_Lairub then
+				player:AddControlsCooldown(2147483647)
+				if not loadedFromSaves then
+					player.Visible = false
+					player:AddBrokenHearts(2147483647)
+				end
+			end
+		end
+	end
+end
+lairub:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, lairub.checkMissingExploriteStart)
+
+function lairub:checkMissingExploriteRend()
+	if Explorite == nil then
+		Isaac.RenderText("Explorite utility is missing.", (Isaac.GetScreenWidth() - Isaac.GetTextWidth("Explorite utility is missing.")) / 2, Isaac.GetScreenHeight() / 2, 255, 0, 0, 255)
+	end
+end
+lairub:AddCallback(ModCallbacks.MC_POST_RENDER, lairub.checkMissingExploriteRend)
+
 local LairubFlags = Explorite.NewExploriteFlags()
 local LairubObjectives = Explorite.NewExploriteObjectives()
 
@@ -1030,7 +1054,7 @@ function lairub:Functions()
 				PressedCtrlOnce = false
 			end
 		end
-		if not IsLairubButtonPressed(player,"release_souls") and not IsLairubButtonPressed(player,"swap_form") and not Input.IsLairubButtonPressed(player,"teleport_to_devil_room") then
+		if not IsLairubButtonPressed(player,"release_souls") and not IsLairubButtonPressed(player,"swap_form") and not IsLairubButtonPressed(player,"teleport_to_devil_room") then
 			if ReadySpawnCross == true then
 				AnimationEnd_ReadySpawnCross = false
 				player:AddControlsCooldown(2)--player.ControlsEnabled = false
