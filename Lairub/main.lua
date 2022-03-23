@@ -1029,7 +1029,7 @@ function lairub:Functions()
 				PressedCtrlOnce = false
 			end
 		end
-		if not IsLairubButtonPressed(player,"release_souls") and not IsLairubButtonPressed(player,"swap_form") and not Input.IsLairubButtonPressed(player,"teleport_to_devil_room") then
+		if not IsLairubButtonPressed(player,"release_souls") and not IsLairubButtonPressed(player,"swap_form") and not IsLairubButtonPressed(player,"teleport_to_devil_room") then
 			if ReadySpawnCross == true then
 				AnimationEnd_ReadySpawnCross = false
 				player:AddControlsCooldown(2)--player.ControlsEnabled = false

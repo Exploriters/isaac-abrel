@@ -2140,8 +2140,8 @@ function hexanowMod:PostUpdate()
 					
 					entity.Visible = false
 				end
+				]]
 			end
-			]]
 		)
 	end
 	
