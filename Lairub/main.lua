@@ -1,5 +1,31 @@
 local lairub = RegisterMod("Lairub", 1);
 
+local playerType_Lairub = Isaac.GetPlayerTypeByName("Lairub")
+
+function lairub:checkMissingExploriteStart(loadedFromSaves)
+	if Explorite == nil then
+		local numPlayers = Game():GetNumPlayers()
+		for i=0,numPlayers-1,1 do
+			local player = Isaac.GetPlayer(i)
+			if player:GetPlayerType() == playerType_Lairub then
+				player:AddControlsCooldown(2147483647)
+				if not loadedFromSaves then
+					player.Visible = false
+					player:AddBrokenHearts(2147483647)
+				end
+			end
+		end
+	end
+end
+lairub:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, lairub.checkMissingExploriteStart)
+
+function lairub:checkMissingExploriteRend()
+	if Explorite == nil then
+		Isaac.RenderText("Explorite utility is missing.", (Isaac.GetScreenWidth() - Isaac.GetTextWidth("Explorite utility is missing.")) / 2, Isaac.GetScreenHeight() / 2, 255, 0, 0, 255)
+	end
+end
+lairub:AddCallback(ModCallbacks.MC_POST_RENDER, lairub.checkMissingExploriteRend)
+
 local LairubFlags = Explorite.NewExploriteFlags()
 local LairubObjectives = Explorite.NewExploriteObjectives()
 
@@ -11,7 +37,6 @@ local costume_Lairub_Head = Isaac.GetCostumeIdByPath("gfx/characters/LairubHead.
 local costume_Lairub_Head_TakeSoul = Isaac.GetCostumeIdByPath("gfx/characters/LairubHead_TakeSoul.anm2")
 local costume_Lairub_Head_TakeSoulBase = Isaac.GetCostumeIdByPath("gfx/characters/LairubHead_TakeSoulBase.anm2")
 
-local playerType_Lairub = Isaac.GetPlayerTypeByName("Lairub")
 local LairubStatUpdateItem = Isaac.GetItemIdByName( "Lairub Stat Trigger" )
 
 local playerType_Tainted_Lairub = Isaac.GetPlayerTypeByName("Tainted Lairub", true)

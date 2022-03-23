@@ -1,5 +1,32 @@
 local hexanowMod = RegisterMod("Hexanow", 1);
 
+local playerTypeHexanow = Isaac.GetPlayerTypeByName("Hexanow")
+local playerTypeHexanowTainted = Isaac.GetPlayerTypeByName("Tainted Hexanow", true)
+
+function hexanowMod:checkMissingExploriteStart(loadedFromSaves)
+	if Explorite == nil then
+		local numPlayers = Game():GetNumPlayers()
+		for i=0,numPlayers-1,1 do
+			local player = Isaac.GetPlayer(i)
+			if player:GetPlayerType() == playerTypeHexanow then
+				player:AddControlsCooldown(2147483647)
+				if not loadedFromSaves then
+					player.Visible = false
+					player:AddBrokenHearts(2147483647)
+				end
+			end
+		end
+	end
+end
+hexanowMod:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, hexanowMod.checkMissingExploriteStart)
+
+function hexanowMod:checkMissingExploriteRend()
+	if Explorite == nil then
+		Isaac.RenderText("Explorite utility is missing.", (Isaac.GetScreenWidth() - Isaac.GetTextWidth("Explorite utility is missing.")) / 2, Isaac.GetScreenHeight() / 2, 255, 0, 0, 255)
+	end
+end
+hexanowMod:AddCallback(ModCallbacks.MC_POST_RENDER, hexanowMod.checkMissingExploriteRend)
+
 --require("hexanowObjectives")
 --require("hexanowFlags")
 
@@ -11,10 +38,6 @@ local hexanowMod = RegisterMod("Hexanow", 1);
 
 local hexanowFlags = Explorite.NewExploriteFlags()
 local hexanowObjectives = Explorite.NewExploriteObjectives()
-
-
-local playerTypeHexanow = Isaac.GetPlayerTypeByName("Hexanow")
-local playerTypeHexanowTainted = Isaac.GetPlayerTypeByName("Tainted Hexanow", true)
 
 --local hexanowItem = Isaac.GetItemIdByName( "Hexanow's Soul" )
 local hexanowPortalTool = Isaac.GetItemIdByName("Eternal Portal")
@@ -2476,7 +2499,7 @@ function hexanowMod:PostRender()
 			offsetModStat = offsetModStat + Vector(0, 8)
 		end
 		
-		if PlayerTypeExistInGame(Isaac.GetPlayerTypeByName("Lairub")) then
+		if PlayerTypeExistInGame(Isaac.GetPlayerTypeByName("hexanowMod")) then
 			offsetModSel = offsetModStat + Vector(0, 35)
 		end
 		
