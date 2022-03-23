@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ItemPools>
+	<!--
 	<Pool Name="shop">
 		<Item Name="Red Map" Weight="1" DecreaseBy="1" RemoveOn="0.1"/>
 	</Pool>
@@ -9,10 +10,14 @@
 	<Pool Name="curse">
 		<Item Name="Red Map" Weight="1" DecreaseBy="0.5" RemoveOn="0.1"/>
 	</Pool>
+	-->
 	<Pool Name="devil">
 		<Item Name="Red Map" Weight="1" DecreaseBy="1" RemoveOn="0.1"/>
 	</Pool>
 	<Pool Name="angel">
 		<Item Name="Red Map" Weight="1" DecreaseBy="1" RemoveOn="0.1"/>
+	</Pool>
+	<Pool Name="ultraSecret">
+		<Item Name="Red Map" Weight="1" DecreaseBy="0.4" RemoveOn="0.1"/>
 	</Pool>
 </ItemPools>

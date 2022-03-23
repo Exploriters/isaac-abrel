@@ -27,7 +27,7 @@ local hexanowBodyFlightCostume = Isaac.GetCostumeIdByPath("gfx/characters/Hexano
 local hexanowSoulStoneID = Isaac.GetCardIdByName("Soul of Hexanow")
 
 local entityVariantHeartsBlender = Isaac.GetEntityVariantByName("Hearts Blender")
-local entityTypeHexanowPortal = Isaac.GetEntityTypeByName("Hexanow Blue Portal")
+--local entityTypeHexanowPortal = Isaac.GetEntityTypeByName("Hexanow Blue Portal")
 
 local EternalChargeSprite = Sprite()
 EternalChargeSprite:Load("gfx/ui/EternalCharge.anm2", true)
@@ -38,7 +38,7 @@ local gameInited = false
 local MC_ENTITY_TAKE_DMG_Room = 0
 local MC_ENTITY_TAKE_DMG_Forever = 0
 
-local HUDoffset = 10
+--local HUDoffset = 10
 
 local EternalCharges = 0
 local EternalChargesLastRoom = 0
@@ -180,7 +180,7 @@ function hexanowObjectives:Apply()
 	hexanowFlags:Wipe()
 	hexanowFlags:LoadFromString(self:Read("Flags", ""))
 	
-	HUDoffset = tonumber(self:Read("HUDoffset", "10"))
+	--HUDoffset = tonumber(self:Read("HUDoffset", "10"))
 	EternalCharges = tonumber(self:Read("EternalCharges", "0"))
 	
 	--[[
@@ -219,7 +219,7 @@ end
 function hexanowObjectives:Recieve()
 	self:Write("Flags", hexanowFlags:ToString())
 	
-	self:Write("HUDoffset", tostring(HUDoffset))
+	--self:Write("HUDoffset", tostring(HUDoffset))
 	self:Write("EternalCharges", tostring(EternalCharges))
 	--self:Write("EternalChargeSuppressed", tostring(EternalChargeSuppressed))
 	--self:Write("HexanowTaintedStarted", tostring(Tainted))
@@ -452,10 +452,10 @@ local function HexanowBlackCollectiblePredicate(ID)
 	local item = Isaac.GetItemConfig():GetCollectible(ID)
 	if ID ~= 0 and (item == nil or
 		(
-		item.ID == CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR
-		or item.ID == CollectibleType.COLLECTIBLE_MEGA_MUSH
+		item.ID == CollectibleType.COLLECTIBLE_MEGA_MUSH
 		or item.ID == CollectibleType.COLLECTIBLE_ANKH
 		or item.ID == CollectibleType.COLLECTIBLE_JUDAS_SHADOW
+		--or item.ID == CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR
 		))
 	then
 		return true
@@ -482,13 +482,14 @@ local function HexanowWhiteCollectiblePredicate(ID, ignoreEnsured)
 		or	item.ID == CollectibleType.COLLECTIBLE_DOGMA
 		or	item.ID == hexanowPortalTool
 		--or	item.ID == CollectibleType.COLLECTIBLE_RED_KEY
-		
+		--[[
 		or (not ignoreEnsured == true and (
 			item.ID == CollectibleType.COLLECTIBLE_ANALOG_STICK
 		or	item.ID == CollectibleType.COLLECTIBLE_URANUS
 		or	item.ID == CollectibleType.COLLECTIBLE_NEPTUNUS
 		--or	item.ID == CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR
 		))
+		]]
 		--or	item.ID == CollectibleType.COLLECTIBLE_BIRTHRIGHT
 		
 		--or	(item.Quality >= 4 and item.ItemType ~= ItemType.ITEM_FAMILIAR)
@@ -760,6 +761,7 @@ local function TickEventHexanow(player)
 		end
 		]]
 		--if room:GetBackdropType() ~= 59 and room:GetBackdropType() ~= 58 then
+			--[[
 			if not player:HasCollectible(CollectibleType.COLLECTIBLE_ANALOG_STICK, true) then
 				player:AddCollectible(CollectibleType.COLLECTIBLE_ANALOG_STICK, 0, false)
 				UpdateCostumes(player)
@@ -772,6 +774,7 @@ local function TickEventHexanow(player)
 				player:AddCollectible(CollectibleType.COLLECTIBLE_NEPTUNUS, 0, false)
 				UpdateCostumes(player)
 			end
+			]]
 			--if not player:HasCollectible(CollectibleType.COLLECTIBLE_SOL, true) then
 			--	player:AddCollectible(CollectibleType.COLLECTIBLE_SOL, 0, false)
 			--	UpdateCostumes(player)
@@ -1111,11 +1114,11 @@ local function InitPlayerHexanow(player)
 		
 		-- print("PostGameStarted for", player:GetName())
 		
-		itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_ANALOG_STICK)
-		itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_URANUS)
-		itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_NEPTUNUS)
+		--itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_ANALOG_STICK)
+		--itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_URANUS)
+		--itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_NEPTUNUS)
 		--itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_SOL)
-		itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR)
+		--itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR)
 		--itemPool:RemoveTrinket(TrinketType.TRINKET_NO)
 		
 		for i=0, PillColor.NUM_PILLS - 1, 1 do
@@ -1306,7 +1309,7 @@ end
 ----------
 
 -- 在游戏被初始化后运行
-function hexanowMod:PostGameStarted(loadedFromSaves)	
+function hexanowMod:PostGameStarted(loadedFromSaves)
 	WipeTempVar()
 	LoadHexanowModData()
 	if not loadedFromSaves then -- 仅限新游戏
@@ -1332,6 +1335,7 @@ hexanowMod:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, hexanowMod.PreGameExit)
 
 -- 自定义命令行
 function hexanowMod:ExecuteCmd(cmd, params)
+	--[[
 	if cmd == "hudoffset" then
 		if tonumber(params) ~= nil
 		and tonumber(params) > -1 and tonumber(params) < 11 then
@@ -1341,6 +1345,7 @@ function hexanowMod:ExecuteCmd(cmd, params)
 			Isaac.ConsoleOutput("Invalid args")
 		end
 	end
+	]]--
 	if cmd == "echarge" then
 		if tonumber(params) ~= nil then
 			EternalCharges = tonumber(params)
@@ -1558,7 +1563,7 @@ function hexanowMod:PostNewLevel()
 		function(player)
 			if player:GetPlayerType() == playerTypeHexanow then
 				if Game():GetLevel():GetStage() ~= 13 then
-					player:UseActiveItem(CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR, false, false, true, false)
+					player:UseActiveItem(hexanowPortalTool, false, false, true, false)
 				end
 			end
 		end
@@ -1602,6 +1607,7 @@ function hexanowMod:PostNewRoom()
 		redsecretRoom.DisplayFlags = redsecretRoom.DisplayFlags | 1 << 0 | 1 << 1 | 1 << 2 
 		level:UpdateVisibility()
 		
+		--[[
 		CallForEveryEntity(
 			function(entity)
 				if entity.Type == EntityType.ENTITY_EFFECT
@@ -1628,6 +1634,7 @@ function hexanowMod:PostNewRoom()
 				end
 			end
 		)
+		]]--
 	end
 	
 	if gameInited then
@@ -2077,7 +2084,7 @@ function hexanowMod:PostUpdate()
 						end
 					end
 				end
-				
+				--[[
 				if entity.Type == EntityType.ENTITY_EFFECT
 				and entity.Variant == EffectVariant.WOMB_TELEPORT
 				then
@@ -2134,9 +2141,11 @@ function hexanowMod:PostUpdate()
 					entity.Visible = false
 				end
 			end
+			]]
 		)
 	end
 	
+	--[[
 	CallForEveryEntity(
 		function(entity)
 			if entity.Type == entityTypeHexanowPortal then
@@ -2307,6 +2316,7 @@ function hexanowMod:PostUpdate()
 	else
 		teledProjectiles = {}
 	end
+	]]--
 	--[[
 	local hexanowExist = PlayerTypeExistInGame(playerTypeHexanow)
 	
@@ -2448,9 +2458,13 @@ hexanowMod:AddCallback(ModCallbacks.MC_POST_UPDATE, hexanowMod.PostUpdate)
 
 -- 渲染器，每一帧执行
 function hexanowMod:PostRender()
+	if not Game():GetHUD():IsVisible() then
+		return nil
+	end
+
 	local baseOffset = Vector(3,71)
-	local offsetModSel = Vector(2 * HUDoffset, 1.2 * HUDoffset)
-	local offsetModStat = Vector(2 * HUDoffset, 1.2 * HUDoffset)
+	local offsetModSel = Vector(20 * Options.HUDOffset, 12 * Options.HUDOffset)
+	local offsetModStat = Vector(20 * Options.HUDOffset, 12 * Options.HUDOffset)
 	
 	if PlayerTypeExistInGame(playerTypeHexanow) then
 		
