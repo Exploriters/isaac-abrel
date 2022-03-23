@@ -1,5 +1,8 @@
 local lairub = RegisterMod("Lairub", 1);
 
+local playerType_Lairub = Isaac.GetPlayerTypeByName("Lairub")
+local playerType_Tainted_Lairub = Isaac.GetPlayerTypeByName("Tainted Lairub", true)
+
 local LairubFlags = Explorite.NewExploriteFlags()
 local LairubObjectives = Explorite.NewExploriteObjectives()
 
@@ -11,10 +14,8 @@ local costume_Lairub_Head = Isaac.GetCostumeIdByPath("gfx/characters/LairubHead.
 local costume_Lairub_Head_TakeSoul = Isaac.GetCostumeIdByPath("gfx/characters/LairubHead_TakeSoul.anm2")
 local costume_Lairub_Head_TakeSoulBase = Isaac.GetCostumeIdByPath("gfx/characters/LairubHead_TakeSoulBase.anm2")
 
-local playerType_Lairub = Isaac.GetPlayerTypeByName("Lairub")
 local LairubStatUpdateItem = Isaac.GetItemIdByName( "Lairub Stat Trigger" )
 
-local playerType_Tainted_Lairub = Isaac.GetPlayerTypeByName("Tainted Lairub", true)
 local costume_TaintedLairub_Body = Isaac.GetCostumeIdByPath("gfx/characters/TaintedLairubBody.anm2")
 local costume_TaintedLairub_Head = Isaac.GetCostumeIdByPath("gfx/characters/TaintedLairubHead.anm2")
 
@@ -1310,7 +1311,8 @@ function lairub:UnfinishedUpdate()
 	local player = Isaac.GetPlayer(0)
 	local room = game:GetRoom()
 	if player:GetPlayerType() == playerType_Tainted_Lairub then
-		player:AddControlsCooldown(2)--player.ControlsEnabled = false
+		player:AddControlsCooldown(2147483647)--player.ControlsEnabled = false
+		player:AddBrokenHearts(2147483647)
 		player.Visible = false
 	end
 end
