@@ -851,7 +851,7 @@ local function MaintainPortal(skipCreationAnim)
 					CreatedPortals[i][j] = nil
 				end
 			end
-			local foundMatchedPortal = isInRoom and InRoomCreatedPortals[i][j] ~= nil and pos.X == portal.InRoomCreatedPortals[i][j].X and pos.Y == portal.InRoomCreatedPortals[i][j].Y
+			local foundMatchedPortal = false--isInRoom and InRoomCreatedPortals[i][j] ~= nil and pos.X == InRoomCreatedPortals[i][j].Position.X and pos.Y == InRoomCreatedPortals[i][j].Position.Y
 			local portals = roomPortals[portalCode]
 			--for k=1,#portals do 
 			for k,portal in pairs(portals) do --remove invalid portals
@@ -1316,7 +1316,7 @@ local function TickEventHexanow(player)
 					removedSomething = true
 					for i = 1, exceededNum do
 						player:RemoveCollectible(ID, true)
-						EternalCharges = EternalCharges + item.Quality * 2 + 1
+						EternalCharges = EternalCharges + 4 --item.Quality * 2 + 1
 					end
 				end
 			end
@@ -2871,16 +2871,22 @@ function hexanowMod:PostRender()
 	
 	if PlayerTypeExistInGame(playerTypeHexanow) then
 		
-		local bet1 = PlayerTypeExistInGame(PlayerType.PLAYER_BETHANY)
-		local bet2 = PlayerTypeExistInGame(36)
-		if bet1 and bet2 then
-			offsetModStat = offsetModStat + Vector(0, 19)
-		elseif bet1 or bet2 then
-			offsetModStat = offsetModStat + Vector(0, 8)
+		local linePlus = 0
+		if PlayerTypeExistInGame(PlayerType.PLAYER_BETHANY) then linePlus = linePlus + 1 end
+		if PlayerTypeExistInGame(PlayerType.PLAYER_BETHANY_B) then linePlus = linePlus + 1 end
+		if PlayerTypeExistInGame(PlayerType.PLAYER_BLUEBABY_B) then linePlus = linePlus + 1 end
+
+		if linePlus > 0 then
+			offsetModStat = offsetModStat + Vector(0, linePlus * 11 - 3)
 		end
 		
 		if PlayerTypeExistInGame(Isaac.GetPlayerTypeByName("Lairub")) then
-			offsetModSel = offsetModStat + Vector(0, 35)
+			offsetModSel = offsetModStat + Vector(0, 40)
+		end
+		if PlayerTypeExistInGame(PlayerType.PLAYER_ISAAC_B)
+		or PlayerTypeExistInGame(PlayerType.PLAYER_BLUEBABY_B)
+		then
+			offsetModSel = offsetModStat + Vector(0, 24)
 		end
 		
 		if EternalChargeForFree then
