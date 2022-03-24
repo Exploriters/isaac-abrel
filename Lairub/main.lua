@@ -1817,7 +1817,7 @@ function lairub:PostNPCDeath()
 		SoulCount = SoulCount + 1
 	end
 end
-lairub:AddCallback( ModCallbacks.MC_POST_NPC_DEATH, lairub.PostNPCDeath)
+lairub:AddCallback(ModCallbacks.MC_POST_NPC_DEATH, lairub.PostNPCDeath)
 
 function lairub:PrePickupCollision(pickup, collider, low)
 	local player = collider:ToPlayer()
@@ -1847,6 +1847,7 @@ function lairub:PrePickupCollision(pickup, collider, low)
 				if pickup:IsShopItem() then
 					if player:GetNumCoins() >= pickup.Price then
 						player:AddCoins(-pickup.Price)
+						player:AnimatePickup(pickup:GetSprite())
 					else
 						return true
 					end

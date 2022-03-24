@@ -33,13 +33,26 @@ require("apioverride")
 local baseEntityPlayerGetHeartsLimit = APIOverride.GetCurrentClassFunction(EntityPlayer, "GetHeartLimit")
 APIOverride.OverrideClassFunction(EntityPlayer, "GetHeartLimit", function(interval)
 	if interval:GetPlayerType() == playerTypeHexanow then
-		print("GET HP LIMIT 36!")
 		return 36
 	end
-    print("GET HP LIMIT!")
 	return baseEntityPlayerGetHeartsLimit(interval)
 end)
 ]]--
+--[[
+local baseEntityPlayerHasCollectible = APIOverride.GetCurrentClassFunction(EntityPlayer, "HasCollectible")
+APIOverride.OverrideClassFunction(EntityPlayer, "HasCollectible", function(interval, Type, IgnoreModifiers)	
+    local result = baseEntityPlayerHasCollectible(interval, Type, IgnoreModifiers)
+	if interval:GetPlayerType() == playerTypeHexanow
+	and (  Type == CollectibleType.COLLECTIBLE_ANALOG_STICK
+		or Type == CollectibleType.COLLECTIBLE_URANUS
+		or Type == CollectibleType.COLLECTIBLE_NEPTUNUS
+	) then
+		result = true
+	end
+	return result
+end)
+]]--
+
 --require("hexanowObjectives")
 --require("hexanowFlags")
 
@@ -54,7 +67,6 @@ local hexanowObjectives = Explorite.NewExploriteObjectives()
 
 --local hexanowItem = Isaac.GetItemIdByName( "Hexanow's Soul" )
 local hexanowPortalTool = Isaac.GetItemIdByName("Eternal Portal")
-local hexanowFlightTriggerItem = Isaac.GetItemIdByName( "Hexanow flight trigger" )
 local hexanowStatTriggerItem = Isaac.GetItemIdByName( "Hexanow overall stat trigger" )
 local hexanowHairCostume = Isaac.GetCostumeIdByPath("gfx/characters/HexanowHair.anm2")
 local hexanowBodyCostume = Isaac.GetCostumeIdByPath("gfx/characters/HexanowBody.anm2")
@@ -63,16 +75,78 @@ local hexanowBodyFlightCostume = Isaac.GetCostumeIdByPath("gfx/characters/Hexano
 local hexanowSoulStoneID = Isaac.GetCardIdByName("Soul of Hexanow")
 
 local entityVariantHeartsBlender = Isaac.GetEntityVariantByName("Hearts Blender")
+local entityVariantHexanowLaser = Isaac.GetEntityVariantByName("Laser (Hexanow)")
+local entityVariantHexanowPortalDoor = Isaac.GetEntityVariantByName("Hexanow Portal Door")
 --local entityTypeHexanowPortal = Isaac.GetEntityTypeByName("Hexanow Blue Portal")
 
 local EternalChargeSprite = Sprite()
 EternalChargeSprite:Load("gfx/ui/EternalCharge.anm2", true)
 local SimNumbersPath = "gfx/ui/SimNumbers.anm2"
 
+local portalColor = { }
+portalColor[1] = {}
+portalColor[1][1] = Color(9 / 255, 132 / 255, 255 / 255)
+portalColor[1][2] = Color(234 / 255, 135 / 255, 0 / 255)
+portalColor[2] = {}
+portalColor[2][1] = Color(0 / 255, 0 / 255, 255 / 255)
+portalColor[2][2] = Color(255 / 255, 255 / 255, 0 / 255)
+portalColor[3] = {}
+portalColor[3][1] = Color(0 / 255, 255 / 255, 255 / 255)
+portalColor[3][2] = Color(255 / 255, 0 / 255, 255 / 255)
+portalColor[4] = {}
+portalColor[4][1] = Color(255 / 255, 0 / 255, 0 / 255)
+portalColor[4][2] = Color(0 / 255, 255 / 255, 0 / 255)
+
+local levelPosition = { levelGridIndex = -1, roomGridIndex = -1 }
+levelPosition.__index = levelPosition
+local function LevelPosition(levelGridIndex, roomGridIndex)
+	local cted = {}
+	setmetatable(cted, levelPosition)
+	cted.levelGridIndex = levelGridIndex
+	cted.roomGridIndex = roomGridIndex
+	return cted
+end
+
+local CreatedPortals = {}
+local function InitCreatedPortalsArray()
+	CreatedPortals = {}
+	CreatedPortals[1] = {}
+	CreatedPortals[1][1] = nil
+	CreatedPortals[1][2] = nil
+	CreatedPortals[2] = {}
+	CreatedPortals[2][1] = nil
+	CreatedPortals[2][2] = nil
+	CreatedPortals[3] = {}
+	CreatedPortals[3][1] = nil
+	CreatedPortals[3][2] = nil
+	CreatedPortals[4] = {}
+	CreatedPortals[4][1] = nil
+	CreatedPortals[4][2] = nil
+end
+InitCreatedPortalsArray()
+
+local inRoomCreatedPortals = {}
+local function InitInRoomCreatedPortalsArray()
+	InRoomCreatedPortals = {}
+	InRoomCreatedPortals[1] = {}
+	InRoomCreatedPortals[1][1] = nil
+	InRoomCreatedPortals[1][2] = nil
+	InRoomCreatedPortals[2] = {}
+	InRoomCreatedPortals[2][1] = nil
+	InRoomCreatedPortals[2][2] = nil
+	InRoomCreatedPortals[3] = {}
+	InRoomCreatedPortals[3][1] = nil
+	InRoomCreatedPortals[3][2] = nil
+	InRoomCreatedPortals[4] = {}
+	InRoomCreatedPortals[4][1] = nil
+	InRoomCreatedPortals[4][2] = nil
+end
+InitInRoomCreatedPortalsArray()
+
 local gameInited = false
 
-local MC_ENTITY_TAKE_DMG_Room = 0
-local MC_ENTITY_TAKE_DMG_Forever = 0
+--local MC_ENTITY_TAKE_DMG_Room = 0
+--local MC_ENTITY_TAKE_DMG_Forever = 0
 
 --local HUDoffset = 10
 
@@ -81,6 +155,17 @@ local EternalChargesLastRoom = 0
 
 -- local lastMaxHearts = nil
 -- local updatedCostumesOvertime = false
+local portalToolColor = { }
+portalToolColor[1] = "orange"
+portalToolColor[2] = "orange"
+portalToolColor[3] = "orange"
+portalToolColor[4] = "orange"
+local attackCharge = { }
+attackCharge[1] = 0
+attackCharge[2] = 0
+attackCharge[3] = 0
+attackCharge[4] = 0
+
 local onceHoldingItem = { }
 onceHoldingItem[1] = false
 onceHoldingItem[2] = false
@@ -170,8 +255,24 @@ end
 -- 抹除临时变量
 local function WipeTempVar()
 	hexanowFlags:Wipe()
+
+	InitCreatedPortalsArray()
+	InitInRoomCreatedPortalsArray()
+
 	gameInited = false
-	
+
+	portalToolColor = { }
+	portalToolColor[1] = "orange"
+	portalToolColor[2] = "orange"
+	portalToolColor[3] = "orange"
+	portalToolColor[4] = "orange"
+
+	attackCharge = { }
+	attackCharge[1] = 0
+	attackCharge[2] = 0
+	attackCharge[3] = 0
+	attackCharge[4] = 0
+
 	EternalCharges = 0
 	EternalChargesLastRoom = 0
 
@@ -243,9 +344,23 @@ function hexanowObjectives:Apply()
 	]]
 	
 	for i=1,4 do
-		SelectedWhiteItem[i] = tonumber(self:Read("SelectedWhiteItem-"..tostring(i), "1"))
+		SelectedWhiteItem[i] = tonumber(self:Read("Player"..tostring(i).."-SelectedWhiteItem", "1"))
 		for j=1,3 do
-			WhiteItem[i][j] = tonumber(self:Read("WhiteItem-"..tostring(i).."-"..tostring(j), "0"))
+			WhiteItem[i][j] = tonumber(self:Read("Player"..tostring(i).."-WhiteItem-"..tostring(j), "0"))
+		end
+		portalToolColor[i] = self:Read("Player"..tostring(i).."-portalToolColor", "orange")
+		if portalToolColor[i] ~= "blue" and portalToolColor[i] ~= "orange" then
+			portalToolColor[i] = "orange"
+		end
+		local levelGridIndex1 = tonumber(self:Read("Player"..tostring(i).."-CreatedPortal-1-levelGridIndex", "-1"))
+		local roomGridIndex1 = tonumber(self:Read("Player"..tostring(i).."-CreatedPortal-1-roomGridIndex", "-1"))
+		if levelGridIndex1 ~= nil and levelGridIndex1 > -1 and roomGridIndex1 ~= nil and roomGridIndex1 > -1 then
+			CreatedPortals[i][1] = LevelPosition(levelGridIndex1, roomGridIndex1)
+		end
+		local levelGridIndex2 = tonumber(self:Read("Player"..tostring(i).."-CreatedPortal-2-levelGridIndex", "-1"))
+		local roomGridIndex2 = tonumber(self:Read("Player"..tostring(i).."-CreatedPortal-2-roomGridIndex", "-1"))
+		if levelGridIndex2 ~= nil and levelGridIndex2 > -1 and roomGridIndex2 ~= nil and roomGridIndex2 > -1 then
+			CreatedPortals[i][2] = LevelPosition(levelGridIndex2, roomGridIndex2)
 		end
 	end
 	
@@ -271,9 +386,28 @@ function hexanowObjectives:Recieve()
 	]]
 	
 	for i=1,4 do
-		self:Write("SelectedWhiteItem-"..tostring(i), tostring(SelectedWhiteItem[i]))
+		self:Write("Player"..tostring(i).."-portalToolColor", tostring(portalToolColor[i]))
+
+		local portalInfoLID1 = -1
+		local portalInfoRID1 = -1
+		if CreatedPortals[i][1] ~= nil then
+			portalInfoLID1 = CreatedPortals[i][1].levelGridIndex
+			portalInfoRID1 = CreatedPortals[i][1].roomGridIndex
+		end
+		self:Write("Player"..tostring(i).."-CreatedPortal-1-levelGridIndex", tostring(portalInfoLID1))
+		self:Write("Player"..tostring(i).."-CreatedPortal-1-roomGridIndex", tostring(portalInfoRID1))
+		local portalInfoLID2 = -1
+		local portalInfoRID2 = -1
+		if CreatedPortals[i][2] ~= nil then
+			portalInfoLID2 = CreatedPortals[i][2].levelGridIndex
+			portalInfoRID2 = CreatedPortals[i][2].roomGridIndex
+		end
+		self:Write("Player"..tostring(i).."-CreatedPortal-2-levelGridIndex", tostring(portalInfoLID2))
+		self:Write("Player"..tostring(i).."-CreatedPortal-2-roomGridIndex", tostring(portalInfoRID2))
+
+		self:Write("Player"..tostring(i).."-SelectedWhiteItem", tostring(SelectedWhiteItem[i]))
 		for j=1,3 do
-			self:Write("WhiteItem-"..tostring(i).."-"..tostring(j), tostring(WhiteItem[i][j]))
+			self:Write("Player"..tostring(i).."-WhiteItem-"..tostring(j), tostring(WhiteItem[i][j]))
 		end
 	end
 end
@@ -305,13 +439,17 @@ end
 local function SaveHexanowModData()
 	hexanowObjectives:Recieve()
 	local str = hexanowObjectives:ToString(true)
-	-- print("Save Readout: ", str)
+	--print("Save Readout: ", str)
 	Isaac.SaveModData(hexanowMod, str)
 end
 
 ------------------------------------------------------------
 ---------- 游戏功能
 ----------
+
+local function GetHexanowPortalColor(player, num)
+	return portalColor[GetPlayerSameTryeID(player)][num]
+end
 
 -- 更新玩家外观，按需执行
 local function UpdateCostumes(player)
@@ -371,21 +509,6 @@ local function ApplyEternalCharge(player)
 	end
 end
 
---[[
-require("apioverride")
-local baseEntityPlayerHasCollectible = APIOverride.GetCurrentClassFunction(EntityPlayer, "HasCollectible")
-APIOverride.OverrideClassFunction(EntityPlayer, "HasCollectible", function(interval, Type, IgnoreModifiers)	
-    local result = baseEntityPlayerHasCollectible(interval, Type, IgnoreModifiers)
-	if interval:GetPlayerType() == playerTypeHexanow
-	and (  Type == CollectibleType.COLLECTIBLE_ANALOG_STICK
-		or Type == CollectibleType.COLLECTIBLE_URANUS
-		or Type == CollectibleType.COLLECTIBLE_NEPTUNUS
-	) then
-		result = true
-	end
-	return result
-end)]]
-
 -- 确保随从数量
 local function EnsureFamiliars(player)
 	local roomEntities = Isaac.GetRoomEntities()
@@ -408,6 +531,7 @@ end
 
 -- 移除红心外的所有心
 local function RearrangeHearts(player)
+	local maxHearts = player:GetMaxHearts()
 	local soulHearts = player:GetSoulHearts()
 	local blackHeartsByte = player:GetBlackHearts()
 	
@@ -433,17 +557,27 @@ local function RearrangeHearts(player)
 	local blackHeartsByteTemp = blackHeartsByte
 	while blackHeartsByteTemp ~= 0 do
 		if blackHeartsByteTemp & 1 == 1 then
+			player:UseActiveItem(CollectibleType.COLLECTIBLE_NECRONOMICON, UseFlag.USE_NOANIM | UseFlag.USE_NOCOSTUME | UseFlag.USE_NOANNOUNCER)
 			countBlack = countBlack + 1
 		end
 		blackHeartsByteTemp = blackHeartsByteTemp >> 1
 	end
 	
-	countSoul = countSoul + countBlack * 2 + countBone * 2
-	EternalCharges = EternalCharges + math.floor(countSoul)
+	local chargesocre = countSoul + countBone * 2
+	EternalCharges = EternalCharges + math.floor(chargesocre)
 	
 	player:AddSoulHearts(-soulHearts)
 	player:AddBoneHearts(-countBone)
 	player:AddGoldenHearts(countGold)
+
+	if (countSoul > 0 or countBone > 0) and player:GetHearts() <=0 then
+		if player:GetMaxHearts() <=0 then
+			EternalCharges = EternalCharges - 1
+			player:AddMaxHearts(1)
+		end
+		EternalCharges = EternalCharges - 1
+		player:AddHearts(1)
+	end
 	
 	return nil ----------------------------------------------------------------
 -- 弃用
@@ -675,6 +809,119 @@ local function PickupWhiteHexanowCollectible(player, ID, slot)
 	SetWhiteHexanowCollectible(player, ID, slot)
 end
 
+local function MaintainPortal(skipCreationAnim)
+	
+	local game = Game()
+	local level = game:GetLevel()
+	local room = game:GetRoom()
+	local roomDesc = level:GetCurrentRoomDesc()
+	local roomEntities = Isaac.GetRoomEntities()
+	local roomPortals = {}
+	roomPortals[1] = {}
+	roomPortals[2] = {}
+	roomPortals[3] = {}
+	roomPortals[4] = {}
+	roomPortals[5] = {}
+	roomPortals[6] = {}
+	roomPortals[7] = {}
+	roomPortals[8] = {}
+
+	for i,entity in ipairs(roomEntities) do
+		if entity.Type == EntityType.ENTITY_EFFECT
+		and entity.Variant == entityVariantHexanowPortalDoor
+		then
+			if entity.SubType < 1 or entity.SubType > 8 then
+				entity:Remove()
+			else
+				roomPortals[entity.SubType][#roomPortals[entity.SubType]+1] = entity
+			end
+		end
+	end
+	for i=1,4 do
+		for j=1,2 do
+			local portalCode = i*2 + j - 2
+			local levelPosition = CreatedPortals[i][j]
+			local pos = nil
+			local isInRoom = false
+			if levelPosition ~= nil then
+				pos = room:GetGridPosition(levelPosition.roomGridIndex)
+				isInRoom = levelPosition.levelGridIndex == roomDesc.GridIndex
+				if isInRoom and pos == nil then
+					isInRoom = false
+					CreatedPortals[i][j] = nil
+				end
+			end
+			local foundMatchedPortal = isInRoom and InRoomCreatedPortals[i][j] ~= nil and pos.X == portal.InRoomCreatedPortals[i][j].X and pos.Y == portal.InRoomCreatedPortals[i][j].Y
+			local portals = roomPortals[portalCode]
+			--for k=1,#portals do 
+			for k,portal in pairs(portals) do --remove invalid portals
+				if isInRoom
+				and not foundMatchedPortal
+				and pos.X == portal.Position.X
+				and pos.Y == portal.Position.Y
+				then
+					foundMatchedPortal = true
+					InRoomCreatedPortals[i][j] = portal
+				else
+					portal:Remove()
+				end
+			end
+			if isInRoom and not foundMatchedPortal then --gen missing portal
+				local newPortal = Isaac.Spawn(EntityType.ENTITY_EFFECT, entityVariantHexanowPortalDoor, portalCode, pos, Vector(0,0), player)
+				local sprite = newPortal:GetSprite()
+				sprite.Color = GetHexanowPortalColor(Game():GetPlayer(i-1), j)
+				InRoomCreatedPortals[i][j] = newPortal
+			end
+		end
+	end
+end
+
+local function SetPortal(player, type, room, roomDesc, pos)
+	pos.X = math.floor((pos.X + 20)/40.0)*40
+	pos.Y = math.floor((pos.Y+ 20)/40.0)*40
+	local playerID = GetPlayerID(player)
+	local typeNum = 1
+	if type == "orange" then
+		typeNum = 2
+	end
+	local inRoomGridIndex = room:GetGridIndex(pos)
+
+	if CreatedPortals[playerID][typeNum] ~= nil
+	and CreatedPortals[playerID][typeNum].levelGridIndex == roomDesc.GridIndex
+	and CreatedPortals[playerID][typeNum].roomGridIndex == inRoomGridIndex then
+		return
+	end
+
+	--[[
+	CreatedPortals[playerID][typeNum] = nil
+	if InRoomCreatedPortals[playerID][typeNum] ~= nil then
+		InRoomCreatedPortals[playerID][typeNum]:Remove()
+		InRoomCreatedPortals[playerID][typeNum] = nil
+	end
+	]]
+
+	if inRoomGridIndex ~= -1 then
+		CreatedPortals[playerID][typeNum] = LevelPosition(roomDesc.GridIndex, inRoomGridIndex)
+	end
+	MaintainPortal(false)
+end
+
+local function CastHexanowLaser(player, dir, colorType, fromOtherBeam)
+	local degrees = dir:GetAngleDegrees()
+	local laser = EntityLaser.ShootAngle(entityVariantHexanowLaser, player.Position, degrees, 10, Vector(0,-26), player)
+	laser.CollisionDamage = player.Damage
+	laser.DepthOffset = -10 --3000
+	laser.Shrink = false
+	laser.DisableFollowParent = true
+	laser.OneHit = true
+	laser.GridHit = true
+	laser.TearFlags = player.TearFlags
+	if not fromOtherBeam then
+		local endpoint = EntityLaser.CalculateEndPoint(player.Position + Vector(0, -26), dir, Vector(0,0), player, 20)
+		SetPortal(player, colorType, Game():GetRoom(), Game():GetLevel():GetCurrentRoomDesc(), endpoint)
+	end
+end
+
 local function TaintedHexanowRoomOverride()
 	if not hexanowFlags:HasFlag("TAINTED") then
 		return nil
@@ -775,11 +1022,11 @@ local function TickEventHexanow(player)
 		]]
 		if Game():GetRoom():IsClear() and not roomClearBounsEnabled then
 			roomClearBounsEnabled = true
-			player:RemoveCollectible(hexanowFlightTriggerItem)
+			player:RemoveCollectible(hexanowStatTriggerItem)
 		end
 		
 		if roomClearBounsEnabled and not player:IsFlying() then
-			player:RemoveCollectible(hexanowFlightTriggerItem)
+			player:RemoveCollectible(hexanowStatTriggerItem)
 		end
 		
 		--[[
@@ -1079,6 +1326,34 @@ local function TickEventHexanow(player)
 	end
 end
 
+-- 玩家攻击，每一帧执行
+local function TryCastFireHexanow(player)
+	if player:GetPlayerType() == playerTypeHexanow then
+		local game = Game()
+		local level = game:GetLevel()
+		local room = game:GetRoom()
+		local roomEntities = Isaac.GetRoomEntities()
+		local playerID = GetPlayerID(player)
+		
+		if game == nil
+		or level == nil
+		or room == nil
+		or roomEntities == nil
+		then
+			--return nil
+		end
+		local aimDirection = player:GetAimDirection();
+
+		attackCharge[playerID] = attackCharge[playerID] + 1
+		if attackCharge[playerID] >= player.MaxFireDelay
+		and not (aimDirection.X == 0 and aimDirection.Y == 0)
+		then
+			attackCharge[playerID] = 0
+			CastHexanowLaser(player, aimDirection, portalToolColor[playerID])
+		end
+	end
+end
+
 -- 初始化人物
 local function InitPlayerHexanowTainted(player)
 	--print("CALLED!")
@@ -1183,8 +1458,9 @@ local function SelManageRander(pos, playerID, sortNum)
 	if sortNum >= 1 then
 		FrameAnm = "Frame2"
 	end
-	pos = pos + Vector(sortNum*35/2, 0)
+	pos = pos + Vector(sortNum*16, 0)
 	
+	local frame0 = Sprite()
 	local frame1 = Sprite()
 	local frame2 = Sprite()
 	local frame3 = Sprite()
@@ -1193,7 +1469,13 @@ local function SelManageRander(pos, playerID, sortNum)
 	local item1 = Sprite()
 	local item2 = Sprite()
 	local item3 = Sprite()
+	local portalBase1 = Sprite()
+	local portalBase2 = Sprite()
+	local portalCreated1 = Sprite()
+	local portalCreated2 = Sprite()
+	local portalSelected = Sprite()
 	
+	frame0:Load("gfx/ui/HexanowInventory.anm2", true)
 	frame1:Load("gfx/ui/HexanowInventory.anm2", true)
 	frame2:Load("gfx/ui/HexanowInventory.anm2", true)
 	frame3:Load("gfx/ui/HexanowInventory.anm2", true)
@@ -1202,6 +1484,14 @@ local function SelManageRander(pos, playerID, sortNum)
 	item1:Load("gfx/ui/HexanowInventoryItem.anm2", true)
 	item2:Load("gfx/ui/HexanowInventoryItem.anm2", true)
 	item3:Load("gfx/ui/HexanowInventoryItem.anm2", true)
+	portalBase1:Load("gfx/ui/HexanowInventory.anm2", true)
+	portalBase2:Load("gfx/ui/HexanowInventory.anm2", true)
+	portalCreated1:Load("gfx/ui/HexanowInventory.anm2", true)
+	portalCreated2:Load("gfx/ui/HexanowInventory.anm2", true)
+	portalSelected:Load("gfx/ui/HexanowInventory.anm2", true)
+
+	local portalColor1 = GetHexanowPortalColor(Game():GetPlayer(playerID-1), 1)
+	local portalColor2 = GetHexanowPortalColor(Game():GetPlayer(playerID-1), 2)
 	
 	if WhiteItem[playerID][1] ~= nil then
 	local item = Isaac.GetItemConfig():GetCollectible(WhiteItem[playerID][1])
@@ -1227,13 +1517,21 @@ local function SelManageRander(pos, playerID, sortNum)
 	
 	--item3:ReplaceSpritesheet(0,"gfx/items/collectibles/".."Collectibles_118_Brimstone.png")
 	
-	frame1:SetFrame(FrameAnm, 0)
+	frame0:SetFrame(FrameAnm, 0)
+	frame1:SetFrame(FrameAnm, 1)
 	frame2:SetFrame(FrameAnm, 1)
 	frame3:SetFrame(FrameAnm, 1)
 	frame4:SetFrame(FrameAnm, 2)
 	item1:SetFrame("Base", 0)
 	item2:SetFrame("Base", 0)
 	item3:SetFrame("Base", 0)
+	portalBase1:SetFrame("PortalBase", 0)
+	portalBase2:SetFrame("PortalBase", 1)
+	portalCreated1:SetFrame("PortalCreated", 0)
+	portalCreated2:SetFrame("PortalCreated", 1)
+
+	portalBase1.Color = portalColor1
+	portalBase2.Color = portalColor2
 	
 	if SelectedWhiteItem[playerID] == 1 then
 		arraw:SetFrame("Select", 0)
@@ -1245,16 +1543,46 @@ local function SelManageRander(pos, playerID, sortNum)
 		arraw:SetFrame("Select", 3)
 	end
 	
-	frame1:Render(pos + Vector(0,0/2), Vector(0,0), Vector(0,0))
-	frame2:Render(pos + Vector(0,35/2), Vector(0,0), Vector(0,0))
-	frame3:Render(pos + Vector(0,70/2), Vector(0,0), Vector(0,0))
-	frame4:Render(pos + Vector(0,105/2), Vector(0,0), Vector(0,0))
+	frame0:Render(pos + Vector(0,16*0), Vector(0,0), Vector(0,0))
+	frame1:Render(pos + Vector(0,16*1), Vector(0,0), Vector(0,0))
+	frame2:Render(pos + Vector(0,16*2), Vector(0,0), Vector(0,0))
+	frame3:Render(pos + Vector(0,16*3), Vector(0,0), Vector(0,0))
+	frame4:Render(pos + Vector(0,16*4), Vector(0,0), Vector(0,0))
+
+	portalBase1:Render(pos + Vector(0,0), Vector(0,0), Vector(0,0))
+	portalBase2:Render(pos + Vector(0,0), Vector(0,0), Vector(0,0))
+
+	local portal1created = CreatedPortals[playerID][1] ~= nil
+	local portal2created = CreatedPortals[playerID][2] ~= nil
+	if portal1created then
+		portalCreated1.Color = portalColor1
+		portalCreated1:Render(pos + Vector(0,0), Vector(0,0), Vector(0,0))
+	end
+	if portal2created then
+		portalCreated2.Color = portalColor2
+		portalCreated2:Render(pos + Vector(0,0), Vector(0,0), Vector(0,0))
+	end
+
+	if portalToolColor[playerID] == "orange" then
+		if portal2created then
+			portalSelected:SetFrame("PortalSelectedCreated", 1)
+		else
+			portalSelected:SetFrame("PortalSelected", 1)
+		end
+	else
+		if portal1created then
+			portalSelected:SetFrame("PortalSelectedCreated", 0)
+		else
+			portalSelected:SetFrame("PortalSelected", 0)
+		end
+	end
 	
-	item1:Render(pos + Vector(0,0/2), Vector(0,0), Vector(0,0))
-	item2:Render(pos + Vector(0,35/2), Vector(0,0), Vector(0,0))
-	item3:Render(pos + Vector(0,70/2), Vector(0,0), Vector(0,0))
+	item1:Render(pos + Vector(0,16*1), Vector(0,0), Vector(0,0))
+	item2:Render(pos + Vector(0,16*2), Vector(0,0), Vector(0,0))
+	item3:Render(pos + Vector(0,16*3), Vector(0,0), Vector(0,0))
 	
-	arraw:Render(pos + Vector(0,0/2), Vector(0,0), Vector(0,0))
+	arraw:Render(pos + Vector(0,0), Vector(0,0), Vector(0,0))
+	portalSelected:Render(pos + Vector(0,0), Vector(0,0), Vector(0,0))
 	
 end
 
@@ -1350,8 +1678,8 @@ function hexanowMod:PostGameStarted(loadedFromSaves)
 	LoadHexanowModData()
 	if not loadedFromSaves then -- 仅限新游戏
 		WipeTempVar()
-		CallForEveryPlayer(InitPlayerHexanowTainted)
-		CallForEveryPlayer(InitPlayerHexanow)
+		--CallForEveryPlayer(InitPlayerHexanowTainted)
+		--CallForEveryPlayer(InitPlayerHexanow)
 		SaveHexanowModData()
 	end
 	gameInited = true
@@ -1509,7 +1837,7 @@ function hexanowMod:ExecuteCmd(cmd, params)
 		local roomEntities = Isaac.GetRoomEntities()
 		
 		for i,entity in ipairs(roomEntities) do
-			print(tostring(entity.Type).."."..tostring(entity.Variant).."."..tostring(entity.SubType).." "..tostring(entity.Index).." ("..tostring(entity.Position.X)..", "..tostring(entity.Position.Y)..")")
+			print(tostring(entity.Type).."."..tostring(entity.Variant).."."..tostring(entity.SubType).." "..tostring(entity.Index).." ("..tostring(entity.Position.X)..", "..tostring(entity.Position.Y)..") ("..tostring(entity.PositionOffset.X)..", "..tostring(entity.PositionOffset.Y)..") "..tostring(entity.DepthOffset))
 		end
 	end
 	if cmd == "reportentityne" then
@@ -1517,7 +1845,7 @@ function hexanowMod:ExecuteCmd(cmd, params)
 				
 		for i,entity in ipairs(roomEntities) do
 			if entity.Type ~= 1000 then
-				print(tostring(entity.Type).."."..tostring(entity.Variant).."."..tostring(entity.SubType).." "..tostring(entity.Index).." ("..tostring(entity.Position.X)..", "..tostring(entity.Position.Y)..")")
+				print(tostring(entity.Type).."."..tostring(entity.Variant).."."..tostring(entity.SubType).." "..tostring(entity.Index).." ("..tostring(entity.Position.X)..", "..tostring(entity.Position.Y)..") ("..tostring(entity.PositionOffset.X)..", "..tostring(entity.PositionOffset.Y)..") "..tostring(entity.DepthOffset))
 			end
 		end
 	end
@@ -1552,7 +1880,10 @@ hexanowMod:AddCallback(ModCallbacks.MC_EXECUTE_CMD, hexanowMod.ExecuteCmd);
 
 -- 在玩家被加载后运行
 function hexanowMod:PostPlayerInit(player)
+	InitPlayerHexanow(player)
+	InitPlayerHexanowTainted(player)
 	UpdateCostumes(player)
+	--SaveHexanowModData()
 end
 hexanowMod:AddCallback(ModCallbacks.MC_POST_PLAYER_INIT, hexanowMod.PostPlayerInit)
 
@@ -1563,7 +1894,12 @@ function hexanowMod:UsePortalTool(itemId, itemRng, player, useFlags, activeSlot,
 		Remove = false,
 		ShowAnim = false,
 	}
-	player:UseActiveItem(CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR, false, false, true, false)
+	if portalToolColor[GetPlayerID(player)] == "blue" then
+		portalToolColor[GetPlayerID(player)] = "orange"
+	else
+		portalToolColor[GetPlayerID(player)] = "blue"
+	end
+	--player:UseActiveItem(CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR, false, false, true, false)
 	
 	return result
 end
@@ -1595,6 +1931,10 @@ hexanowMod:AddCallback(ModCallbacks.MC_USE_CARD, hexanowMod.UseHexanowSoulStone,
 
 -- 在玩家进入新楼层后运行
 function hexanowMod:PostNewLevel()
+	InitInRoomCreatedPortalsArray()
+	InitCreatedPortalsArray()
+	MaintainPortal(true)
+	--[[
 	CallForEveryPlayer(
 		function(player)
 			if player:GetPlayerType() == playerTypeHexanow then
@@ -1604,13 +1944,16 @@ function hexanowMod:PostNewLevel()
 			end
 		end
 	)
+	]]
 end
 hexanowMod:AddCallback(ModCallbacks.MC_POST_NEW_LEVEL, hexanowMod.PostNewLevel)
 
 -- 在玩家进入新房间后运行
 function hexanowMod:PostNewRoom()
+	InitInRoomCreatedPortalsArray()
 	TaintedHexanowRoomOverride()
 	UpdateLastRoomVar()
+	MaintainPortal(true)
 	
 	if Game():GetRoom():GetAliveEnemiesCount() <= 0 then
 		EternalChargeForFree = true
@@ -1625,7 +1968,7 @@ function hexanowMod:PostNewRoom()
 				ApplyEternalHearts(player)
 				if not Game():GetRoom():IsClear() then
 					roomClearBounsEnabled = false
-					player:RemoveCollectible(hexanowFlightTriggerItem)
+					player:RemoveCollectible(hexanowStatTriggerItem)
 				end
 			end
 		end
@@ -1633,6 +1976,7 @@ function hexanowMod:PostNewRoom()
 	
 	if PlayerTypeExistInGame(playerTypeHexanow) then
 		local level = Game():GetLevel()
+		--[[
 		level:ApplyBlueMapEffect()
 		level:ApplyCompassEffect()
 		level:ApplyMapEffect()
@@ -1641,6 +1985,14 @@ function hexanowMod:PostNewRoom()
 		local redsecretIndex = level:QueryRoomTypeIndex(RoomType.ROOM_ULTRASECRET, false, RNG(), true)
 		local redsecretRoom = level:GetRoomByIdx(redsecretIndex)
 		redsecretRoom.DisplayFlags = redsecretRoom.DisplayFlags | 1 << 0 | 1 << 1 | 1 << 2 
+		]]
+		local rooms = level:GetRooms()
+		for i = 0, #rooms - 1 do
+			local room = level:GetRoomByIdx(rooms:Get(i).GridIndex)
+			if room then
+				room.DisplayFlags = room.DisplayFlags | 1 << 1
+			end
+		end
 		level:UpdateVisibility()
 		
 		--[[
@@ -1809,8 +2161,9 @@ function hexanowMod:PrePickupCollision(pickup, collider, low)
 			and player:GetHearts() < player:GetMaxHearts()
 			and player:GetEternalHearts() >= 1 then
 				if pickup:IsShopItem() then
-					if player:GetNumCoins() >= pickup.Price then
+					if player:GetNumCoins() >= pickup.Price and not player:IsHoldingItem() then
 						player:AddCoins(-pickup.Price)
+						player:AnimatePickup(pickup:GetSprite())
 					else
 						return true
 					end
@@ -1827,19 +2180,19 @@ function hexanowMod:PrePickupCollision(pickup, collider, low)
 				--else
 					pickup:Remove()
 				--end
-				return false
+				return pickup:IsShopItem()
 			elseif
 				pickup.SubType == HeartSubType.HEART_HALF_SOUL
 			or	pickup.SubType == HeartSubType.HEART_SOUL
 			or	pickup.SubType == HeartSubType.HEART_BONE
 			or	pickup.SubType == HeartSubType.HEART_BLACK
-			or	pickup.SubType == HeartSubType.HEART_BLACK
 			or	pickup.SubType == HeartSubType.HEART_BLENDED
 			then
 				
 				if pickup:IsShopItem() then
-					if player:GetNumCoins() >= pickup.Price then
+					if player:GetNumCoins() >= pickup.Price and not player:IsHoldingItem() then
 						player:AddCoins(-pickup.Price)
+						player:AnimatePickup(pickup:GetSprite())
 					else
 						return true
 					end
@@ -1849,7 +2202,8 @@ function hexanowMod:PrePickupCollision(pickup, collider, low)
 				if pickup.SubType == HeartSubType.HEART_HALF_SOUL then
 					score = 1
 				elseif pickup.SubType == HeartSubType.HEART_BLACK then
-					score = 4
+					score = 2
+					player:UseActiveItem(CollectibleType.COLLECTIBLE_NECRONOMICON, UseFlag.USE_NOANIM | UseFlag.USE_NOCOSTUME | UseFlag.USE_NOANNOUNCER)
 				elseif pickup.SubType == HeartSubType.HEART_BLENDED then
 					if player:GetMaxHearts() - player:GetHearts() > 1 then
 						player:AddHearts(2)
@@ -1870,7 +2224,7 @@ function hexanowMod:PrePickupCollision(pickup, collider, low)
 				EternalCharges = EternalCharges + score
 				pickup:GetSprite():Play("Collect", true)
 				pickup:Remove()
-				return false
+				return pickup:IsShopItem()
 			end
 		end
 		
@@ -1978,6 +2332,15 @@ function hexanowMod:PrePickupCollision(pickup, collider, low)
 end
 hexanowMod:AddCallback(ModCallbacks.MC_PRE_PICKUP_COLLISION , hexanowMod.PrePickupCollision)
 
+--[[
+	Hexanow stats
+	damage: 300%
+	tears: -0.66
+	speed: -0.15 is room is not cleared, +0.15 if room is cleared
+	tear range: 300%
+	luck: -3
+]]
+
 -- 后期处理属性缓存
 function hexanowMod:EvaluateCache(player, cacheFlag, tear)
 	if player:GetPlayerType() == playerTypeHexanow then
@@ -1998,18 +2361,20 @@ function hexanowMod:EvaluateCache(player, cacheFlag, tear)
 			--		(player.MaxFireDelay + (player:HasCollectible(CollectibleType.COLLECTIBLE_ANALOG_STICK) and {2} or {0})[1]
 			--		) * 2 -- * (1.0 + 1.5 * player:GetMaxHearts() / 24.0 - 0.5)
 			--	)
-			if player:HasCollectible(CollectibleType.COLLECTIBLE_ANALOG_STICK) then
+			if false and player:HasCollectible(CollectibleType.COLLECTIBLE_ANALOG_STICK) then
 				player.MaxFireDelay = ApplyTears2TearDelay(player.MaxFireDelay, -0.34999972571835 -0.6666666666666)
 			else
 				player.MaxFireDelay = ApplyTears2TearDelay(player.MaxFireDelay, -0.6666666666666)
 			end
 			--player.MaxFireDelay = player.MaxFireDelay * 2
 		elseif cacheFlag == CacheFlag.CACHE_RANGE  then
-			player.TearHeight = player.TearHeight * 3 -- (1 + 2.5 * player:GetMaxHearts() / 24.0 - 0.5)
+			--player.TearHeight = player.TearHeight * 3 -- (1 + 2.5 * player:GetMaxHearts() / 24.0 - 0.5)
+			player.TearRange = player.TearRange * 3 -- (1 + 2.5 * player:GetMaxHearts() / 24.0 - 0.5)
 			--player.TearFallingSpeed = player.TearFallingSpeed -- + 5.0 -- * player:GetMaxHearts() / 24.0 
 			--player.TearFallingAcceleration = math.min(player.TearFallingAcceleration, - 0.2 / 3)
 		elseif cacheFlag == CacheFlag.CACHE_TEARFLAG then
-			player.TearFlags = player.TearFlags | TearFlags.TEAR_HOMING | TearFlags.TEAR_PERSISTENT | TearFlags.TEAR_SPECTRAL | TearFlags.TEAR_ICE
+			--player.TearFlags = player.TearFlags | TearFlags.TEAR_HOMING | TearFlags.TEAR_PERSISTENT | TearFlags.TEAR_SPECTRAL | TearFlags.TEAR_ICE
+			player.TearFlags = player.TearFlags | TearFlags.TEAR_ICE
 		elseif cacheFlag == CacheFlag.CACHE_FLYING then
 			--[[if Game():GetRoom():IsClear() then
 				player.CanFly = true
@@ -2066,8 +2431,9 @@ function hexanowMod:PostUpdate()
 	]]
 	CallForEveryPlayer(
 		function(player)
-			if player:GetPlayerType() == playerTypeHexanow then		
+			if player:GetPlayerType() == playerTypeHexanow then
 				TickEventHexanow(player)
+				TryCastFireHexanow(player)
 			end
 		end
 	)
@@ -2489,6 +2855,7 @@ function hexanowMod:PostUpdate()
 	)
 	]]
 	--SaveHexanowModData()
+	MaintainPortal(skipCreationAnim)
 end
 hexanowMod:AddCallback(ModCallbacks.MC_POST_UPDATE, hexanowMod.PostUpdate)
 
@@ -2512,7 +2879,7 @@ function hexanowMod:PostRender()
 			offsetModStat = offsetModStat + Vector(0, 8)
 		end
 		
-		if PlayerTypeExistInGame(Isaac.GetPlayerTypeByName("hexanowMod")) then
+		if PlayerTypeExistInGame(Isaac.GetPlayerTypeByName("Lairub")) then
 			offsetModSel = offsetModStat + Vector(0, 35)
 		end
 		

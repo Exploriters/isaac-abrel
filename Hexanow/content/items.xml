@@ -1,6 +1,6 @@
 <items gfxroot="gfx/items/" version="1">
 	<!--<passive cache="all" description="Triple Lives" hidden="true" gfx="collectibles_045_yumheart.png" id="12571" name="Hexanow's Soul" />-->
 	<passive cache="all" description="Up to date" hidden="true" gfx="PortalTool.png" name="Hexanow overall stat trigger" />
-	<passive cache="flying speed" description="Flight when safe" hidden="true" gfx="PortalTool.png" name="Hexanow flight trigger" />
-	<active cache="" description="Advanced short cutter" hidden="true" gfx="PortalTool.png" name="Eternal Portal" maxcharges="0" cooldown="0" chargetype="timed" tags="quest"/>
+	<!--<passive cache="flying speed" description="Flight when safe" hidden="true" gfx="PortalTool.png" name="Hexanow flight trigger" />-->
+	<active cache="" description="Recolor portal beam" hidden="true" gfx="PortalTool.png" name="Eternal Portal" maxcharges="0" cooldown="0" chargetype="timed" tags="quest"/>
 </items>

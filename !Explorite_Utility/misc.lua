@@ -33,6 +33,21 @@ function GetPlayerID(player)
 	return nil
 end
 
+function GetPlayerSameTryeID(player)
+	local numPlayers = Game():GetNumPlayers()
+	local sameType = 1
+	for i=0,numPlayers-1,1 do
+		local p = Isaac.GetPlayer(i)
+		if p.Index == player.Index then
+			return sameType
+		end
+		if p:GetPlayerType() == player:GetPlayerType() then
+			sameType = sameType + 1
+		end
+	end
+	return nil
+end
+
 -- 为每个玩家执行目标函数
 function CallForEveryPlayer(func)
 	local numPlayers = Game():GetNumPlayers()
