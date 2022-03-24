@@ -3,8 +3,8 @@ local hexanowMod = RegisterMod("Hexanow", 1);
 local playerTypeHexanow = Isaac.GetPlayerTypeByName("Hexanow")
 local playerTypeHexanowTainted = Isaac.GetPlayerTypeByName("Tainted Hexanow", true)
 
+if Explorite == nil then
 function hexanowMod:checkMissingExploriteStart(loadedFromSaves)
-	if Explorite == nil then
 		local numPlayers = Game():GetNumPlayers()
 		for i=0,numPlayers-1,1 do
 			local player = Isaac.GetPlayer(i)
@@ -17,16 +17,29 @@ function hexanowMod:checkMissingExploriteStart(loadedFromSaves)
 			end
 		end
 	end
-end
-hexanowMod:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, hexanowMod.checkMissingExploriteStart)
+	hexanowMod:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, hexanowMod.checkMissingExploriteStart)
 
-function hexanowMod:checkMissingExploriteRend()
-	if Explorite == nil then
-		Isaac.RenderText("Explorite utility is missing.", (Isaac.GetScreenWidth() - Isaac.GetTextWidth("Explorite utility is missing.")) / 2, Isaac.GetScreenHeight() / 2, 255, 0, 0, 255)
+	function hexanowMod:checkMissingExploriteRend()
+		if Explorite == nil then
+			Isaac.RenderText("Explorite utility is missing.", (Isaac.GetScreenWidth() - Isaac.GetTextWidth("Explorite utility is missing.")) / 2, Isaac.GetScreenHeight() / 2, 255, 0, 0, 255)
+		end
 	end
+	hexanowMod:AddCallback(ModCallbacks.MC_POST_RENDER, hexanowMod.checkMissingExploriteRend)
+	return
 end
-hexanowMod:AddCallback(ModCallbacks.MC_POST_RENDER, hexanowMod.checkMissingExploriteRend)
 
+require("apioverride")
+--[[
+local baseEntityPlayerGetHeartsLimit = APIOverride.GetCurrentClassFunction(EntityPlayer, "GetHeartLimit")
+APIOverride.OverrideClassFunction(EntityPlayer, "GetHeartLimit", function(interval)
+	if interval:GetPlayerType() == playerTypeHexanow then
+		print("GET HP LIMIT 36!")
+		return 36
+	end
+    print("GET HP LIMIT!")
+	return baseEntityPlayerGetHeartsLimit(interval)
+end)
+]]--
 --require("hexanowObjectives")
 --require("hexanowFlags")
 

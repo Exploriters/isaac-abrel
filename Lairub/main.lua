@@ -3,8 +3,8 @@ local lairub = RegisterMod("Lairub", 1);
 local playerType_Lairub = Isaac.GetPlayerTypeByName("Lairub")
 local playerType_Tainted_Lairub = Isaac.GetPlayerTypeByName("Tainted Lairub", true)
 
-function lairub:checkMissingExploriteStart(loadedFromSaves)
-	if Explorite == nil then
+if Explorite == nil then
+	function lairub:checkMissingExploriteStart(loadedFromSaves)
 		local numPlayers = Game():GetNumPlayers()
 		for i=0,numPlayers-1,1 do
 			local player = Isaac.GetPlayer(i)
@@ -17,15 +17,16 @@ function lairub:checkMissingExploriteStart(loadedFromSaves)
 			end
 		end
 	end
-end
-lairub:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, lairub.checkMissingExploriteStart)
+	lairub:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, lairub.checkMissingExploriteStart)
 
-function lairub:checkMissingExploriteRend()
-	if Explorite == nil then
-		Isaac.RenderText("Explorite utility is missing.", (Isaac.GetScreenWidth() - Isaac.GetTextWidth("Explorite utility is missing.")) / 2, Isaac.GetScreenHeight() / 2, 255, 0, 0, 255)
+	function lairub:checkMissingExploriteRend()
+		if Explorite == nil then
+			Isaac.RenderText("Explorite utility is missing.", (Isaac.GetScreenWidth() - Isaac.GetTextWidth("Explorite utility is missing.")) / 2, Isaac.GetScreenHeight() / 2, 255, 0, 0, 255)
+		end
 	end
+	lairub:AddCallback(ModCallbacks.MC_POST_RENDER, lairub.checkMissingExploriteRend)
+	return
 end
-lairub:AddCallback(ModCallbacks.MC_POST_RENDER, lairub.checkMissingExploriteRend)
 
 local LairubFlags = Explorite.NewExploriteFlags()
 local LairubObjectives = Explorite.NewExploriteObjectives()
