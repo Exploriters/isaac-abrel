@@ -1,6 +1,7 @@
 local lairub = RegisterMod("Lairub", 1);
 
 local playerType_Lairub = Isaac.GetPlayerTypeByName("Lairub")
+local playerType_Tainted_Lairub = Isaac.GetPlayerTypeByName("Tainted Lairub", true)
 
 if Explorite == nil then
 	function lairub:checkMissingExploriteStart(loadedFromSaves)
@@ -40,7 +41,6 @@ local costume_Lairub_Head_TakeSoulBase = Isaac.GetCostumeIdByPath("gfx/character
 
 local LairubStatUpdateItem = Isaac.GetItemIdByName( "Lairub Stat Trigger" )
 
-local playerType_Tainted_Lairub = Isaac.GetPlayerTypeByName("Tainted Lairub", true)
 local costume_TaintedLairub_Body = Isaac.GetCostumeIdByPath("gfx/characters/TaintedLairubBody.anm2")
 local costume_TaintedLairub_Head = Isaac.GetCostumeIdByPath("gfx/characters/TaintedLairubHead.anm2")
 
@@ -390,27 +390,40 @@ function lairub:Update(player)
 	if room:GetFrameCount() == 1 and player:GetPlayerType() == playerType_Lairub and not player:IsDead() then
 		if ShiftChanged == 1 then
 			if player:HasCollectible(CollectibleType.COLLECTIBLE_GUILLOTINE) or player:HasCollectible(CollectibleType.COLLECTIBLE_TRANSCENDENCE) then
-				player:AddNullCostume(costume_Lairub_Body)
+				if not player:HasCollectible(CollectibleType.COLLECTIBLE_JUPITER) then
+					player:TryRemoveNullCostume(costume_Lairub_Body)
+					player:AddNullCostume(costume_Lairub_Body)
+				end
 				player:AddNullCostume(costume_Lairub_Head)
 			else
-				player:TryRemoveNullCostume(costume_Lairub_Body)
-				player:AddNullCostume(costume_Lairub_Body)
+				if not player:HasCollectible(CollectibleType.COLLECTIBLE_JUPITER) then
+					player:TryRemoveNullCostume(costume_Lairub_Body)
+					player:AddNullCostume(costume_Lairub_Body)
+				end
 				player:TryRemoveNullCostume(costume_Lairub_Head)
 				player:AddNullCostume(costume_Lairub_Head)
 			end
 		elseif ShiftChanged == 2 then
 			if player:HasCollectible(CollectibleType.COLLECTIBLE_GUILLOTINE) or player:HasCollectible(CollectibleType.COLLECTIBLE_TRANSCENDENCE) then
-				player:AddNullCostume(costume_Lairub_Body)
+				if not player:HasCollectible(CollectibleType.COLLECTIBLE_JUPITER) then
+					player:TryRemoveNullCostume(costume_Lairub_Body)
+					player:AddNullCostume(costume_Lairub_Body)
+				end
 				player:AddNullCostume(costume_Lairub_Head_TakeSoul)
 				player:AddNullCostume(costume_Lairub_Head_TakeSoulBase)
 			else
-				player:TryRemoveNullCostume(costume_Lairub_Body)
-				player:AddNullCostume(costume_Lairub_Body)
+				if not player:HasCollectible(CollectibleType.COLLECTIBLE_JUPITER) then
+					player:TryRemoveNullCostume(costume_Lairub_Body)
+					player:AddNullCostume(costume_Lairub_Body)
+				end
 				player:TryRemoveNullCostume(costume_Lairub_Head_TakeSoul)
 				player:AddNullCostume(costume_Lairub_Head_TakeSoul)
 				player:TryRemoveNullCostume(costume_Lairub_Head_TakeSoulBase)
 				player:AddNullCostume(costume_Lairub_Head_TakeSoulBase)
 			end
+		end
+		if player:HasCollectible(CollectibleType.COLLECTIBLE_JUPITER) then
+			player:TryRemoveNullCostume(costume_Lairub_Body)
 		end
 	end
 	--==Remove Costume if player isn't Lairub==--
@@ -468,13 +481,17 @@ function lairub:EvaluateCache(player, cacheFlag)
 		elseif cacheFlag == CacheFlag.CACHE_FLYING then
 			if player:HasCollectible(CollectibleType.COLLECTIBLE_TRANSCENDENCE) then
 				if ShiftChanged == 1 then
-					player:TryRemoveNullCostume(costume_Lairub_Body)
-					player:AddNullCostume(costume_Lairub_Body)
+					if not player:HasCollectible(CollectibleType.COLLECTIBLE_JUPITER) then
+						player:TryRemoveNullCostume(costume_Lairub_Body)
+						player:AddNullCostume(costume_Lairub_Body)
+					end
 					player:TryRemoveNullCostume(costume_Lairub_Head)
 					player:AddNullCostume(costume_Lairub_Head)
 				elseif ShiftChanged == 2 then
-					player:TryRemoveNullCostume(costume_Lairub_Body)
-					player:AddNullCostume(costume_Lairub_Body)
+					if not player:HasCollectible(CollectibleType.COLLECTIBLE_JUPITER) then
+						player:TryRemoveNullCostume(costume_Lairub_Body)
+						player:AddNullCostume(costume_Lairub_Body)
+					end
 					player:TryRemoveNullCostume(costume_Lairub_Head_TakeSoul)
 					player:AddNullCostume(costume_Lairub_Head_TakeSoul)
 					player:TryRemoveNullCostume(costume_Lairub_Head_TakeSoulBase)
@@ -487,13 +504,21 @@ function lairub:EvaluateCache(player, cacheFlag)
 				local variant = maybeFamiliars[m].Variant
 				if variant == (FamiliarVariant.GUILLOTINE) or variant == (FamiliarVariant.ISAACS_BODY) or variant == (FamiliarVariant.SCISSORS) then
 					if ShiftChanged == 1 then
-						player:TryRemoveNullCostume(costume_Lairub_Body)
-						player:AddNullCostume(costume_Lairub_Body)
+						if not player:HasCollectible(CollectibleType.COLLECTIBLE_JUPITER) then
+							player:TryRemoveNullCostume(costume_Lairub_Body)
+							player:AddNullCostume(costume_Lairub_Body)
+						else
+							player:TryRemoveNullCostume(costume_Lairub_Body)
+						end
 						player:TryRemoveNullCostume(costume_Lairub_Head)
 						player:AddNullCostume(costume_Lairub_Head)
 					elseif ShiftChanged == 2 then
-						player:TryRemoveNullCostume(costume_Lairub_Body)
-						player:AddNullCostume(costume_Lairub_Body)
+						if not player:HasCollectible(CollectibleType.COLLECTIBLE_JUPITER) then
+							player:TryRemoveNullCostume(costume_Lairub_Body)
+							player:AddNullCostume(costume_Lairub_Body)
+						else
+							player:TryRemoveNullCostume(costume_Lairub_Body)
+						end
 						player:TryRemoveNullCostume(costume_Lairub_Head_TakeSoul)
 						player:AddNullCostume(costume_Lairub_Head_TakeSoul)
 						player:TryRemoveNullCostume(costume_Lairub_Head_TakeSoulBase)
@@ -987,14 +1012,22 @@ function lairub:Functions()
 			player:RemoveCollectible(LairubStatUpdateItem)
 			UpdateCache(player)
 			if ShiftChanged == 1 then
-				player:TryRemoveNullCostume(costume_Lairub_Body)
-				player:AddNullCostume(costume_Lairub_Body)
+				if not player:HasCollectible(CollectibleType.COLLECTIBLE_JUPITER) then
+					player:TryRemoveNullCostume(costume_Lairub_Body)
+					player:AddNullCostume(costume_Lairub_Body)
+				else
+					player:TryRemoveNullCostume(costume_Lairub_Body)
+				end
 				player:TryRemoveNullCostume(costume_Lairub_Head)
 				player:AddNullCostume(costume_Lairub_Head)
 				player:TryRemoveNullCostume(costume_Lairub_Head_TakeSoulBase)
 			elseif ShiftChanged == 2 then
-				player:TryRemoveNullCostume(costume_Lairub_Body)
-				player:AddNullCostume(costume_Lairub_Body)
+				if not player:HasCollectible(CollectibleType.COLLECTIBLE_JUPITER) then
+					player:TryRemoveNullCostume(costume_Lairub_Body)
+					player:AddNullCostume(costume_Lairub_Body)
+				else
+					player:TryRemoveNullCostume(costume_Lairub_Body)
+				end
 				player:TryRemoveNullCostume(costume_Lairub_Head_TakeSoul)
 				player:AddNullCostume(costume_Lairub_Head_TakeSoul)
 				player:TryRemoveNullCostume(costume_Lairub_Head_TakeSoulBase)
@@ -1336,7 +1369,7 @@ function lairub:UnfinishedUpdate()
 	local player = Isaac.GetPlayer(0)
 	local room = game:GetRoom()
 	if player:GetPlayerType() == playerType_Tainted_Lairub then
-		player:AddControlsCooldown(2)--player.ControlsEnabled = false
+		player.ControlsEnabled = false
 		player.Visible = false
 	end
 end
