@@ -83,7 +83,7 @@ local EternalChargeSprite = Sprite()
 EternalChargeSprite:Load("gfx/ui/EternalCharge.anm2", true)
 local SimNumbersPath = "gfx/ui/SimNumbers.anm2"
 
-local portalColor = { }
+local portalColor = {}
 portalColor[1] = {}
 portalColor[1][1] = Color(9 / 255, 132 / 255, 255 / 255)
 portalColor[1][2] = Color(234 / 255, 135 / 255, 0 / 255)
@@ -97,147 +97,945 @@ portalColor[4] = {}
 portalColor[4][1] = Color(255 / 255, 0 / 255, 0 / 255)
 portalColor[4][2] = Color(0 / 255, 255 / 255, 0 / 255)
 
-local levelPosition = { levelGridIndex = -1, roomGridIndex = -1 }
+local roomWall = {}
+local function loadRoomWall()
+	roomWall[RoomShape.ROOMSHAPE_1x1] = {}
+	roomWall[RoomShape.ROOMSHAPE_1x1][0] = 15
+	roomWall[RoomShape.ROOMSHAPE_1x1][1] = "up"
+	roomWall[RoomShape.ROOMSHAPE_1x1][2] = "up"
+	roomWall[RoomShape.ROOMSHAPE_1x1][3] = "up"
+	roomWall[RoomShape.ROOMSHAPE_1x1][4] = "up"
+	roomWall[RoomShape.ROOMSHAPE_1x1][5] = "up"
+	roomWall[RoomShape.ROOMSHAPE_1x1][6] = "up"
+	roomWall[RoomShape.ROOMSHAPE_1x1][7] = "up"
+	roomWall[RoomShape.ROOMSHAPE_1x1][8] = "up"
+	roomWall[RoomShape.ROOMSHAPE_1x1][9] = "up"
+	roomWall[RoomShape.ROOMSHAPE_1x1][10] = "up"
+	roomWall[RoomShape.ROOMSHAPE_1x1][11] = "up"
+	roomWall[RoomShape.ROOMSHAPE_1x1][12] = "up"
+	roomWall[RoomShape.ROOMSHAPE_1x1][13] = "up"
+	roomWall[RoomShape.ROOMSHAPE_1x1][14] = 29
+	roomWall[RoomShape.ROOMSHAPE_1x1][15] = "left"
+	roomWall[RoomShape.ROOMSHAPE_1x1][29] = "right"
+	roomWall[RoomShape.ROOMSHAPE_1x1][30] = "left"
+	roomWall[RoomShape.ROOMSHAPE_1x1][44] = "right"
+	roomWall[RoomShape.ROOMSHAPE_1x1][45] = "left"
+	roomWall[RoomShape.ROOMSHAPE_1x1][59] = "right"
+	roomWall[RoomShape.ROOMSHAPE_1x1][60] = "left"
+	roomWall[RoomShape.ROOMSHAPE_1x1][74] = "right"
+	roomWall[RoomShape.ROOMSHAPE_1x1][75] = "left"
+	roomWall[RoomShape.ROOMSHAPE_1x1][89] = "right"
+	roomWall[RoomShape.ROOMSHAPE_1x1][90] = "left"
+	roomWall[RoomShape.ROOMSHAPE_1x1][104] = "right"
+	roomWall[RoomShape.ROOMSHAPE_1x1][105] = "left"
+	roomWall[RoomShape.ROOMSHAPE_1x1][119] = "right"
+	roomWall[RoomShape.ROOMSHAPE_1x1][120] = 105
+	roomWall[RoomShape.ROOMSHAPE_1x1][121] = "down"
+	roomWall[RoomShape.ROOMSHAPE_1x1][122] = "down"
+	roomWall[RoomShape.ROOMSHAPE_1x1][123] = "down"
+	roomWall[RoomShape.ROOMSHAPE_1x1][124] = "down"
+	roomWall[RoomShape.ROOMSHAPE_1x1][125] = "down"
+	roomWall[RoomShape.ROOMSHAPE_1x1][126] = "down"
+	roomWall[RoomShape.ROOMSHAPE_1x1][127] = "down"
+	roomWall[RoomShape.ROOMSHAPE_1x1][128] = "down"
+	roomWall[RoomShape.ROOMSHAPE_1x1][129] = "down"
+	roomWall[RoomShape.ROOMSHAPE_1x1][130] = "down"
+	roomWall[RoomShape.ROOMSHAPE_1x1][131] = "down"
+	roomWall[RoomShape.ROOMSHAPE_1x1][132] = "down"
+	roomWall[RoomShape.ROOMSHAPE_1x1][133] = "down"
+	roomWall[RoomShape.ROOMSHAPE_1x1][134] = 119
+
+	roomWall[RoomShape.ROOMSHAPE_IH] = {}
+	roomWall[RoomShape.ROOMSHAPE_IH][30] = 45
+	roomWall[RoomShape.ROOMSHAPE_IH][45] = "left"
+	roomWall[RoomShape.ROOMSHAPE_IH][60] = "left"
+	roomWall[RoomShape.ROOMSHAPE_IH][75] = "left"
+	roomWall[RoomShape.ROOMSHAPE_IH][90] = 75
+	roomWall[RoomShape.ROOMSHAPE_IH][44] = 59
+	roomWall[RoomShape.ROOMSHAPE_IH][59] = "right"
+	roomWall[RoomShape.ROOMSHAPE_IH][74] = "right"
+	roomWall[RoomShape.ROOMSHAPE_IH][89] = "right"
+	roomWall[RoomShape.ROOMSHAPE_IH][104] = 104
+	roomWall[RoomShape.ROOMSHAPE_IH][31] = "up"
+	roomWall[RoomShape.ROOMSHAPE_IH][32] = "up"
+	roomWall[RoomShape.ROOMSHAPE_IH][33] = "up"
+	roomWall[RoomShape.ROOMSHAPE_IH][34] = "up"
+	roomWall[RoomShape.ROOMSHAPE_IH][35] = "up"
+	roomWall[RoomShape.ROOMSHAPE_IH][36] = "up"
+	roomWall[RoomShape.ROOMSHAPE_IH][37] = "up"
+	roomWall[RoomShape.ROOMSHAPE_IH][38] = "up"
+	roomWall[RoomShape.ROOMSHAPE_IH][39] = "up"
+	roomWall[RoomShape.ROOMSHAPE_IH][40] = "up"
+	roomWall[RoomShape.ROOMSHAPE_IH][41] = "up"
+	roomWall[RoomShape.ROOMSHAPE_IH][42] = "up"
+	roomWall[RoomShape.ROOMSHAPE_IH][43] = "up"
+	roomWall[RoomShape.ROOMSHAPE_IH][91] = "down"
+	roomWall[RoomShape.ROOMSHAPE_IH][92] = "down"
+	roomWall[RoomShape.ROOMSHAPE_IH][93] = "down"
+	roomWall[RoomShape.ROOMSHAPE_IH][94] = "down"
+	roomWall[RoomShape.ROOMSHAPE_IH][95] = "down"
+	roomWall[RoomShape.ROOMSHAPE_IH][96] = "down"
+	roomWall[RoomShape.ROOMSHAPE_IH][97] = "down"
+	roomWall[RoomShape.ROOMSHAPE_IH][98] = "down"
+	roomWall[RoomShape.ROOMSHAPE_IH][99] = "down"
+	roomWall[RoomShape.ROOMSHAPE_IH][100] = "down"
+	roomWall[RoomShape.ROOMSHAPE_IH][101] = "down"
+	roomWall[RoomShape.ROOMSHAPE_IH][102] = "down"
+	roomWall[RoomShape.ROOMSHAPE_IH][103] = "down"
+
+	roomWall[RoomShape.ROOMSHAPE_IV] = {}
+	roomWall[RoomShape.ROOMSHAPE_IV][4] = 19
+	roomWall[RoomShape.ROOMSHAPE_IV][19] = "left"
+	roomWall[RoomShape.ROOMSHAPE_IV][34] = "left"
+	roomWall[RoomShape.ROOMSHAPE_IV][49] = "left"
+	roomWall[RoomShape.ROOMSHAPE_IV][64] = "left"
+	roomWall[RoomShape.ROOMSHAPE_IV][79] = "left"
+	roomWall[RoomShape.ROOMSHAPE_IV][94] = "left"
+	roomWall[RoomShape.ROOMSHAPE_IV][109] = "left"
+	roomWall[RoomShape.ROOMSHAPE_IV][124] = 109
+	roomWall[RoomShape.ROOMSHAPE_IV][10] = 25
+	roomWall[RoomShape.ROOMSHAPE_IV][25] = "right"
+	roomWall[RoomShape.ROOMSHAPE_IV][40] = "right"
+	roomWall[RoomShape.ROOMSHAPE_IV][55] = "right"
+	roomWall[RoomShape.ROOMSHAPE_IV][70] = "right"
+	roomWall[RoomShape.ROOMSHAPE_IV][85] = "right"
+	roomWall[RoomShape.ROOMSHAPE_IV][100] = "right"
+	roomWall[RoomShape.ROOMSHAPE_IV][115] = "right"
+	roomWall[RoomShape.ROOMSHAPE_IV][130] = 115
+	roomWall[RoomShape.ROOMSHAPE_IV][5] = "up"
+	roomWall[RoomShape.ROOMSHAPE_IV][6] = "up"
+	roomWall[RoomShape.ROOMSHAPE_IV][7] = "up"
+	roomWall[RoomShape.ROOMSHAPE_IV][8] = "up"
+	roomWall[RoomShape.ROOMSHAPE_IV][9] = "up"
+	roomWall[RoomShape.ROOMSHAPE_IV][125] = "down"
+	roomWall[RoomShape.ROOMSHAPE_IV][126] = "down"
+	roomWall[RoomShape.ROOMSHAPE_IV][127] = "down"
+	roomWall[RoomShape.ROOMSHAPE_IV][128] = "down"
+	roomWall[RoomShape.ROOMSHAPE_IV][129] = "down"
+
+	roomWall[RoomShape.ROOMSHAPE_1x2] = {}
+	roomWall[RoomShape.ROOMSHAPE_1x2][0] = 15
+	roomWall[RoomShape.ROOMSHAPE_1x2][1] = "up"
+	roomWall[RoomShape.ROOMSHAPE_1x2][2] = "up"
+	roomWall[RoomShape.ROOMSHAPE_1x2][3] = "up"
+	roomWall[RoomShape.ROOMSHAPE_1x2][4] = "up"
+	roomWall[RoomShape.ROOMSHAPE_1x2][5] = "up"
+	roomWall[RoomShape.ROOMSHAPE_1x2][6] = "up"
+	roomWall[RoomShape.ROOMSHAPE_1x2][7] = "up"
+	roomWall[RoomShape.ROOMSHAPE_1x2][8] = "up"
+	roomWall[RoomShape.ROOMSHAPE_1x2][9] = "up"
+	roomWall[RoomShape.ROOMSHAPE_1x2][10] = "up"
+	roomWall[RoomShape.ROOMSHAPE_1x2][11] = "up"
+	roomWall[RoomShape.ROOMSHAPE_1x2][12] = "up"
+	roomWall[RoomShape.ROOMSHAPE_1x2][13] = "up"
+	roomWall[RoomShape.ROOMSHAPE_1x2][14] = 29
+	roomWall[RoomShape.ROOMSHAPE_1x2][15] = "left"
+	roomWall[RoomShape.ROOMSHAPE_1x2][29] = "right"
+	roomWall[RoomShape.ROOMSHAPE_1x2][30] = "left"
+	roomWall[RoomShape.ROOMSHAPE_1x2][44] = "right"
+	roomWall[RoomShape.ROOMSHAPE_1x2][45] = "left"
+	roomWall[RoomShape.ROOMSHAPE_1x2][59] = "right"
+	roomWall[RoomShape.ROOMSHAPE_1x2][60] = "left"
+	roomWall[RoomShape.ROOMSHAPE_1x2][74] = "right"
+	roomWall[RoomShape.ROOMSHAPE_1x2][75] = "left"
+	roomWall[RoomShape.ROOMSHAPE_1x2][89] = "right"
+	roomWall[RoomShape.ROOMSHAPE_1x2][90] = "left"
+	roomWall[RoomShape.ROOMSHAPE_1x2][104] = "right"
+	roomWall[RoomShape.ROOMSHAPE_1x2][105] = "left"
+	roomWall[RoomShape.ROOMSHAPE_1x2][119] = "right"
+	roomWall[RoomShape.ROOMSHAPE_1x2][120] = "left"
+	roomWall[RoomShape.ROOMSHAPE_1x2][134] = "right"
+	roomWall[RoomShape.ROOMSHAPE_1x2][135] = "left"
+	roomWall[RoomShape.ROOMSHAPE_1x2][149] = "right"
+	roomWall[RoomShape.ROOMSHAPE_1x2][135] = "left"
+	roomWall[RoomShape.ROOMSHAPE_1x2][149] = "right"
+	roomWall[RoomShape.ROOMSHAPE_1x2][150] = "left"
+	roomWall[RoomShape.ROOMSHAPE_1x2][164] = "right"
+	roomWall[RoomShape.ROOMSHAPE_1x2][165] = "left"
+	roomWall[RoomShape.ROOMSHAPE_1x2][179] = "right"
+	roomWall[RoomShape.ROOMSHAPE_1x2][180] = "left"
+	roomWall[RoomShape.ROOMSHAPE_1x2][194] = "right"
+	roomWall[RoomShape.ROOMSHAPE_1x2][195] = "left"
+	roomWall[RoomShape.ROOMSHAPE_1x2][209] = "right"
+	roomWall[RoomShape.ROOMSHAPE_1x2][210] = "left"
+	roomWall[RoomShape.ROOMSHAPE_1x2][224] = "right"
+	roomWall[RoomShape.ROOMSHAPE_1x2][225] = 210
+	roomWall[RoomShape.ROOMSHAPE_1x2][226] = "up"
+	roomWall[RoomShape.ROOMSHAPE_1x2][227] = "up"
+	roomWall[RoomShape.ROOMSHAPE_1x2][228] = "up"
+	roomWall[RoomShape.ROOMSHAPE_1x2][229] = "up"
+	roomWall[RoomShape.ROOMSHAPE_1x2][230] = "up"
+	roomWall[RoomShape.ROOMSHAPE_1x2][231] = "up"
+	roomWall[RoomShape.ROOMSHAPE_1x2][232] = "up"
+	roomWall[RoomShape.ROOMSHAPE_1x2][233] = "up"
+	roomWall[RoomShape.ROOMSHAPE_1x2][234] = "up"
+	roomWall[RoomShape.ROOMSHAPE_1x2][235] = "up"
+	roomWall[RoomShape.ROOMSHAPE_1x2][236] = "up"
+	roomWall[RoomShape.ROOMSHAPE_1x2][237] = "up"
+	roomWall[RoomShape.ROOMSHAPE_1x2][238] = "up"
+	roomWall[RoomShape.ROOMSHAPE_1x2][239] = 224
+
+	roomWall[RoomShape.ROOMSHAPE_IIV] = {}
+	roomWall[RoomShape.ROOMSHAPE_IIV][5] = "up"
+	roomWall[RoomShape.ROOMSHAPE_IIV][6] = "up"
+	roomWall[RoomShape.ROOMSHAPE_IIV][7] = "up"
+	roomWall[RoomShape.ROOMSHAPE_IIV][8] = "up"
+	roomWall[RoomShape.ROOMSHAPE_IIV][9] = "up"
+	roomWall[RoomShape.ROOMSHAPE_IIV][230] = "down"
+	roomWall[RoomShape.ROOMSHAPE_IIV][231] = "down"
+	roomWall[RoomShape.ROOMSHAPE_IIV][232] = "down"
+	roomWall[RoomShape.ROOMSHAPE_IIV][233] = "down"
+	roomWall[RoomShape.ROOMSHAPE_IIV][234] = "down"
+	roomWall[RoomShape.ROOMSHAPE_IIV][15*0+4] = 19
+	roomWall[RoomShape.ROOMSHAPE_IIV][15*1+4] = "left"
+	roomWall[RoomShape.ROOMSHAPE_IIV][15*2+4] = "left"
+	roomWall[RoomShape.ROOMSHAPE_IIV][15*3+4] = "left"
+	roomWall[RoomShape.ROOMSHAPE_IIV][15*4+4] = "left"
+	roomWall[RoomShape.ROOMSHAPE_IIV][15*5+4] = "left"
+	roomWall[RoomShape.ROOMSHAPE_IIV][15*6+4] = "left"
+	roomWall[RoomShape.ROOMSHAPE_IIV][15*7+4] = "left"
+	roomWall[RoomShape.ROOMSHAPE_IIV][15*8+4] = "left"
+	roomWall[RoomShape.ROOMSHAPE_IIV][15*9+4] = "left"
+	roomWall[RoomShape.ROOMSHAPE_IIV][15*10+4] = "left"
+	roomWall[RoomShape.ROOMSHAPE_IIV][15*12+4] = "left"
+	roomWall[RoomShape.ROOMSHAPE_IIV][15*13+4] = "left"
+	roomWall[RoomShape.ROOMSHAPE_IIV][15*14+4] = "left"
+	roomWall[RoomShape.ROOMSHAPE_IIV][15*15+4] = "left"
+	roomWall[RoomShape.ROOMSHAPE_IIV][15*16+4] = 229
+	roomWall[RoomShape.ROOMSHAPE_IIV][15*0+10] = 25
+	roomWall[RoomShape.ROOMSHAPE_IIV][15*1+10] = "right"
+	roomWall[RoomShape.ROOMSHAPE_IIV][15*2+10] = "right"
+	roomWall[RoomShape.ROOMSHAPE_IIV][15*3+10] = "right"
+	roomWall[RoomShape.ROOMSHAPE_IIV][15*4+10] = "right"
+	roomWall[RoomShape.ROOMSHAPE_IIV][15*5+10] = "right"
+	roomWall[RoomShape.ROOMSHAPE_IIV][15*6+10] = "right"
+	roomWall[RoomShape.ROOMSHAPE_IIV][15*7+10] = "right"
+	roomWall[RoomShape.ROOMSHAPE_IIV][15*8+10] = "right"
+	roomWall[RoomShape.ROOMSHAPE_IIV][15*9+10] = "right"
+	roomWall[RoomShape.ROOMSHAPE_IIV][15*10+10] = "right"
+	roomWall[RoomShape.ROOMSHAPE_IIV][15*12+10] = "right"
+	roomWall[RoomShape.ROOMSHAPE_IIV][15*13+10] = "right"
+	roomWall[RoomShape.ROOMSHAPE_IIV][15*14+10] = "right"
+	roomWall[RoomShape.ROOMSHAPE_IIV][15*15+10] = "right"
+	roomWall[RoomShape.ROOMSHAPE_IIV][15*16+10] = 235
+
+	roomWall[RoomShape.ROOMSHAPE_2x1] = {}
+	roomWall[RoomShape.ROOMSHAPE_2x1][28*0] = 28
+	roomWall[RoomShape.ROOMSHAPE_2x1][28*1] = "left"
+	roomWall[RoomShape.ROOMSHAPE_2x1][28*2] = "left"
+	roomWall[RoomShape.ROOMSHAPE_2x1][28*3] = "left"
+	roomWall[RoomShape.ROOMSHAPE_2x1][28*4] = "left"
+	roomWall[RoomShape.ROOMSHAPE_2x1][28*5] = "left"
+	roomWall[RoomShape.ROOMSHAPE_2x1][28*6] = "left"
+	roomWall[RoomShape.ROOMSHAPE_2x1][28*7] = "left"
+	roomWall[RoomShape.ROOMSHAPE_2x1][28*8] = 196
+	roomWall[RoomShape.ROOMSHAPE_2x1][28*0+27] = 55
+	roomWall[RoomShape.ROOMSHAPE_2x1][28*1+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_2x1][28*2+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_2x1][28*3+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_2x1][28*4+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_2x1][28*5+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_2x1][28*6+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_2x1][28*7+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_2x1][28*8+27] = 223
+	roomWall[RoomShape.ROOMSHAPE_2x1][1] = "up"
+	roomWall[RoomShape.ROOMSHAPE_2x1][2] = "up"
+	roomWall[RoomShape.ROOMSHAPE_2x1][3] = "up"
+	roomWall[RoomShape.ROOMSHAPE_2x1][4] = "up"
+	roomWall[RoomShape.ROOMSHAPE_2x1][5] = "up"
+	roomWall[RoomShape.ROOMSHAPE_2x1][6] = "up"
+	roomWall[RoomShape.ROOMSHAPE_2x1][7] = "up"
+	roomWall[RoomShape.ROOMSHAPE_2x1][8] = "up"
+	roomWall[RoomShape.ROOMSHAPE_2x1][9] = "up"
+	roomWall[RoomShape.ROOMSHAPE_2x1][10] = "up"
+	roomWall[RoomShape.ROOMSHAPE_2x1][11] = "up"
+	roomWall[RoomShape.ROOMSHAPE_2x1][12] = "up"
+	roomWall[RoomShape.ROOMSHAPE_2x1][13] = "up"
+	roomWall[RoomShape.ROOMSHAPE_2x1][14] = "up"
+	roomWall[RoomShape.ROOMSHAPE_2x1][15] = "up"
+	roomWall[RoomShape.ROOMSHAPE_2x1][16] = "up"
+	roomWall[RoomShape.ROOMSHAPE_2x1][17] = "up"
+	roomWall[RoomShape.ROOMSHAPE_2x1][18] = "up"
+	roomWall[RoomShape.ROOMSHAPE_2x1][19] = "up"
+	roomWall[RoomShape.ROOMSHAPE_2x1][20] = "up"
+	roomWall[RoomShape.ROOMSHAPE_2x1][21] = "up"
+	roomWall[RoomShape.ROOMSHAPE_2x1][22] = "up"
+	roomWall[RoomShape.ROOMSHAPE_2x1][23] = "up"
+	roomWall[RoomShape.ROOMSHAPE_2x1][24] = "up"
+	roomWall[RoomShape.ROOMSHAPE_2x1][25] = "up"
+	roomWall[RoomShape.ROOMSHAPE_2x1][26] = "up"
+	roomWall[RoomShape.ROOMSHAPE_2x1][1+224] = "down"
+	roomWall[RoomShape.ROOMSHAPE_2x1][2+224] = "down"
+	roomWall[RoomShape.ROOMSHAPE_2x1][3+224] = "down"
+	roomWall[RoomShape.ROOMSHAPE_2x1][4+224] = "down"
+	roomWall[RoomShape.ROOMSHAPE_2x1][5+224] = "down"
+	roomWall[RoomShape.ROOMSHAPE_2x1][6+224] = "down"
+	roomWall[RoomShape.ROOMSHAPE_2x1][7+224] = "down"
+	roomWall[RoomShape.ROOMSHAPE_2x1][8+224] = "down"
+	roomWall[RoomShape.ROOMSHAPE_2x1][9+224] = "down"
+	roomWall[RoomShape.ROOMSHAPE_2x1][10+224] = "down"
+	roomWall[RoomShape.ROOMSHAPE_2x1][11+224] = "down"
+	roomWall[RoomShape.ROOMSHAPE_2x1][12+224] = "down"
+	roomWall[RoomShape.ROOMSHAPE_2x1][13+224] = "down"
+	roomWall[RoomShape.ROOMSHAPE_2x1][14+224] = "down"
+	roomWall[RoomShape.ROOMSHAPE_2x1][15+224] = "down"
+	roomWall[RoomShape.ROOMSHAPE_2x1][16+224] = "down"
+	roomWall[RoomShape.ROOMSHAPE_2x1][17+224] = "down"
+	roomWall[RoomShape.ROOMSHAPE_2x1][18+224] = "down"
+	roomWall[RoomShape.ROOMSHAPE_2x1][19+224] = "down"
+	roomWall[RoomShape.ROOMSHAPE_2x1][20+224] = "down"
+	roomWall[RoomShape.ROOMSHAPE_2x1][21+224] = "down"
+	roomWall[RoomShape.ROOMSHAPE_2x1][22+224] = "down"
+	roomWall[RoomShape.ROOMSHAPE_2x1][23+224] = "down"
+	roomWall[RoomShape.ROOMSHAPE_2x1][24+224] = "down"
+	roomWall[RoomShape.ROOMSHAPE_2x1][25+224] = "down"
+	roomWall[RoomShape.ROOMSHAPE_2x1][26+224] = "down"
+
+	roomWall[RoomShape.ROOMSHAPE_IIH] = {}
+	roomWall[RoomShape.ROOMSHAPE_IIH][28*2] = 84
+	roomWall[RoomShape.ROOMSHAPE_IIH][28*3] = "left"
+	roomWall[RoomShape.ROOMSHAPE_IIH][28*4] = "left"
+	roomWall[RoomShape.ROOMSHAPE_IIH][28*5] = "left"
+	roomWall[RoomShape.ROOMSHAPE_IIH][28*6] = 140
+	roomWall[RoomShape.ROOMSHAPE_IIH][28*2+27] = 111
+	roomWall[RoomShape.ROOMSHAPE_IIH][28*3+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_IIH][28*4+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_IIH][28*5+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_IIH][28*6+27] = 167
+	roomWall[RoomShape.ROOMSHAPE_IIH][1+56] = "up"
+	roomWall[RoomShape.ROOMSHAPE_IIH][2+56] = "up"
+	roomWall[RoomShape.ROOMSHAPE_IIH][3+56] = "up"
+	roomWall[RoomShape.ROOMSHAPE_IIH][4+56] = "up"
+	roomWall[RoomShape.ROOMSHAPE_IIH][5+56] = "up"
+	roomWall[RoomShape.ROOMSHAPE_IIH][6+56] = "up"
+	roomWall[RoomShape.ROOMSHAPE_IIH][7+56] = "up"
+	roomWall[RoomShape.ROOMSHAPE_IIH][8+56] = "up"
+	roomWall[RoomShape.ROOMSHAPE_IIH][9+56] = "up"
+	roomWall[RoomShape.ROOMSHAPE_IIH][10+56] = "up"
+	roomWall[RoomShape.ROOMSHAPE_IIH][11+56] = "up"
+	roomWall[RoomShape.ROOMSHAPE_IIH][12+56] = "up"
+	roomWall[RoomShape.ROOMSHAPE_IIH][13+56] = "up"
+	roomWall[RoomShape.ROOMSHAPE_IIH][14+56] = "up"
+	roomWall[RoomShape.ROOMSHAPE_IIH][15+56] = "up"
+	roomWall[RoomShape.ROOMSHAPE_IIH][16+56] = "up"
+	roomWall[RoomShape.ROOMSHAPE_IIH][17+56] = "up"
+	roomWall[RoomShape.ROOMSHAPE_IIH][18+56] = "up"
+	roomWall[RoomShape.ROOMSHAPE_IIH][19+56] = "up"
+	roomWall[RoomShape.ROOMSHAPE_IIH][20+56] = "up"
+	roomWall[RoomShape.ROOMSHAPE_IIH][21+56] = "up"
+	roomWall[RoomShape.ROOMSHAPE_IIH][22+56] = "up"
+	roomWall[RoomShape.ROOMSHAPE_IIH][23+56] = "up"
+	roomWall[RoomShape.ROOMSHAPE_IIH][24+56] = "up"
+	roomWall[RoomShape.ROOMSHAPE_IIH][25+56] = "up"
+	roomWall[RoomShape.ROOMSHAPE_IIH][26+56] = "up"
+	roomWall[RoomShape.ROOMSHAPE_IIH][1+168] = "down"
+	roomWall[RoomShape.ROOMSHAPE_IIH][2+168] = "down"
+	roomWall[RoomShape.ROOMSHAPE_IIH][3+168] = "down"
+	roomWall[RoomShape.ROOMSHAPE_IIH][4+168] = "down"
+	roomWall[RoomShape.ROOMSHAPE_IIH][5+168] = "down"
+	roomWall[RoomShape.ROOMSHAPE_IIH][6+168] = "down"
+	roomWall[RoomShape.ROOMSHAPE_IIH][7+168] = "down"
+	roomWall[RoomShape.ROOMSHAPE_IIH][8+168] = "down"
+	roomWall[RoomShape.ROOMSHAPE_IIH][9+168] = "down"
+	roomWall[RoomShape.ROOMSHAPE_IIH][10+168] = "down"
+	roomWall[RoomShape.ROOMSHAPE_IIH][11+168] = "down"
+	roomWall[RoomShape.ROOMSHAPE_IIH][12+168] = "down"
+	roomWall[RoomShape.ROOMSHAPE_IIH][13+168] = "down"
+	roomWall[RoomShape.ROOMSHAPE_IIH][14+168] = "down"
+	roomWall[RoomShape.ROOMSHAPE_IIH][15+168] = "down"
+	roomWall[RoomShape.ROOMSHAPE_IIH][16+168] = "down"
+	roomWall[RoomShape.ROOMSHAPE_IIH][17+168] = "down"
+	roomWall[RoomShape.ROOMSHAPE_IIH][18+168] = "down"
+	roomWall[RoomShape.ROOMSHAPE_IIH][19+168] = "down"
+	roomWall[RoomShape.ROOMSHAPE_IIH][20+168] = "down"
+	roomWall[RoomShape.ROOMSHAPE_IIH][21+168] = "down"
+	roomWall[RoomShape.ROOMSHAPE_IIH][22+168] = "down"
+	roomWall[RoomShape.ROOMSHAPE_IIH][23+168] = "down"
+	roomWall[RoomShape.ROOMSHAPE_IIH][24+168] = "down"
+	roomWall[RoomShape.ROOMSHAPE_IIH][25+168] = "down"
+	roomWall[RoomShape.ROOMSHAPE_IIH][26+168] = "down"
+
+	roomWall[RoomShape.ROOMSHAPE_2x2] = {}
+	roomWall[RoomShape.ROOMSHAPE_2x2][28*0] = 28
+	roomWall[RoomShape.ROOMSHAPE_2x2][28*1] = "left"
+	roomWall[RoomShape.ROOMSHAPE_2x2][28*2] = "left"
+	roomWall[RoomShape.ROOMSHAPE_2x2][28*3] = "left"
+	roomWall[RoomShape.ROOMSHAPE_2x2][28*4] = "left"
+	roomWall[RoomShape.ROOMSHAPE_2x2][28*5] = "left"
+	roomWall[RoomShape.ROOMSHAPE_2x2][28*6] = "left"
+	roomWall[RoomShape.ROOMSHAPE_2x2][28*7] = "left"
+	roomWall[RoomShape.ROOMSHAPE_2x2][28*8] = "left"
+	roomWall[RoomShape.ROOMSHAPE_2x2][28*9] = "left"
+	roomWall[RoomShape.ROOMSHAPE_2x2][28*10] = "left"
+	roomWall[RoomShape.ROOMSHAPE_2x2][28*11] = "left"
+	roomWall[RoomShape.ROOMSHAPE_2x2][28*12] = "left"
+	roomWall[RoomShape.ROOMSHAPE_2x2][28*13] = "left"
+	roomWall[RoomShape.ROOMSHAPE_2x2][28*14] = "left"
+	roomWall[RoomShape.ROOMSHAPE_2x2][28*15] = 392
+	roomWall[RoomShape.ROOMSHAPE_2x2][28*0+27] = 55
+	roomWall[RoomShape.ROOMSHAPE_2x2][28*1+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_2x2][28*2+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_2x2][28*3+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_2x2][28*4+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_2x2][28*5+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_2x2][28*6+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_2x2][28*7+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_2x2][28*8+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_2x2][28*9+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_2x2][28*10+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_2x2][28*11+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_2x2][28*12+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_2x2][28*13+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_2x2][28*14+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_2x2][28*15+27] = 419
+	roomWall[RoomShape.ROOMSHAPE_2x2][1] = "up"
+	roomWall[RoomShape.ROOMSHAPE_2x2][2] = "up"
+	roomWall[RoomShape.ROOMSHAPE_2x2][3] = "up"
+	roomWall[RoomShape.ROOMSHAPE_2x2][4] = "up"
+	roomWall[RoomShape.ROOMSHAPE_2x2][5] = "up"
+	roomWall[RoomShape.ROOMSHAPE_2x2][6] = "up"
+	roomWall[RoomShape.ROOMSHAPE_2x2][7] = "up"
+	roomWall[RoomShape.ROOMSHAPE_2x2][8] = "up"
+	roomWall[RoomShape.ROOMSHAPE_2x2][9] = "up"
+	roomWall[RoomShape.ROOMSHAPE_2x2][10] = "up"
+	roomWall[RoomShape.ROOMSHAPE_2x2][11] = "up"
+	roomWall[RoomShape.ROOMSHAPE_2x2][12] = "up"
+	roomWall[RoomShape.ROOMSHAPE_2x2][13] = "up"
+	roomWall[RoomShape.ROOMSHAPE_2x2][14] = "up"
+	roomWall[RoomShape.ROOMSHAPE_2x2][15] = "up"
+	roomWall[RoomShape.ROOMSHAPE_2x2][16] = "up"
+	roomWall[RoomShape.ROOMSHAPE_2x2][17] = "up"
+	roomWall[RoomShape.ROOMSHAPE_2x2][18] = "up"
+	roomWall[RoomShape.ROOMSHAPE_2x2][19] = "up"
+	roomWall[RoomShape.ROOMSHAPE_2x2][20] = "up"
+	roomWall[RoomShape.ROOMSHAPE_2x2][21] = "up"
+	roomWall[RoomShape.ROOMSHAPE_2x2][22] = "up"
+	roomWall[RoomShape.ROOMSHAPE_2x2][23] = "up"
+	roomWall[RoomShape.ROOMSHAPE_2x2][24] = "up"
+	roomWall[RoomShape.ROOMSHAPE_2x2][25] = "up"
+	roomWall[RoomShape.ROOMSHAPE_2x2][26] = "up"
+	roomWall[RoomShape.ROOMSHAPE_2x2][1+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_2x2][2+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_2x2][3+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_2x2][4+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_2x2][5+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_2x2][6+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_2x2][7+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_2x2][8+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_2x2][9+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_2x2][10+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_2x2][11+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_2x2][12+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_2x2][13+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_2x2][14+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_2x2][15+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_2x2][16+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_2x2][17+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_2x2][18+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_2x2][19+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_2x2][20+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_2x2][21+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_2x2][22+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_2x2][23+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_2x2][24+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_2x2][25+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_2x2][26+420] = "down"
+
+	roomWall[RoomShape.ROOMSHAPE_LTL] = {}
+	roomWall[RoomShape.ROOMSHAPE_LTL][13+28*0] = 41
+	roomWall[RoomShape.ROOMSHAPE_LTL][13+28*1] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LTL][13+28*2] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LTL][13+28*3] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LTL][13+28*4] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LTL][13+28*5] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LTL][13+28*6] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LTL][13+28*7] = 181
+	roomWall[RoomShape.ROOMSHAPE_LTL][28*7] = 224
+	roomWall[RoomShape.ROOMSHAPE_LTL][28*8] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LTL][28*9] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LTL][28*10] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LTL][28*11] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LTL][28*12] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LTL][28*13] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LTL][28*14] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LTL][28*15] = 392
+	roomWall[RoomShape.ROOMSHAPE_LTL][28*0+27] = 55
+	roomWall[RoomShape.ROOMSHAPE_LTL][28*1+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LTL][28*2+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LTL][28*3+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LTL][28*4+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LTL][28*5+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LTL][28*6+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LTL][28*7+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LTL][28*8+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LTL][28*9+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LTL][28*10+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LTL][28*11+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LTL][28*12+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LTL][28*13+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LTL][28*14+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LTL][28*15+27] = 419
+	roomWall[RoomShape.ROOMSHAPE_LTL][1+196] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LTL][2+196] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LTL][3+196] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LTL][4+196] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LTL][5+196] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LTL][6+196] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LTL][7+196] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LTL][8+196] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LTL][9+196] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LTL][10+196] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LTL][11+196] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LTL][12+196] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LTL][14] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LTL][15] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LTL][16] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LTL][17] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LTL][18] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LTL][19] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LTL][20] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LTL][21] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LTL][22] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LTL][23] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LTL][24] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LTL][25] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LTL][26] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LTL][1+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LTL][2+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LTL][3+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LTL][4+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LTL][5+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LTL][6+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LTL][7+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LTL][8+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LTL][9+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LTL][10+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LTL][11+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LTL][12+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LTL][13+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LTL][14+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LTL][15+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LTL][16+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LTL][17+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LTL][18+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LTL][19+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LTL][20+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LTL][21+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LTL][22+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LTL][23+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LTL][24+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LTL][25+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LTL][26+420] = "down"
+
+	roomWall[RoomShape.ROOMSHAPE_LTR] = {}
+	roomWall[RoomShape.ROOMSHAPE_LTR][28*0] = 28
+	roomWall[RoomShape.ROOMSHAPE_LTR][28*1] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LTR][28*2] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LTR][28*3] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LTR][28*4] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LTR][28*5] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LTR][28*6] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LTR][28*7] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LTR][28*8] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LTR][28*9] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LTR][28*10] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LTR][28*11] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LTR][28*12] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LTR][28*13] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LTR][28*14] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LTR][28*15] = 392
+	roomWall[RoomShape.ROOMSHAPE_LTR][28*0+14] = 42
+	roomWall[RoomShape.ROOMSHAPE_LTR][28*1+14] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LTR][28*2+14] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LTR][28*3+14] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LTR][28*4+14] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LTR][28*5+14] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LTR][28*6+14] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LTR][28*7+14] = 182
+	roomWall[RoomShape.ROOMSHAPE_LTR][28*7+27] = 251
+	roomWall[RoomShape.ROOMSHAPE_LTR][28*8+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LTR][28*9+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LTR][28*10+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LTR][28*11+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LTR][28*12+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LTR][28*13+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LTR][28*14+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LTR][28*15+27] = 419
+	roomWall[RoomShape.ROOMSHAPE_LTR][1] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LTR][2] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LTR][3] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LTR][4] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LTR][5] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LTR][6] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LTR][7] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LTR][8] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LTR][9] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LTR][10] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LTR][11] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LTR][12] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LTR][13] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LTR][15+196] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LTR][16+196] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LTR][17+196] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LTR][18+196] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LTR][19+196] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LTR][20+196] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LTR][21+196] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LTR][22+196] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LTR][23+196] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LTR][24+196] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LTR][25+196] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LTR][26+196] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LTR][1+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LTR][2+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LTR][3+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LTR][4+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LTR][5+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LTR][6+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LTR][7+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LTR][8+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LTR][9+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LTR][10+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LTR][11+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LTR][12+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LTR][13+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LTR][14+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LTR][15+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LTR][16+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LTR][17+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LTR][18+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LTR][19+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LTR][20+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LTR][21+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LTR][22+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LTR][23+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LTR][24+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LTR][25+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LTR][26+420] = "down"
+
+	roomWall[RoomShape.ROOMSHAPE_LBL] = {}
+	roomWall[RoomShape.ROOMSHAPE_LBL][28*0] = 28
+	roomWall[RoomShape.ROOMSHAPE_LBL][28*1] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LBL][28*2] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LBL][28*3] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LBL][28*4] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LBL][28*5] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LBL][28*6] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LBL][28*7] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LBL][28*8] = 196
+	roomWall[RoomShape.ROOMSHAPE_LBL][28*8+13] = 265
+	roomWall[RoomShape.ROOMSHAPE_LBL][28*9+13] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LBL][28*10+13] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LBL][28*11+13] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LBL][28*12+13] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LBL][28*13+13] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LBL][28*14+13] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LBL][28*15+13] = 405
+	roomWall[RoomShape.ROOMSHAPE_LBL][28*0+27] = 55
+	roomWall[RoomShape.ROOMSHAPE_LBL][28*1+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LBL][28*2+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LBL][28*3+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LBL][28*4+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LBL][28*5+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LBL][28*6+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LBL][28*7+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LBL][28*8+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LBL][28*9+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LBL][28*10+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LBL][28*11+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LBL][28*12+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LBL][28*13+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LBL][28*14+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LBL][28*15+27] = 419
+	roomWall[RoomShape.ROOMSHAPE_LBL][1] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LBL][2] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LBL][3] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LBL][4] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LBL][5] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LBL][6] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LBL][7] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LBL][8] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LBL][9] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LBL][10] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LBL][11] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LBL][12] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LBL][13] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LBL][14] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LBL][15] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LBL][16] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LBL][17] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LBL][18] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LBL][19] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LBL][20] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LBL][21] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LBL][22] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LBL][23] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LBL][24] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LBL][25] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LBL][26] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LBL][1+420-196] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LBL][2+420-196] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LBL][3+420-196] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LBL][4+420-196] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LBL][5+420-196] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LBL][6+420-196] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LBL][7+420-196] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LBL][8+420-196] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LBL][9+420-196] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LBL][10+420-196] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LBL][11+420-196] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LBL][12+420-196] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LBL][14+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LBL][15+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LBL][16+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LBL][17+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LBL][18+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LBL][19+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LBL][20+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LBL][21+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LBL][22+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LBL][23+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LBL][24+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LBL][25+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LBL][26+420] = "down"
+
+	roomWall[RoomShape.ROOMSHAPE_LBR] = {}
+	roomWall[RoomShape.ROOMSHAPE_LBR][28*0] = 28
+	roomWall[RoomShape.ROOMSHAPE_LBR][28*1] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LBR][28*2] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LBR][28*3] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LBR][28*4] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LBR][28*5] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LBR][28*6] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LBR][28*7] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LBR][28*8] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LBR][28*9] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LBR][28*10] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LBR][28*11] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LBR][28*12] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LBR][28*13] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LBR][28*14] = "left"
+	roomWall[RoomShape.ROOMSHAPE_LBR][28*15] = 392
+	roomWall[RoomShape.ROOMSHAPE_LBR][28*0+27] = 55
+	roomWall[RoomShape.ROOMSHAPE_LBR][28*1+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LBR][28*2+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LBR][28*3+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LBR][28*4+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LBR][28*5+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LBR][28*6+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LBR][28*7+27] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LBR][28*8+27] = 223
+	roomWall[RoomShape.ROOMSHAPE_LBR][28*8+27-13] = 266
+	roomWall[RoomShape.ROOMSHAPE_LBR][28*9+27-13] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LBR][28*10+27-13] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LBR][28*11+27-13] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LBR][28*12+27-13] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LBR][28*13+27-13] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LBR][28*14+27-13] = "right"
+	roomWall[RoomShape.ROOMSHAPE_LBR][28*15+27-13] = 406
+	roomWall[RoomShape.ROOMSHAPE_LBR][1] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LBR][2] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LBR][3] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LBR][4] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LBR][5] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LBR][6] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LBR][7] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LBR][8] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LBR][9] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LBR][10] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LBR][11] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LBR][12] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LBR][13] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LBR][14] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LBR][15] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LBR][16] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LBR][17] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LBR][18] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LBR][19] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LBR][20] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LBR][21] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LBR][22] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LBR][23] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LBR][24] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LBR][25] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LBR][26] = "up"
+	roomWall[RoomShape.ROOMSHAPE_LBR][1+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LBR][2+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LBR][3+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LBR][4+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LBR][5+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LBR][6+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LBR][7+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LBR][8+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LBR][9+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LBR][10+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LBR][11+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LBR][12+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LBR][13+420] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LBR][15+420-196] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LBR][16+420-196] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LBR][17+420-196] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LBR][18+420-196] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LBR][19+420-196] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LBR][20+420-196] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LBR][21+420-196] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LBR][22+420-196] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LBR][23+420-196] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LBR][24+420-196] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LBR][25+420-196] = "down"
+	roomWall[RoomShape.ROOMSHAPE_LBR][26+420-196] = "down"
+end
+loadRoomWall()
+
+local function ValidPortalWall(roomShape, roomGrid)
+	local shapeWallData = roomWall[roomShape]
+	if shapeWallData == nil then return end
+	local wallDirType = shapeWallData[roomGrid]
+	for i=1,1000 do
+		if type(wallDirType) == "number" then
+			roomGrid = wallDirType
+			wallDirType = shapeWallData[roomGrid]
+		else
+			break
+		end
+	end
+	if wallDirType == nil then return nil end
+	return roomGrid, wallDirType
+end
+
+local levelPosition = { RoomInLevelListIndex = -1, InRoomGridIndex = -1 }
 levelPosition.__index = levelPosition
-local function LevelPosition(levelGridIndex, roomGridIndex)
+local function LevelPosition(RoomInLevelListIndex, InRoomGridIndex)
 	local cted = {}
 	setmetatable(cted, levelPosition)
-	cted.levelGridIndex = levelGridIndex
-	cted.roomGridIndex = roomGridIndex
+	cted.RoomInLevelListIndex = RoomInLevelListIndex
+	cted.InRoomGridIndex = InRoomGridIndex
 	return cted
 end
 
-local CreatedPortals = {}
-local function InitCreatedPortalsArray()
-	CreatedPortals = {}
-	CreatedPortals[1] = {}
-	CreatedPortals[1][1] = nil
-	CreatedPortals[1][2] = nil
-	CreatedPortals[2] = {}
-	CreatedPortals[2][1] = nil
-	CreatedPortals[2][2] = nil
-	CreatedPortals[3] = {}
-	CreatedPortals[3][1] = nil
-	CreatedPortals[3][2] = nil
-	CreatedPortals[4] = {}
-	CreatedPortals[4][1] = nil
-	CreatedPortals[4][2] = nil
-end
-InitCreatedPortalsArray()
-
-local inRoomCreatedPortals = {}
-local function InitInRoomCreatedPortalsArray()
-	InRoomCreatedPortals = {}
-	InRoomCreatedPortals[1] = {}
-	InRoomCreatedPortals[1][1] = nil
-	InRoomCreatedPortals[1][2] = nil
-	InRoomCreatedPortals[2] = {}
-	InRoomCreatedPortals[2][1] = nil
-	InRoomCreatedPortals[2][2] = nil
-	InRoomCreatedPortals[3] = {}
-	InRoomCreatedPortals[3][1] = nil
-	InRoomCreatedPortals[3][2] = nil
-	InRoomCreatedPortals[4] = {}
-	InRoomCreatedPortals[4][1] = nil
-	InRoomCreatedPortals[4][2] = nil
-end
-InitInRoomCreatedPortalsArray()
-
 local gameInited = false
+local SuperPower = false
 
---local MC_ENTITY_TAKE_DMG_Room = 0
---local MC_ENTITY_TAKE_DMG_Forever = 0
-
---local HUDoffset = 10
+local EternalChargeForFree = true
+local roomClearBounsEnabled = false
 
 local EternalCharges = 0
 local EternalChargesLastRoom = 0
 
--- local lastMaxHearts = nil
--- local updatedCostumesOvertime = false
-local portalToolColor = { }
-portalToolColor[1] = "orange"
-portalToolColor[2] = "orange"
-portalToolColor[3] = "orange"
-portalToolColor[4] = "orange"
-local attackCharge = { }
-attackCharge[1] = 0
-attackCharge[2] = 0
-attackCharge[3] = 0
-attackCharge[4] = 0
+local queuedNextRoomGrid = nil
 
-local onceHoldingItem = { }
-onceHoldingItem[1] = false
-onceHoldingItem[2] = false
-onceHoldingItem[3] = false
-onceHoldingItem[4] = false
-local lastCanFly = { }
-lastCanFly[1] = nil
-lastCanFly[2] = nil
-lastCanFly[3] = nil
-lastCanFly[4] = nil
-local roomClearBounsEnabled = false
-local EternalChargeForFree = true
+local hexanowPlayerData = {
+}
+hexanowPlayerData.__index = hexanowPlayerData
 
---local EternalChargeSuppressed = false
---local Tainted = false
-
-local SuperPower = false
-
---local WhiteHexanowCollectibleID = 0
---local WhiteHexanowTrinketID = 0
---local WhiteHexanowCollectibleIDLastRoom = 0
---local WhiteHexanowTrinketIDLastRoom = 0
-
-local portalBlue = nil
-local portalOrange = nil
-local teledProjectiles = {}
---local fireworksToWipe = {}
---local rainbowFireworkRng = RNG()
---local tempt = 0
-
-local WhiteItem = {}
-local SelectedWhiteItem = {}
-local WhiteItemSelectPressed = {}
-local WhiteItemLastRoom = {}
-local SelectedWhiteItemLastRoom = {}
-
-local function InitWhiteItemArray()
-	WhiteItem[1] = {}
-	WhiteItem[2] = {}
-	WhiteItem[3] = {}
-	WhiteItem[4] = {}
-	
-	SelectedWhiteItem[1] = 1
-	SelectedWhiteItem[2] = 1
-	SelectedWhiteItem[3] = 1
-	SelectedWhiteItem[4] = 1
-	
-	WhiteItemSelectPressed[1] = 0
-	WhiteItemSelectPressed[2] = 0
-	WhiteItemSelectPressed[3] = 0
-	WhiteItemSelectPressed[4] = 0
-	
-	WhiteItem[1][1] = 0
-	WhiteItem[1][2] = 0
-	WhiteItem[1][3] = 0
-	
-	WhiteItem[2][1] = 0
-	WhiteItem[2][2] = 0
-	WhiteItem[2][3] = 0
-	
-	WhiteItem[3][1] = 0
-	WhiteItem[3][2] = 0
-	WhiteItem[3][3] = 0
-	
-	WhiteItem[4][1] = 0
-	WhiteItem[4][2] = 0
-	WhiteItem[4][3] = 0
-	
-	WhiteItemLastRoom = WhiteItem
+function hexanowPlayerData:UpdateLastRoomVar()
+	self.lastRoom = {}
+	self.lastRoom.WhiteItem = {}
+	self.lastRoom.CreatedPortals = {}
+	for slot=1, 3 do
+		self.lastRoom.WhiteItem[slot] = self.WhiteItem[slot]
+	end
+	self.lastRoom.SelectedWhiteItem = self.SelectedWhiteItem
+	self.lastRoom.portalToolColor = self.portalToolColor
+    for dim=0, 2 do
+		self.lastRoom.CreatedPortals[dim] = {}
+		for type=1, 2 do
+			self.lastRoom.CreatedPortals[dim][type] = self.CreatedPortals[dim][type]
+		end
+	end
+end
+function hexanowPlayerData:RewindLastRoomVar()
+	for slot=1, 3 do
+		self.WhiteItem[slot] = self.lastRoom.WhiteItem[slot]
+	end
+	self.SelectedWhiteItem = self.lastRoom.SelectedWhiteItem
+	self.portalToolColor = self.lastRoom.portalToolColor
+    for dim=0, 2 do
+		for type=1, 2 do
+			self.CreatedPortals[dim][type] = self.lastRoom.CreatedPortals[dim][type]
+		end
+	end
+	self:UpdateLastRoomVar()
+end
+function hexanowPlayerData:GenSpriteCaches()
+	self.sprites = {}
+	self.sprites.frame0 = Sprite()
+	self.sprites.frame1 = Sprite()
+	self.sprites.frame2 = Sprite()
+	self.sprites.frame3 = Sprite()
+	self.sprites.frame4 = Sprite()
+	self.sprites.arraw = Sprite()
+	self.sprites.item1 = Sprite()
+	self.sprites.item2 = Sprite()
+	self.sprites.item3 = Sprite()
+	self.sprites.portalBase1 = Sprite()
+	self.sprites.portalBase2 = Sprite()
+	self.sprites.portalCreated1 = Sprite()
+	self.sprites.portalCreated2 = Sprite()
+	self.sprites.portalSelected = Sprite()
+	self.sprites.frame0:Load("gfx/ui/HexanowInventory.anm2", true)
+	self.sprites.frame1:Load("gfx/ui/HexanowInventory.anm2", true)
+	self.sprites.frame2:Load("gfx/ui/HexanowInventory.anm2", true)
+	self.sprites.frame3:Load("gfx/ui/HexanowInventory.anm2", true)
+	self.sprites.frame4:Load("gfx/ui/HexanowInventory.anm2", true)
+	self.sprites.arraw:Load("gfx/ui/HexanowInventory.anm2", true)
+	self.sprites.item1:Load("gfx/ui/HexanowInventoryItem.anm2", true)
+	self.sprites.item2:Load("gfx/ui/HexanowInventoryItem.anm2", true)
+	self.sprites.item3:Load("gfx/ui/HexanowInventoryItem.anm2", true)
+	self.sprites.portalBase1:Load("gfx/ui/HexanowInventory.anm2", true)
+	self.sprites.portalBase2:Load("gfx/ui/HexanowInventory.anm2", true)
+	self.sprites.portalCreated1:Load("gfx/ui/HexanowInventory.anm2", true)
+	self.sprites.portalCreated2:Load("gfx/ui/HexanowInventory.anm2", true)
+	self.sprites.portalSelected:Load("gfx/ui/HexanowInventory.anm2", true)
+	self.sprites.arraw:SetFrame("Select", 0)
+	self.sprites.item1:SetFrame("Base", 0)
+	self.sprites.item2:SetFrame("Base", 0)
+	self.sprites.item3:SetFrame("Base", 0)
+	self.sprites.portalBase1:SetFrame("PortalBase", 0)
+	self.sprites.portalBase2:SetFrame("PortalBase", 1)
+	self.sprites.portalCreated1:SetFrame("PortalCreated", 0)
+	self.sprites.portalCreated2:SetFrame("PortalCreated", 1)
 end
 
-InitWhiteItemArray()
+local function HexanowPlayerData()
+	local cted = {}
+	setmetatable(cted, hexanowPlayerData)
+	cted.WhiteItem = {}
+	cted.WhiteItem[1] = 0
+	cted.WhiteItem[2] = 0
+	cted.WhiteItem[3] = 0
+	cted.SelectedWhiteItem = 1
+	cted.portalToolColor = 2
+	cted.CreatedPortals = {}
+	cted.CreatedPortals[0] = {}
+	cted.CreatedPortals[0][1] = nil
+	cted.CreatedPortals[0][2] = nil
+	cted.CreatedPortals[1] = {}
+	cted.CreatedPortals[1][1] = nil
+	cted.CreatedPortals[1][2] = nil
+	cted.CreatedPortals[2] = {}
+	cted.CreatedPortals[2][1] = nil
+	cted.CreatedPortals[2][2] = nil
+
+	cted:UpdateLastRoomVar()
+
+	cted.attackCharge = 0
+	cted.InRoomCreatedPortals = {}
+	cted.InRoomCreatedPortals[1] = nil
+	cted.InRoomCreatedPortals[2] = nil
+	cted.onceHoldingItem = false
+	cted.lastCanFly = nil
+	cted.WhiteItemSelectPressed = 0
+
+	cted:GenSpriteCaches()
+	return cted
+end
+
+local HexanowPlayerDatas = {}
+HexanowPlayerDatas[1] = HexanowPlayerData()
+HexanowPlayerDatas[2] = HexanowPlayerData()
+HexanowPlayerDatas[3] = HexanowPlayerData()
+HexanowPlayerDatas[4] = HexanowPlayerData()
 
 ------------------------------------------------------------
 ---------- 变量处理
@@ -245,122 +1043,60 @@ InitWhiteItemArray()
 
 local function UpdateLastRoomVar()
 	EternalChargesLastRoom = EternalCharges
-	WhiteItemLastRoom = WhiteItem
-	SelectedWhiteItemLastRoom = SelectedWhiteItem
-	
-	--WhiteHexanowCollectibleIDLastRoom = WhiteHexanowCollectibleID
-	--WhiteHexanowTrinketIDLastRoom = WhiteHexanowTrinketID
+	for playerID=1,4 do
+		HexanowPlayerDatas[playerID]:UpdateLastRoomVar()
+	end
 end
 
 -- 抹除临时变量
 local function WipeTempVar()
 	hexanowFlags:Wipe()
-
-	InitCreatedPortalsArray()
-	InitInRoomCreatedPortalsArray()
-
+	
 	gameInited = false
-
-	portalToolColor = { }
-	portalToolColor[1] = "orange"
-	portalToolColor[2] = "orange"
-	portalToolColor[3] = "orange"
-	portalToolColor[4] = "orange"
-
-	attackCharge = { }
-	attackCharge[1] = 0
-	attackCharge[2] = 0
-	attackCharge[3] = 0
-	attackCharge[4] = 0
 
 	EternalCharges = 0
 	EternalChargesLastRoom = 0
-
-	onceHoldingItem = { }
-	onceHoldingItem[1] = nil
-	onceHoldingItem[2] = nil
-	onceHoldingItem[3] = nil
-	onceHoldingItem[4] = nil
-	lastCanFly = { }
-	lastCanFly[1] = nil
-	lastCanFly[2] = nil
-	lastCanFly[3] = nil
-	lastCanFly[4] = nil
 	roomClearBounsEnabled = false
 	EternalChargeForFree = true
-	
-	--EternalChargeSuppressed = false
-	--Tainted = false
 	SuperPower = false
-	
-	--WhiteHexanowCollectibleID = 0
-	--WhiteHexanowTrinketID = 0
+	queuedNextRoomGrid = nil
 
-	portalBlue = nil
-	portalOrange = nil
-	teledProjectiles = {}
-	
-	InitWhiteItemArray()
-	UpdateLastRoomVar()
+	HexanowPlayerDatas = {}
+	HexanowPlayerDatas[1] = HexanowPlayerData()
+	HexanowPlayerDatas[2] = HexanowPlayerData()
+	HexanowPlayerDatas[3] = HexanowPlayerData()
+	HexanowPlayerDatas[4] = HexanowPlayerData()
 end
 
 local function RewindLastRoomVar()
 	EternalCharges = EternalChargesLastRoom
-	WhiteItem = WhiteItemLastRoom
-	SelectedWhiteItem = SelectedWhiteItemLastRoom
-	
-	--WhiteHexanowCollectibleID = WhiteHexanowCollectibleIDLastRoom
-	--WhiteHexanowTrinketID = WhiteHexanowTrinketIDLastRoom
+	for playerID=1,4 do
+		HexanowPlayerDatas[playerID]:RewindLastRoomVar()
+	end
+	UpdateLastRoomVar()
 end
 
 function hexanowObjectives:Apply()
 	hexanowFlags:Wipe()
 	hexanowFlags:LoadFromString(self:Read("Flags", ""))
-	
-	--HUDoffset = tonumber(self:Read("HUDoffset", "10"))
 	EternalCharges = tonumber(self:Read("EternalCharges", "0"))
-	
-	--[[
-	EternalChargeSuppressed = StringConvertToBoolean(self:Read("EternalChargeSuppressed", "false"))
-	--print("Eternal charge suppression state "..tostring(EternalChargeSuppressed))
-
-	Tainted = StringConvertToBoolean(self:Read("HexanowTaintedStarted", "false"))
-	]]
-	
-	
-	--[[
-	local WHIStr = self:Read("WhiteHexanowItem", "")
-	local WHIpoint = string.find(WHIStr, ":", 1)
-	if WHIpoint ~= nil then
-		local prefix = string.sub(WHIStr, 1, WHIpoint - 1)
-		local value = tonumber(string.sub(WHIStr, WHIpoint + 1, 256))
-		
-		if prefix == "Collectible" then
-			SetWhiteHexanowCollectible(player, value)
-		elseif prefix == "Trinket" then
-			--WhiteHexanowTrinket(value)
+	for playerID=1,4 do
+		HexanowPlayerDatas[playerID].SelectedWhiteItem = tonumber(self:Read("Player"..playerID.."-SelectedWhiteItem", "1"))
+		for i=1,3 do
+			HexanowPlayerDatas[playerID].WhiteItem[i] = tonumber(self:Read("Player"..playerID.."-WhiteItem-"..i, "0"))
 		end
-	end
-	]]
-	
-	for i=1,4 do
-		SelectedWhiteItem[i] = tonumber(self:Read("Player"..tostring(i).."-SelectedWhiteItem", "1"))
-		for j=1,3 do
-			WhiteItem[i][j] = tonumber(self:Read("Player"..tostring(i).."-WhiteItem-"..tostring(j), "0"))
+		HexanowPlayerDatas[playerID].portalToolColor = tonumber(self:Read("Player"..playerID.."-portalToolColor", "2"))
+		if HexanowPlayerDatas[playerID].portalToolColor ~= 1 and HexanowPlayerDatas[playerID].portalToolColor ~= 2 then
+			HexanowPlayerDatas[playerID].portalToolColor = 2
 		end
-		portalToolColor[i] = self:Read("Player"..tostring(i).."-portalToolColor", "orange")
-		if portalToolColor[i] ~= "blue" and portalToolColor[i] ~= "orange" then
-			portalToolColor[i] = "orange"
-		end
-		local levelGridIndex1 = tonumber(self:Read("Player"..tostring(i).."-CreatedPortal-1-levelGridIndex", "-1"))
-		local roomGridIndex1 = tonumber(self:Read("Player"..tostring(i).."-CreatedPortal-1-roomGridIndex", "-1"))
-		if levelGridIndex1 ~= nil and levelGridIndex1 > -1 and roomGridIndex1 ~= nil and roomGridIndex1 > -1 then
-			CreatedPortals[i][1] = LevelPosition(levelGridIndex1, roomGridIndex1)
-		end
-		local levelGridIndex2 = tonumber(self:Read("Player"..tostring(i).."-CreatedPortal-2-levelGridIndex", "-1"))
-		local roomGridIndex2 = tonumber(self:Read("Player"..tostring(i).."-CreatedPortal-2-roomGridIndex", "-1"))
-		if levelGridIndex2 ~= nil and levelGridIndex2 > -1 and roomGridIndex2 ~= nil and roomGridIndex2 > -1 then
-			CreatedPortals[i][2] = LevelPosition(levelGridIndex2, roomGridIndex2)
+		for dim=0,2 do
+			for type=1,2 do
+				local RoomInLevelListIndex = tonumber(self:Read("Player"..playerID.."-CreatedPortal-"..dim.."-"..type.."-RoomInLevelListIndex", "-1"))
+				local InRoomGridIndex = tonumber(self:Read("Player"..playerID.."-CreatedPortal-"..dim.."-"..type.."-InRoomGridIndex", "-1"))
+				if RoomInLevelListIndex ~= nil and RoomInLevelListIndex1 ~= -1 and InRoomGridIndex ~= nil and InRoomGridIndex ~= -1 then
+					HexanowPlayerDatas[playerID].CreatedPortals[dim][type] = LevelPosition(RoomInLevelListIndex, InRoomGridIndex)
+				end
+			end
 		end
 	end
 	
@@ -369,45 +1105,24 @@ end
 
 function hexanowObjectives:Recieve()
 	self:Write("Flags", hexanowFlags:ToString())
-	
-	--self:Write("HUDoffset", tostring(HUDoffset))
 	self:Write("EternalCharges", tostring(EternalCharges))
-	--self:Write("EternalChargeSuppressed", tostring(EternalChargeSuppressed))
-	--self:Write("HexanowTaintedStarted", tostring(Tainted))
-	
-	--[[
-	if WhiteHexanowCollectibleID ~= 0 then
-		self:Write("WhiteHexanowItem", "Collectible:"..tostring(WhiteHexanowCollectibleID))
-	--elseif WhiteHexanowTrinketID ~= 0 then
-	--	self:Write("WhiteHexanowItem", "Trinket:"..tostring(WhiteHexanowTrinketID))
-	else
-		self:Write("WhiteHexanowItem", "")
-	end
-	]]
-	
-	for i=1,4 do
-		self:Write("Player"..tostring(i).."-portalToolColor", tostring(portalToolColor[i]))
-
-		local portalInfoLID1 = -1
-		local portalInfoRID1 = -1
-		if CreatedPortals[i][1] ~= nil then
-			portalInfoLID1 = CreatedPortals[i][1].levelGridIndex
-			portalInfoRID1 = CreatedPortals[i][1].roomGridIndex
+	for playerID=1,4 do
+		self:Write("Player"..playerID.."-SelectedWhiteItem", tostring(HexanowPlayerDatas[playerID].SelectedWhiteItem))
+		for i=1,3 do
+			self:Write("Player"..playerID.."-WhiteItem-"..i, tostring(HexanowPlayerDatas[playerID].WhiteItem[i]))
 		end
-		self:Write("Player"..tostring(i).."-CreatedPortal-1-levelGridIndex", tostring(portalInfoLID1))
-		self:Write("Player"..tostring(i).."-CreatedPortal-1-roomGridIndex", tostring(portalInfoRID1))
-		local portalInfoLID2 = -1
-		local portalInfoRID2 = -1
-		if CreatedPortals[i][2] ~= nil then
-			portalInfoLID2 = CreatedPortals[i][2].levelGridIndex
-			portalInfoRID2 = CreatedPortals[i][2].roomGridIndex
-		end
-		self:Write("Player"..tostring(i).."-CreatedPortal-2-levelGridIndex", tostring(portalInfoLID2))
-		self:Write("Player"..tostring(i).."-CreatedPortal-2-roomGridIndex", tostring(portalInfoRID2))
-
-		self:Write("Player"..tostring(i).."-SelectedWhiteItem", tostring(SelectedWhiteItem[i]))
-		for j=1,3 do
-			self:Write("Player"..tostring(i).."-WhiteItem-"..tostring(j), tostring(WhiteItem[i][j]))
+		self:Write("Player"..playerID.."-portalToolColor", tostring(HexanowPlayerDatas[playerID].portalToolColor))
+		for dim=0,2 do
+			for type=1,2 do
+				local portalInfoLID = -1
+				local portalInfoRID = -1
+				if HexanowPlayerDatas[playerID].CreatedPortals[dim][type] ~= nil then
+					portalInfoLID = HexanowPlayerDatas[playerID].CreatedPortals[dim][type].RoomInLevelListIndex
+					portalInfoRID = HexanowPlayerDatas[playerID].CreatedPortals[dim][type].InRoomGridIndex
+				end
+				self:Write("Player"..playerID.."-CreatedPortal-"..dim.."-"..type.."-RoomInLevelListIndex", tostring(portalInfoLID))
+				self:Write("Player"..playerID.."-CreatedPortal-"..dim.."-"..type.."-InRoomGridIndex", tostring(portalInfoRID))
+			end
 		end
 	end
 end
@@ -503,7 +1218,7 @@ end
 
 -- 给予永恒充能
 local function ApplyEternalCharge(player)
-	if player:GetEternalHearts() <= 0 and EternalCharges > 0then
+	if player:GetEternalHearts() <= 0 and EternalCharges > 0 then
 		player:AddEternalHearts(1)
 		EternalCharges = EternalCharges - 1
 	end
@@ -697,7 +1412,7 @@ local function HexanowCollectibleMaxAllowed(player, ID)
 	]]
 	
 	for i=1,3 do
-		if WhiteItem[playerID][i] == ID then
+		if HexanowPlayerDatas[playerID].WhiteItem[i] == ID then
 			num = num + 1
 		end
 	end
@@ -712,7 +1427,7 @@ local function IsWhiteHexanowCollectible(player, ID)
 		return false
 	end
 	for i=1,3 do
-		if WhiteItem[playerID][i] == ID then
+		if HexanowPlayerDatas[playerID].WhiteItem[i] == ID then
 			return true
 		end
 	end
@@ -735,7 +1450,7 @@ local function SetWhiteHexanowCollectible(player, ID, slot)
 	end
 	
 	if slot == nil then
-		slot = SelectedWhiteItem[playerID]
+		slot = HexanowPlayerDatas[playerID].SelectedWhiteItem
 	end
 	
 	if slot ~= 1
@@ -745,7 +1460,7 @@ local function SetWhiteHexanowCollectible(player, ID, slot)
 		return nil
 	end
 	
-	WhiteItem[playerID][slot] = ID
+	HexanowPlayerDatas[playerID].WhiteItem[slot] = ID
 end
 
 local function PickupWhiteHexanowCollectible(player, ID, slot)
@@ -761,7 +1476,7 @@ local function PickupWhiteHexanowCollectible(player, ID, slot)
 	end
 	
 	if slot == nil then
-		slot = SelectedWhiteItem[playerID]
+		slot = HexanowPlayerDatas[playerID].SelectedWhiteItem
 	end
 	
 	if slot ~= 1
@@ -779,9 +1494,9 @@ local function PickupWhiteHexanowCollectible(player, ID, slot)
 			and player:GetActiveItem(ActiveSlot.SLOT_SECONDARY) == CollectibleType.COLLECTIBLE_NULL
 			)
 		then
-			if WhiteItem[playerID][1] == primaryAcItem then slot = 1 end
-			if WhiteItem[playerID][2] == primaryAcItem then slot = 2 end
-			if WhiteItem[playerID][3] == primaryAcItem then slot = 3 end
+			if HexanowPlayerDatas[playerID].WhiteItem[1] == primaryAcItem then slot = 1 end
+			if HexanowPlayerDatas[playerID].WhiteItem[2] == primaryAcItem then slot = 2 end
+			if HexanowPlayerDatas[playerID].WhiteItem[3] == primaryAcItem then slot = 3 end
 		end
 	end
 	
@@ -791,22 +1506,102 @@ local function PickupWhiteHexanowCollectible(player, ID, slot)
 	end
 	
 	if ID ~= CollectibleType.COLLECTIBLE_SCHOOLBAG
-	and WhiteItem[playerID][slot] == CollectibleType.COLLECTIBLE_SCHOOLBAG then
+	and HexanowPlayerDatas[playerID].WhiteItem[slot] == CollectibleType.COLLECTIBLE_SCHOOLBAG then
 		local secondaryID = player:GetActiveItem(ActiveSlot.SLOT_SECONDARY)
 		if secondaryID ~= CollectibleType.COLLECTIBLE_NULL then
-			if WhiteItem[playerID][1] == secondaryID then
-				WhiteItem[playerID][1] = 0
+			if HexanowPlayerDatas[playerID].WhiteItem[1] == secondaryID then
+				HexanowPlayerDatas[playerID].WhiteItem[1] = 0
 			end
-			if WhiteItem[playerID][2] == secondaryID then
-				WhiteItem[playerID][2] = 0
+			if HexanowPlayerDatas[playerID].WhiteItem[2] == secondaryID then
+				HexanowPlayerDatas[playerID].WhiteItem[2] = 0
 			end
-			if WhiteItem[playerID][3] == secondaryID then
-				WhiteItem[playerID][3] = 0
+			if HexanowPlayerDatas[playerID].WhiteItem[3] == secondaryID then
+				HexanowPlayerDatas[playerID].WhiteItem[3] = 0
 			end
 		end
 	end
 	
 	SetWhiteHexanowCollectible(player, ID, slot)
+end
+
+local function fromDirectionString(str)
+	if str == "left" then
+		return Direction.LEFT
+	elseif str == "up" then
+		return Direction.UP
+	elseif str == "right" then
+		return Direction.RIGHT
+	elseif str == "down" then
+		return Direction.DOWN
+	else
+		return Direction.NO_DIRECTION
+	end
+end
+
+local function TeleportToRoomDescLocation(player, gridIndex, dimension, inInRoomGridIndex)
+	Game():StartRoomTransition(gridIndex, Direction.NO_DIRECTION, RoomTransitionAnim.WOMB_TELEPORT, player, dimension)
+	queuedNextRoomGrid = inInRoomGridIndex
+	if player ~= nil then
+		player:AnimateTeleport(true)
+	end
+	return true
+end
+
+local function TeleportToLevelLocation(player, RoomInLevelListIndex, InRoomGridIndex)
+	local roomDesc = Game():GetLevel():GetRooms():Get(RoomInLevelListIndex)
+	if roomDesc == nil
+	or roomDesc.SafeGridIndex < 0
+	then
+		return false
+	end
+	return TeleportToRoomDescLocation(player, roomDesc.SafeGridIndex, GetDimensionOfRoomDesc(roomDesc), InRoomGridIndex)
+end
+
+local function IsPortalInSameRoom(portalOwnerPlayerID, portalColorType)
+	local level = Game():GetLevel()
+	local levelPosition = HexanowPlayerDatas[portalOwnerPlayerID].CreatedPortals[GetCurrentDimension()][portalColorType]
+	return levelPosition.RoomInLevelListIndex == level:GetCurrentRoomDesc().ListIndex
+end
+
+local function TeleportToPortalLocation(entity, portalOwnerPlayerID, portalColorType, originalDegree)
+	local room = Game():GetRoom()
+	local location = HexanowPlayerDatas[portalOwnerPlayerID].CreatedPortals[GetCurrentDimension()][portalColorType]
+	if location ~= nil then
+		if IsPortalInSameRoom(portalOwnerPlayerID, portalColorType) then
+			local inInRoomGridIndex, direction = ValidPortalWall(room:GetRoomShape(), location.InRoomGridIndex)
+			local pos = room:GetGridPosition(inInRoomGridIndex)
+			direction = fromDirectionString(direction)
+			if pos ~= nil and direction ~= Direction.NO_DIRECTION then
+				local outFacingDeg = ((direction) * 90) % 360
+				local dir = Vector.FromAngle(outFacingDeg)
+				local rot = (outFacingDeg - originalDegree - 180) % 360
+				entity.Position = pos + (dir * 40)
+				entity.Velocity = entity.Velocity:Rotated(rot)
+				--entity:AddVelocity(dir * 40)
+				--entity:AddControlsCooldown(2)
+			end
+		elseif entity:ToPlayer() ~= nil then
+			if location.InRoomGridIndex == nil then
+				print("NIL!!!")
+			end
+			return TeleportToLevelLocation(entity:ToPlayer(), location.RoomInLevelListIndex, location.InRoomGridIndex)
+		end
+	end
+	return false
+end
+
+
+local function HasValidCreatedPortal(portalOwnerPlayerID, portalColorType)
+	local level = Game():GetLevel()
+	local levelPosition = HexanowPlayerDatas[portalOwnerPlayerID].CreatedPortals[GetCurrentDimension()][portalColorType]
+	if levelPosition == nil then
+		return false
+	end
+	local portalRoomDesc = level:GetRooms():Get(levelPosition.RoomInLevelListIndex)
+	if (portalRoomDesc == nil or portalRoomDesc.SafeGridIndex < 0) and not IsPortalInSameRoom(portalOwnerPlayerID, portalColorType) then
+		return false
+	end
+	return true
 end
 
 local function MaintainPortal(skipCreationAnim)
@@ -817,6 +1612,7 @@ local function MaintainPortal(skipCreationAnim)
 	local roomDesc = level:GetCurrentRoomDesc()
 	local roomEntities = Isaac.GetRoomEntities()
 	local roomPortals = {}
+	local dimension = GetCurrentDimension()
 	roomPortals[1] = {}
 	roomPortals[2] = {}
 	roomPortals[3] = {}
@@ -837,21 +1633,34 @@ local function MaintainPortal(skipCreationAnim)
 			end
 		end
 	end
-	for i=1,4 do
-		for j=1,2 do
-			local portalCode = i*2 + j - 2
-			local levelPosition = CreatedPortals[i][j]
+	for playerID=1,4 do
+		for portaltype=1,2 do
+			if HexanowPlayerDatas[playerID].InRoomCreatedPortals[portaltype] ~= nil
+			and HexanowPlayerDatas[playerID].InRoomCreatedPortals[portaltype]:IsDead()
+			then
+				HexanowPlayerDatas[playerID].InRoomCreatedPortals[portaltype] = nil
+			end
+			local portalCode = playerID*2 + portaltype - 2
+			local levelPosition = HexanowPlayerDatas[playerID].CreatedPortals[dimension][portaltype]
+			local inInRoomGridIndex = nil
+			local direction = nil
 			local pos = nil
 			local isInRoom = false
 			if levelPosition ~= nil then
-				pos = room:GetGridPosition(levelPosition.roomGridIndex)
-				isInRoom = levelPosition.levelGridIndex == roomDesc.GridIndex
-				if isInRoom and pos == nil then
-					isInRoom = false
-					CreatedPortals[i][j] = nil
+				isInRoom = levelPosition.RoomInLevelListIndex == roomDesc.ListIndex
+				if isInRoom then
+					inInRoomGridIndex, direction = ValidPortalWall(room:GetRoomShape(), levelPosition.InRoomGridIndex)
+					pos = room:GetGridPosition(inInRoomGridIndex)
+					direction = fromDirectionString(direction)
+					if inInRoomGridIndex == nil or direction == Direction.NO_DIRECTION or pos == nil or room:GetType() == RoomType.ROOM_DUNGEON then
+						isInRoom = false
+						pos = nil
+						direction = nil
+						HexanowPlayerDatas[playerID].CreatedPortals[dimension][portaltype] = nil
+					end
 				end
 			end
-			local foundMatchedPortal = false--isInRoom and InRoomCreatedPortals[i][j] ~= nil and pos.X == InRoomCreatedPortals[i][j].Position.X and pos.Y == InRoomCreatedPortals[i][j].Position.Y
+			local foundMatchedPortal = false--isInRoom and HexanowPlayerDatas[playerID].InRoomCreatedPortals[portaltype] ~= nil and pos.X == HexanowPlayerDatas[playerID].InRoomCreatedPortals[portaltype].Position.X and pos.Y == HexanowPlayerDatas[playerID].InRoomCreatedPortals[portaltype].Position.Y
 			local portals = roomPortals[portalCode]
 			--for k=1,#portals do 
 			for k,portal in pairs(portals) do --remove invalid portals
@@ -861,65 +1670,185 @@ local function MaintainPortal(skipCreationAnim)
 				and pos.Y == portal.Position.Y
 				then
 					foundMatchedPortal = true
-					InRoomCreatedPortals[i][j] = portal
+					HexanowPlayerDatas[playerID].InRoomCreatedPortals[portaltype] = portal
 				else
+					if HexanowPlayerDatas[playerID].InRoomCreatedPortals[portaltype] == portal then
+						HexanowPlayerDatas[playerID].InRoomCreatedPortals[portaltype] = nil
+					end
 					portal:Remove()
 				end
 			end
 			if isInRoom and not foundMatchedPortal then --gen missing portal
 				local newPortal = Isaac.Spawn(EntityType.ENTITY_EFFECT, entityVariantHexanowPortalDoor, portalCode, pos, Vector(0,0), player)
+				newPortal.SpriteRotation = ((direction - 1) * 90) % 360
+				--newPortal:AddEntityFlags(EntityFlag.FLAG_PERSISTENT)
 				local sprite = newPortal:GetSprite()
-				sprite.Color = GetHexanowPortalColor(Game():GetPlayer(i-1), j)
-				InRoomCreatedPortals[i][j] = newPortal
+				sprite.Color = GetHexanowPortalColor(Game():GetPlayer(playerID-1), portaltype)
+				HexanowPlayerDatas[playerID].InRoomCreatedPortals[portaltype] = newPortal
+			end
+		end
+	end
+
+	if skipCreationAnim then
+		for i=1, 8 do
+			local ownerId = math.ceil(i/2)
+			local otherType = i%2+1
+			local portals = roomPortals[i]
+			for j=1,#portals do
+				local portal = portals[j]
+				if not portal:IsDead() then
+					CallForEveryEntity(
+						function(entity)
+							if entity:ToPlayer() ~= nil
+							or entity:ToTear() ~= nil
+							--or entity.Type == EntityType.ENTITY_FROZEN_ENEMY
+							then
+								local dist = entity.Position:Distance(portal.Position)
+								if dist < 40 then--28.284271247461900976033774484194 then
+									TeleportToPortalLocation(entity, ownerId, otherType, (portal.SpriteRotation + 90) % 360)
+								end
+							end
+						end
+					)
+				end
 			end
 		end
 	end
 end
 
-local function SetPortal(player, type, room, roomDesc, pos)
+local function SetPortal(player, typeNum, room, roomDesc, pos)
 	pos.X = math.floor((pos.X + 20)/40.0)*40
 	pos.Y = math.floor((pos.Y+ 20)/40.0)*40
 	local playerID = GetPlayerID(player)
-	local typeNum = 1
-	if type == "orange" then
-		typeNum = 2
+	local dimension = GetCurrentDimension()
+	local inInRoomGridIndex, direction = ValidPortalWall(room:GetRoomShape(), room:GetGridIndex(pos))
+	if inInRoomGridIndex == nil or direction == nil then
+		HexanowPlayerDatas[playerID].CreatedPortals[dimension][typeNum] = nil
+		MaintainPortal(false)
+		return false
 	end
-	local inRoomGridIndex = room:GetGridIndex(pos)
-
-	if CreatedPortals[playerID][typeNum] ~= nil
-	and CreatedPortals[playerID][typeNum].levelGridIndex == roomDesc.GridIndex
-	and CreatedPortals[playerID][typeNum].roomGridIndex == inRoomGridIndex then
-		return
+	local anotherTypeNum = 1
+	if typeNum == 1 then anotherTypeNum = 2 end
+	if HexanowPlayerDatas[playerID].CreatedPortals[dimension][anotherTypeNum] ~= nil
+	and HexanowPlayerDatas[playerID].CreatedPortals[dimension][anotherTypeNum].RoomInLevelListIndex == roomDesc.ListIndex
+	then
+		if HexanowPlayerDatas[playerID].CreatedPortals[dimension][anotherTypeNum].InRoomGridIndex == inInRoomGridIndex then
+			HexanowPlayerDatas[playerID].CreatedPortals[dimension][anotherTypeNum] = nil
+		end
 	end
 
+	for i=1,4 do
+		if i ~= playerID then
+			for j=1,2 do
+				if HexanowPlayerDatas[i].CreatedPortals[dimension][j] ~= nil
+				and HexanowPlayerDatas[i].CreatedPortals[dimension][j].RoomInLevelListIndex == roomDesc.ListIndex
+				and HexanowPlayerDatas[i].CreatedPortals[dimension][j].InRoomGridIndex == inInRoomGridIndex
+				then
+					HexanowPlayerDatas[playerID].CreatedPortals[dimension][typeNum] = nil
+					MaintainPortal(false)
+					return false
+				end
+			end
+		end
+	end
+
+	if HexanowPlayerDatas[playerID].CreatedPortals[dimension][typeNum] ~= nil
+	and HexanowPlayerDatas[playerID].CreatedPortals[dimension][typeNum].RoomInLevelListIndex == roomDesc.ListIndex
+	and HexanowPlayerDatas[playerID].CreatedPortals[dimension][typeNum].InRoomGridIndex == inInRoomGridIndex
+	then
+		return true
+	end
 	--[[
-	CreatedPortals[playerID][typeNum] = nil
-	if InRoomCreatedPortals[playerID][typeNum] ~= nil then
-		InRoomCreatedPortals[playerID][typeNum]:Remove()
-		InRoomCreatedPortals[playerID][typeNum] = nil
+	HexanowPlayerDatas[playerID].[dimension]CreatedPortals[typeNum] = nil
+	if HexanowPlayerDatas[playerID].InRoomCreatedPortals[typeNum] ~= nil then
+		HexanowPlayerDatas[playerID].InRoomCreatedPortals[typeNum]:Remove()
+		HexanowPlayerDatas[playerID].InRoomCreatedPortals[typeNum] = nil
 	end
 	]]
-
-	if inRoomGridIndex ~= -1 then
-		CreatedPortals[playerID][typeNum] = LevelPosition(roomDesc.GridIndex, inRoomGridIndex)
+	HexanowPlayerDatas[playerID].CreatedPortals[dimension][typeNum] = nil
+	if room:GetType() ~= RoomType.ROOM_DUNGEON and inInRoomGridIndex ~= -1 then
+		HexanowPlayerDatas[playerID].CreatedPortals[dimension][typeNum] = LevelPosition(roomDesc.ListIndex, inInRoomGridIndex)
+		return true
 	end
 	MaintainPortal(false)
+	return true
 end
 
-local function CastHexanowLaser(player, dir, colorType, fromOtherBeam)
-	local degrees = dir:GetAngleDegrees()
-	local laser = EntityLaser.ShootAngle(entityVariantHexanowLaser, player.Position, degrees, 10, Vector(0,-26), player)
+local function HexanowLaserOverPortalLocation(player, degrees, colorType)
+	local playerID = GetPlayerID(player)
+	local room = Game():GetRoom()
+	local dimension = GetCurrentDimension()
+	--local thisPortal = HexanowPlayerDatas[playerID].InRoomCreatedPortals[colorType]
+	--local otherPortal = HexanowPlayerDatas[playerID].InRoomCreatedPortals[(colorType)%2+1]
+	local thisPortal = HexanowPlayerDatas[playerID].CreatedPortals[dimension][colorType]
+	local otherPortal = HexanowPlayerDatas[playerID].CreatedPortals[dimension][(colorType)%2+1]
+	if thisPortal == nil or otherPortal == nil
+	or not IsPortalInSameRoom(playerID, 1)
+	or not IsPortalInSameRoom(playerID, 2)
+	then
+		return nil
+	end
+	local inInRoomGridIndex1, direction1 = ValidPortalWall(room:GetRoomShape(), thisPortal.InRoomGridIndex)
+	local inInRoomGridIndex2, direction2 = ValidPortalWall(room:GetRoomShape(), otherPortal.InRoomGridIndex)
+	direction1 = fromDirectionString(direction1)
+	direction2 = fromDirectionString(direction2)
+	
+	if inInRoomGridIndex1 == nil or direction1 == Direction.NO_DIRECTION
+	or inInRoomGridIndex2 == nil or direction2 == Direction.NO_DIRECTION
+	then
+		return nil
+	end
+	local pos1 = room:GetGridPosition(inInRoomGridIndex1)
+	local pos2 = room:GetGridPosition(inInRoomGridIndex2)
+	local rot1 = ((direction1 - 1) * 90) % 360
+	local rot2 = ((direction2 - 1) * 90) % 360
+	--if thisPortal ~= nil and otherPortal ~= nil then
+	if pos1 ~= nil and pos2 ~= nil and rot1 ~= nil and rot2 ~= nil then
+		return pos2, (rot2 - rot1 - 180 + degrees) % 360
+	end
+	return nil
+end
+
+local function CastHexanowLaser(player, position, degrees, colorType, fromOtherBeam)
+	local offset = Vector(0, 0)
+	if not fromOtherBeam then
+		offset = Vector(0, -26)
+	end
+	local laser = EntityLaser.ShootAngle(entityVariantHexanowLaser, position, degrees, 10, offset, player)
+	local sprite = laser:GetSprite()
+	sprite.Color = GetHexanowPortalColor(player, colorType)
 	laser.CollisionDamage = player.Damage
 	laser.DepthOffset = -10 --3000
 	laser.Shrink = false
 	laser.DisableFollowParent = true
 	laser.OneHit = true
 	laser.GridHit = true
-	laser.TearFlags = player.TearFlags
+	laser.TearFlags = player.TearFlags | TearFlags.TEAR_ICE
 	if not fromOtherBeam then
-		local endpoint = EntityLaser.CalculateEndPoint(player.Position + Vector(0, -26), dir, Vector(0,0), player, 20)
-		SetPortal(player, colorType, Game():GetRoom(), Game():GetLevel():GetCurrentRoomDesc(), endpoint)
+		local endpoint = EntityLaser.CalculateEndPoint(position + offset, Vector.FromAngle(degrees), Vector(0,0), player, 20)
+		local settedPortal = SetPortal(player, colorType, Game():GetRoom(), Game():GetLevel():GetCurrentRoomDesc(), endpoint)
+		if settedPortal then
+			local newPosition, newDegrees = HexanowLaserOverPortalLocation(player, degrees, colorType)
+			if newPosition ~= nil and newDegrees ~= nil then
+				CastHexanowLaser(player, newPosition, newDegrees, (colorType)%2+1, true)
+				local newEndpoint = EntityLaser.CalculateEndPoint(newPosition, Vector.FromAngle(newDegrees), Vector(0,0), player, 20)
+				local intersection = ComputeIntersection(position, endpoint, newPosition, newEndpoint)
+				if degrees ~= newDegrees and intersection ~= nil then
+					Game():BombDamage(
+						intersection, 
+						player.Damage, 
+						40,
+						false,
+						player,
+						player.TearFlags | TearFlags.TEAR_ICE, 
+						DamageFlag.DAMAGE_LASER,
+						false
+					)
+				end
+			end
+		end
 	end
+	return laser
 end
 
 local function TaintedHexanowRoomOverride()
@@ -1153,15 +2082,15 @@ local function TickEventHexanow(player)
 		]]
 		if player:IsHoldingItem()
 		then
-			onceHoldingItem[playerID] = true
-		elseif onceHoldingItem[playerID] then
+			HexanowPlayerDatas[playerID].onceHoldingItem = true
+		elseif HexanowPlayerDatas[playerID].onceHoldingItem then
 			UpdateCostumes(player)
-			onceHoldingItem[playerID] = false
+			HexanowPlayerDatas[playerID].onceHoldingItem = false
 		end
 		--[[
-		if lastCanFly[playerID] ~= player.CanFly then
+		if HexanowPlayerDatas[playerID].lastCanFly ~= player.CanFly then
 			UpdateCostumes(player)
-			lastCanFly[playerID] = player.CanFly
+			HexanowPlayerDatas[playerID].lastCanFly = player.CanFly
 		end
 		]]
 			
@@ -1186,11 +2115,11 @@ local function TickEventHexanow(player)
 		
 		if Input.IsActionPressed(ButtonAction.ACTION_DROP, player.ControllerIndex)
 		then
-			if WhiteItemSelectPressed[playerID] >= 20 then
-				WhiteItemSelectPressed[playerID] = 0
+			if HexanowPlayerDatas[playerID].WhiteItemSelectPressed >= 20 then
+				HexanowPlayerDatas[playerID].WhiteItemSelectPressed = 0
 			end
-			if WhiteItemSelectPressed[playerID] == 0 then
-				local slot = SelectedWhiteItem[playerID]
+			if HexanowPlayerDatas[playerID].WhiteItemSelectPressed == 0 then
+				local slot = HexanowPlayerDatas[playerID].SelectedWhiteItem
 				
 				if slot == 1
 				or slot == 2
@@ -1201,11 +2130,11 @@ local function TickEventHexanow(player)
 					slot = 1
 				end
 				
-				SelectedWhiteItem[playerID] = slot
+				HexanowPlayerDatas[playerID].SelectedWhiteItem = slot
 			end
-			WhiteItemSelectPressed[playerID] = WhiteItemSelectPressed[playerID] + 1
+			HexanowPlayerDatas[playerID].WhiteItemSelectPressed = HexanowPlayerDatas[playerID].WhiteItemSelectPressed + 1
 		else
-			WhiteItemSelectPressed[playerID] = 0
+			HexanowPlayerDatas[playerID].WhiteItemSelectPressed = 0
 		end
 		
 		--local tracedItems = player:GetCollectibleCount()
@@ -1215,9 +2144,9 @@ local function TickEventHexanow(player)
 		--local hasWhiteCollectible = false
 		--local hasWhiteTrinket = false
 		
-		local item1 = WhiteItem[playerID][1]
-		local item2 = WhiteItem[playerID][2]
-		local item3 = WhiteItem[playerID][3]
+		local item1 = HexanowPlayerDatas[playerID].WhiteItem[1]
+		local item2 = HexanowPlayerDatas[playerID].WhiteItem[2]
+		local item3 = HexanowPlayerDatas[playerID].WhiteItem[3]
 		
 		local item1Missing = item1 == 0
 		local item2Missing = item2 == 0
@@ -1344,12 +2273,12 @@ local function TryCastFireHexanow(player)
 		end
 		local aimDirection = player:GetAimDirection();
 
-		attackCharge[playerID] = attackCharge[playerID] + 1
-		if attackCharge[playerID] >= player.MaxFireDelay
+		HexanowPlayerDatas[playerID].attackCharge = HexanowPlayerDatas[playerID].attackCharge + 1
+		if HexanowPlayerDatas[playerID].attackCharge >= player.MaxFireDelay
 		and not (aimDirection.X == 0 and aimDirection.Y == 0)
 		then
-			attackCharge[playerID] = 0
-			CastHexanowLaser(player, aimDirection, portalToolColor[playerID])
+			HexanowPlayerDatas[playerID].attackCharge = 0
+			CastHexanowLaser(player, player.Position, aimDirection:GetAngleDegrees(), HexanowPlayerDatas[playerID].portalToolColor)
 		end
 	end
 end
@@ -1460,60 +2389,24 @@ local function SelManageRander(pos, playerID, sortNum)
 	end
 	pos = pos + Vector(sortNum*16, 0)
 	
-	local frame0 = Sprite()
-	local frame1 = Sprite()
-	local frame2 = Sprite()
-	local frame3 = Sprite()
-	local frame4 = Sprite()
-	local arraw = Sprite()
-	local item1 = Sprite()
-	local item2 = Sprite()
-	local item3 = Sprite()
-	local portalBase1 = Sprite()
-	local portalBase2 = Sprite()
-	local portalCreated1 = Sprite()
-	local portalCreated2 = Sprite()
-	local portalSelected = Sprite()
-	
-	frame0:Load("gfx/ui/HexanowInventory.anm2", true)
-	frame1:Load("gfx/ui/HexanowInventory.anm2", true)
-	frame2:Load("gfx/ui/HexanowInventory.anm2", true)
-	frame3:Load("gfx/ui/HexanowInventory.anm2", true)
-	frame4:Load("gfx/ui/HexanowInventory.anm2", true)
-	arraw:Load("gfx/ui/HexanowInventory.anm2", true)
-	item1:Load("gfx/ui/HexanowInventoryItem.anm2", true)
-	item2:Load("gfx/ui/HexanowInventoryItem.anm2", true)
-	item3:Load("gfx/ui/HexanowInventoryItem.anm2", true)
-	portalBase1:Load("gfx/ui/HexanowInventory.anm2", true)
-	portalBase2:Load("gfx/ui/HexanowInventory.anm2", true)
-	portalCreated1:Load("gfx/ui/HexanowInventory.anm2", true)
-	portalCreated2:Load("gfx/ui/HexanowInventory.anm2", true)
-	portalSelected:Load("gfx/ui/HexanowInventory.anm2", true)
+	local frame0 = HexanowPlayerDatas[playerID].sprites.frame0
+	local frame1 = HexanowPlayerDatas[playerID].sprites.frame1
+	local frame2 = HexanowPlayerDatas[playerID].sprites.frame2
+	local frame3 = HexanowPlayerDatas[playerID].sprites.frame3
+	local frame4 = HexanowPlayerDatas[playerID].sprites.frame4
+	local arraw = HexanowPlayerDatas[playerID].sprites.arraw
+	local item1 = HexanowPlayerDatas[playerID].sprites.item1
+	local item2 = HexanowPlayerDatas[playerID].sprites.item2
+	local item3 = HexanowPlayerDatas[playerID].sprites.item3
+	local portalBase1 = HexanowPlayerDatas[playerID].sprites.portalBase1
+	local portalBase2 = HexanowPlayerDatas[playerID].sprites.portalBase2
+	local portalCreated1 = HexanowPlayerDatas[playerID].sprites.portalCreated1
+	local portalCreated2 = HexanowPlayerDatas[playerID].sprites.portalCreated2
+	local portalSelected = HexanowPlayerDatas[playerID].sprites.portalSelected
 
 	local portalColor1 = GetHexanowPortalColor(Game():GetPlayer(playerID-1), 1)
 	local portalColor2 = GetHexanowPortalColor(Game():GetPlayer(playerID-1), 2)
 	
-	if WhiteItem[playerID][1] ~= nil then
-	local item = Isaac.GetItemConfig():GetCollectible(WhiteItem[playerID][1])
-		if item ~= nil then
-			item1:ReplaceSpritesheet(0,item.GfxFileName)
-			item1:LoadGraphics()
-		end
-	end
-	if WhiteItem[playerID][2] ~= nil then
-	local item = Isaac.GetItemConfig():GetCollectible(WhiteItem[playerID][2])
-		if item ~= nil then
-			item2:ReplaceSpritesheet(0,item.GfxFileName)
-			item2:LoadGraphics()
-		end
-	end
-	if WhiteItem[playerID][3] ~= nil then
-	local item = Isaac.GetItemConfig():GetCollectible(WhiteItem[playerID][3])
-		if item ~= nil then
-			item3:ReplaceSpritesheet(0,item.GfxFileName)
-			item3:LoadGraphics()
-		end
-	end
 	
 	--item3:ReplaceSpritesheet(0,"gfx/items/collectibles/".."Collectibles_118_Brimstone.png")
 	
@@ -1522,26 +2415,21 @@ local function SelManageRander(pos, playerID, sortNum)
 	frame2:SetFrame(FrameAnm, 1)
 	frame3:SetFrame(FrameAnm, 1)
 	frame4:SetFrame(FrameAnm, 2)
-	item1:SetFrame("Base", 0)
-	item2:SetFrame("Base", 0)
-	item3:SetFrame("Base", 0)
-	portalBase1:SetFrame("PortalBase", 0)
-	portalBase2:SetFrame("PortalBase", 1)
-	portalCreated1:SetFrame("PortalCreated", 0)
-	portalCreated2:SetFrame("PortalCreated", 1)
 
 	portalBase1.Color = portalColor1
 	portalBase2.Color = portalColor2
 	
-	if SelectedWhiteItem[playerID] == 1 then
+	--[[
+	if HexanowPlayerDatas[playerID].SelectedWhiteItem == 1 then
 		arraw:SetFrame("Select", 0)
-	elseif SelectedWhiteItem[playerID] == 2 then
+	elseif HexanowPlayerDatas[playerID].SelectedWhiteItem == 2 then
 		arraw:SetFrame("Select", 1)
-	elseif SelectedWhiteItem[playerID] == 3 then
+	elseif HexanowPlayerDatas[playerID].SelectedWhiteItem == 3 then
 		arraw:SetFrame("Select", 2)
 	else
 		arraw:SetFrame("Select", 3)
 	end
+	]]
 	
 	frame0:Render(pos + Vector(0,16*0), Vector(0,0), Vector(0,0))
 	frame1:Render(pos + Vector(0,16*1), Vector(0,0), Vector(0,0))
@@ -1552,8 +2440,8 @@ local function SelManageRander(pos, playerID, sortNum)
 	portalBase1:Render(pos + Vector(0,0), Vector(0,0), Vector(0,0))
 	portalBase2:Render(pos + Vector(0,0), Vector(0,0), Vector(0,0))
 
-	local portal1created = CreatedPortals[playerID][1] ~= nil
-	local portal2created = CreatedPortals[playerID][2] ~= nil
+	local portal1created = HasValidCreatedPortal(playerID,1)
+	local portal2created = HasValidCreatedPortal(playerID,2)
 	if portal1created then
 		portalCreated1.Color = portalColor1
 		portalCreated1:Render(pos + Vector(0,0), Vector(0,0), Vector(0,0))
@@ -1563,7 +2451,7 @@ local function SelManageRander(pos, playerID, sortNum)
 		portalCreated2:Render(pos + Vector(0,0), Vector(0,0), Vector(0,0))
 	end
 
-	if portalToolColor[playerID] == "orange" then
+	if HexanowPlayerDatas[playerID].portalToolColor == 2 then
 		if portal2created then
 			portalSelected:SetFrame("PortalSelectedCreated", 1)
 		else
@@ -1577,11 +2465,32 @@ local function SelManageRander(pos, playerID, sortNum)
 		end
 	end
 	
-	item1:Render(pos + Vector(0,16*1), Vector(0,0), Vector(0,0))
-	item2:Render(pos + Vector(0,16*2), Vector(0,0), Vector(0,0))
-	item3:Render(pos + Vector(0,16*3), Vector(0,0), Vector(0,0))
+	if HexanowPlayerDatas[playerID].WhiteItem[1] ~= nil then
+		local item = Isaac.GetItemConfig():GetCollectible(HexanowPlayerDatas[playerID].WhiteItem[1])
+		if item ~= nil then
+			item1:ReplaceSpritesheet(0,item.GfxFileName)
+			item1:LoadGraphics()
+			item1:Render(pos + Vector(0,16*1), Vector(0,0), Vector(0,0))
+		end
+	end
+	if HexanowPlayerDatas[playerID].WhiteItem[2] ~= nil then
+	local item = Isaac.GetItemConfig():GetCollectible(HexanowPlayerDatas[playerID].WhiteItem[2])
+		if item ~= nil then
+			item2:ReplaceSpritesheet(0,item.GfxFileName)
+			item2:LoadGraphics()
+			item2:Render(pos + Vector(0,16*2), Vector(0,0), Vector(0,0))
+		end
+	end
+	if HexanowPlayerDatas[playerID].WhiteItem[3] ~= nil then
+	local item = Isaac.GetItemConfig():GetCollectible(HexanowPlayerDatas[playerID].WhiteItem[3])
+		if item ~= nil then
+			item3:ReplaceSpritesheet(0,item.GfxFileName)
+			item3:LoadGraphics()
+			item3:Render(pos + Vector(0,16*3), Vector(0,0), Vector(0,0))
+		end
+	end
 	
-	arraw:Render(pos + Vector(0,0), Vector(0,0), Vector(0,0))
+	arraw:Render(pos + Vector(0,(HexanowPlayerDatas[playerID].SelectedWhiteItem-1)*15), Vector(0,0), Vector(0,0))
 	portalSelected:Render(pos + Vector(0,0), Vector(0,0), Vector(0,0))
 	
 end
@@ -1788,6 +2697,9 @@ function hexanowMod:ExecuteCmd(cmd, params)
 		]]
 		
 	end
+	if cmd == "toportal" then
+		TeleportToPortalLocation(Game():GetPlayer(0), 1, tonumber(params))
+	end
 	if cmd == "ffsp" then
 		SuperPower = not SuperPower
 		CallForEveryPlayer(
@@ -1849,6 +2761,18 @@ function hexanowMod:ExecuteCmd(cmd, params)
 			end
 		end
 	end
+	if cmd == "reportportals" then
+		local roomEntities = Isaac.GetRoomEntities()
+				
+		for i=1,4 do
+			for j=1,2 do
+				local entity = HexanowPlayerDatas[i].InRoomCreatedPortals[j]
+				if entity ~= nil then
+					print(tostring(entity.Type).."."..tostring(entity.Variant).."."..tostring(entity.SubType).." "..tostring(entity.Index).." ("..tostring(entity.Position.X)..", "..tostring(entity.Position.Y)..") ("..tostring(entity.PositionOffset.X)..", "..tostring(entity.PositionOffset.Y)..") "..tostring(entity.DepthOffset))
+				end
+			end
+		end
+	end
 	if cmd == "hflag" then
 		local subcmd = params
 		local subcmd_arg = ""
@@ -1894,10 +2818,11 @@ function hexanowMod:UsePortalTool(itemId, itemRng, player, useFlags, activeSlot,
 		Remove = false,
 		ShowAnim = false,
 	}
-	if portalToolColor[GetPlayerID(player)] == "blue" then
-		portalToolColor[GetPlayerID(player)] = "orange"
+	local playerID = GetPlayerID(player)
+	if HexanowPlayerDatas[playerID].portalToolColor == 1 then
+		HexanowPlayerDatas[playerID].portalToolColor = 2
 	else
-		portalToolColor[GetPlayerID(player)] = "blue"
+		HexanowPlayerDatas[playerID].portalToolColor = 1
 	end
 	--player:UseActiveItem(CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR, false, false, true, false)
 	
@@ -1906,15 +2831,14 @@ end
 hexanowMod:AddCallback(ModCallbacks.MC_USE_ITEM, hexanowMod.UsePortalTool, hexanowPortalTool)
 
 -- 时间回溯
-function hexanowMod:UsePortalTool(itemId, itemRng, player, useFlags, activeSlot, customVarData)
+function hexanowMod:UseGlowingHourGlass(itemId, itemRng, player, useFlags, activeSlot, customVarData)
 	if itemId == CollectibleType.COLLECTIBLE_GLOWING_HOUR_GLASS
 	--and player:GetPlayerType() == playerTypeHexanow
 	then
 		RewindLastRoomVar()
-		UpdateLastRoomVar()
 	end
 end
-hexanowMod:AddCallback(ModCallbacks.MC_USE_ITEM, hexanowMod.UsePortalTool)
+hexanowMod:AddCallback(ModCallbacks.MC_USE_ITEM, hexanowMod.UseGlowingHourGlass)
 
 -- 使用灵魂石的效果
 function hexanowMod:UseHexanowSoulStone(cardId, player, useFlags)
@@ -1931,9 +2855,21 @@ hexanowMod:AddCallback(ModCallbacks.MC_USE_CARD, hexanowMod.UseHexanowSoulStone,
 
 -- 在玩家进入新楼层后运行
 function hexanowMod:PostNewLevel()
-	InitInRoomCreatedPortalsArray()
-	InitCreatedPortalsArray()
+	for playerID=1,4 do
+		HexanowPlayerDatas[playerID].CreatedPortals[0][1] = nil
+		HexanowPlayerDatas[playerID].CreatedPortals[0][2] = nil
+		HexanowPlayerDatas[playerID].CreatedPortals[1][1] = nil
+		HexanowPlayerDatas[playerID].CreatedPortals[1][2] = nil
+		HexanowPlayerDatas[playerID].CreatedPortals[2][1] = nil
+		HexanowPlayerDatas[playerID].CreatedPortals[2][2] = nil
+		HexanowPlayerDatas[playerID].InRoomCreatedPortals[1] = nil
+		HexanowPlayerDatas[playerID].InRoomCreatedPortals[2] = nil
+	end
 	MaintainPortal(true)
+	if hexanowFlags:HasFlag("TREASURE_ROOM_NOT_ENTERED") then
+		EternalCharges = EternalCharges + 0
+	end
+	hexanowFlags:AddFlag("TREASURE_ROOM_NOT_ENTERED")
 	--[[
 	CallForEveryPlayer(
 		function(player)
@@ -1950,12 +2886,37 @@ hexanowMod:AddCallback(ModCallbacks.MC_POST_NEW_LEVEL, hexanowMod.PostNewLevel)
 
 -- 在玩家进入新房间后运行
 function hexanowMod:PostNewRoom()
-	InitInRoomCreatedPortalsArray()
+	local room = Game():GetRoom()
+	for playerID=1,4 do
+		HexanowPlayerDatas[playerID].InRoomCreatedPortals[1] = nil
+		HexanowPlayerDatas[playerID].InRoomCreatedPortals[2] = nil
+	end
+	if queuedNextRoomGrid ~= nil then
+		local inInRoomGridIndex, direction = ValidPortalWall(room:GetRoomShape(), queuedNextRoomGrid)
+		direction = fromDirectionString(direction)
+		local pos = room:GetGridPosition(inInRoomGridIndex)
+		if pos ~= nil and direction ~= Direction.NO_DIRECTION then
+			pos = pos + (Vector.FromAngle(((direction) * 90) % 360) * 40)
+		else
+			pos = room:GetGridPosition(queuedNextRoomGrid)
+		end
+		CallForEveryPlayer(
+			function(player)
+				player:AnimateTeleport()
+				player.Position = pos
+			end
+		)
+		queuedNextRoomGrid = nil
+	end
 	TaintedHexanowRoomOverride()
-	UpdateLastRoomVar()
 	MaintainPortal(true)
+	UpdateLastRoomVar()
+
+	if room:GetType() == RoomType.ROOM_TREASURE and not room:IsMirrorWorld() then
+		hexanowFlags:RemoveFlag("TREASURE_ROOM_NOT_ENTERED")
+	end
 	
-	if Game():GetRoom():GetAliveEnemiesCount() <= 0 then
+	if room:GetAliveEnemiesCount() <= 0 then
 		EternalChargeForFree = true
 	else
 		EternalChargeForFree = false
@@ -1988,9 +2949,9 @@ function hexanowMod:PostNewRoom()
 		]]
 		local rooms = level:GetRooms()
 		for i = 0, #rooms - 1 do
-			local room = level:GetRoomByIdx(rooms:Get(i).GridIndex)
+			local room = level:GetRoomByIdx(rooms:Get(i).SafeGridIndex)
 			if room then
-				room.DisplayFlags = room.DisplayFlags | 1 << 1
+				room.DisplayFlags = room.DisplayFlags | 1 << 0 | 1 << 1 | 1 << 2 
 			end
 		end
 		level:UpdateVisibility()
@@ -2332,17 +3293,16 @@ function hexanowMod:PrePickupCollision(pickup, collider, low)
 end
 hexanowMod:AddCallback(ModCallbacks.MC_PRE_PICKUP_COLLISION , hexanowMod.PrePickupCollision)
 
---[[
-	Hexanow stats
-	damage: 300%
-	tears: -0.66
-	speed: -0.15 is room is not cleared, +0.15 if room is cleared
-	tear range: 300%
-	luck: -3
-]]
-
 -- 后期处理属性缓存
 function hexanowMod:EvaluateCache(player, cacheFlag, tear)
+	--[[
+		Hexanow stats
+		damage: 300%
+		tears: -0.66
+		speed: -0.15 is room is not cleared, +0.15 if room is cleared
+		tear range: 300%
+		luck: -3
+	]]
 	if player:GetPlayerType() == playerTypeHexanow then
 		if cacheFlag == CacheFlag.CACHE_SPEED then
 			if roomClearBounsEnabled then
@@ -2374,7 +3334,7 @@ function hexanowMod:EvaluateCache(player, cacheFlag, tear)
 			--player.TearFallingAcceleration = math.min(player.TearFallingAcceleration, - 0.2 / 3)
 		elseif cacheFlag == CacheFlag.CACHE_TEARFLAG then
 			--player.TearFlags = player.TearFlags | TearFlags.TEAR_HOMING | TearFlags.TEAR_PERSISTENT | TearFlags.TEAR_SPECTRAL | TearFlags.TEAR_ICE
-			player.TearFlags = player.TearFlags | TearFlags.TEAR_ICE
+			player.TearFlags = player.TearFlags
 		elseif cacheFlag == CacheFlag.CACHE_FLYING then
 			--[[if Game():GetRoom():IsClear() then
 				player.CanFly = true
@@ -2409,7 +3369,7 @@ function hexanowMod:EvaluateCache(player, cacheFlag, tear)
 	end
 	
 	if SuperPower and cacheFlag == CacheFlag.CACHE_DAMAGE then
-		player.Damage = player.Damage * 20
+		player.Damage = player.Damage * 3 * 20 * 100 * 1000
 	end
 end
 hexanowMod:AddCallback(ModCallbacks.MC_EVALUATE_CACHE, hexanowMod.EvaluateCache)
@@ -2855,7 +3815,7 @@ function hexanowMod:PostUpdate()
 	)
 	]]
 	--SaveHexanowModData()
-	MaintainPortal(skipCreationAnim)
+	MaintainPortal(true)
 end
 hexanowMod:AddCallback(ModCallbacks.MC_POST_UPDATE, hexanowMod.PostUpdate)
 

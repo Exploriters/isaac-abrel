@@ -1,8 +1,8 @@
 <entities anm2root="gfx/" version="5">
+	<!--
     <entity anm2path="HeartsBlender.anm2" baseHP="0" boss="0" champion="0" collisionDamage="0" collisionMass="1" collisionRadius="1" friction="1" id="3" name="Hearts Blender" numGridCollisionPoints="10" shadowSize="10" stageHP="0" variant="822" subtype="0">
         <gibs amount="0" blood="0" bone="0" eye="0" gut="0" large="0" />
     </entity>
-	<!--
 	<entity anm2path="HexanowPortalBlue.anm2" baseHP="0" boss="0" champion="0" collisionDamage="0" collisionMass="0" collisionRadius="0" friction="1" id="1257" name="Hexanow Blue Portal" numGridCollisionPoints="0" shadowSize="24" stageHP="0" variant="0" shutdoors="false">
         <gibs amount="0" blood="0" bone="0" eye="0" gut="0" large="0" />
 	</entity>

@@ -48,6 +48,17 @@ function GetPlayerSameTryeID(player)
 	return nil
 end
 
+function GetDimensionOfRoomDesc(roomDesc)
+	local roomDescHash = GetPtrHash(roomDesc)
+    for dim=0, 2 do
+        if roomDescHash == GetPtrHash(Game():GetLevel():GetRoomByIdx(roomDesc.SafeGridIndex, dim)) then return dim end
+    end
+end
+
+function GetCurrentDimension()
+	return GetDimensionOfRoomDesc(Game():GetLevel():GetCurrentRoomDesc())
+end
+
 -- 为每个玩家执行目标函数
 function CallForEveryPlayer(func)
 	local numPlayers = Game():GetNumPlayers()
@@ -97,4 +108,18 @@ function ReverseTable(tab)
 	end
 
 	return tmp
+end
+
+function ComputeIntersection(start1, end1, start2, end2) -- start end start end
+	local ax, ay, bx, by, cx, cy, dx, dy = start1.X, start1.Y, end1.X, end1.Y, start2.X, start2.Y, end2.X, end2.Y
+    local d = (ax-bx)*(cy-dy)-(ay-by)*(cx-dx)
+    if d == 0 then return end  -- they are parallel
+    local a, b = ax*by-ay*bx, cx*dy-cy*dx
+    local x = (a*(cx-dx) - b*(ax-bx))/d
+    local y = (a*(cy-dy) - b*(ay-by))/d
+    if x <= math.max(ax, bx) and x >= math.min(ax, bx) and
+        x <= math.max(cx, dx) and x >= math.min(cx, dx) then
+        -- between start and end of both lines
+        return Vector(x,y)
+    end
 end

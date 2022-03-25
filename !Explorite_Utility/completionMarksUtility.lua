@@ -1,3 +1,8 @@
+--broken, do not use
+if true then
+    return nil
+end
+
 local ExploriteMod = Explorite.ExploriteMod
 
 local SCREEN_SCALE = Vector(480.0, 270.0)
