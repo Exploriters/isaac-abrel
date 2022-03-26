@@ -3,12 +3,20 @@ local hexanowMod = RegisterMod("Hexanow", 1);
 local playerTypeHexanow = Isaac.GetPlayerTypeByName("Hexanow")
 local playerTypeHexanowTainted = Isaac.GetPlayerTypeByName("Tainted Hexanow", true)
 
+local function IsHexanow(player)
+	return player:GetPlayerType() == playerTypeHexanow
+end
+
+local function IsHexanowTainted(player)
+	return player:GetPlayerType() == playerTypeHexanowTainted
+end
+
 if Explorite == nil then
-function hexanowMod:checkMissingExploriteStart(loadedFromSaves)
+	function hexanowMod:checkMissingExploriteStart(loadedFromSaves)
 		local numPlayers = Game():GetNumPlayers()
 		for i=0,numPlayers-1,1 do
 			local player = Isaac.GetPlayer(i)
-			if player:GetPlayerType() == playerTypeHexanow then
+			if IsHexanow(player) then
 				player:AddControlsCooldown(2147483647)
 				if not loadedFromSaves then
 					player.Visible = false
@@ -28,11 +36,13 @@ function hexanowMod:checkMissingExploriteStart(loadedFromSaves)
 	return
 end
 
+require("roomWall")
+require("lang")
 require("apioverride")
 --[[
 local baseEntityPlayerGetHeartsLimit = APIOverride.GetCurrentClassFunction(EntityPlayer, "GetHeartLimit")
 APIOverride.OverrideClassFunction(EntityPlayer, "GetHeartLimit", function(interval)
-	if interval:GetPlayerType() == playerTypeHexanow then
+	if IsHexanow(interval) then
 		return 36
 	end
 	return baseEntityPlayerGetHeartsLimit(interval)
@@ -42,7 +52,7 @@ end)
 local baseEntityPlayerHasCollectible = APIOverride.GetCurrentClassFunction(EntityPlayer, "HasCollectible")
 APIOverride.OverrideClassFunction(EntityPlayer, "HasCollectible", function(interval, Type, IgnoreModifiers)	
     local result = baseEntityPlayerHasCollectible(interval, Type, IgnoreModifiers)
-	if interval:GetPlayerType() == playerTypeHexanow
+	if IsHexanow(interval)
 	and (  Type == CollectibleType.COLLECTIBLE_ANALOG_STICK
 		or Type == CollectibleType.COLLECTIBLE_URANUS
 		or Type == CollectibleType.COLLECTIBLE_NEPTUNUS
@@ -74,7 +84,7 @@ local hexanowBodyFlightCostume = Isaac.GetCostumeIdByPath("gfx/characters/Hexano
 
 local hexanowSoulStoneID = Isaac.GetCardIdByName("Soul of Hexanow")
 
-local entityVariantHeartsBlender = Isaac.GetEntityVariantByName("Hearts Blender")
+--local entityVariantHeartsBlender = Isaac.GetEntityVariantByName("Hearts Blender")
 local entityVariantHexanowLaser = Isaac.GetEntityVariantByName("Laser (Hexanow)")
 local entityVariantHexanowPortalDoor = Isaac.GetEntityVariantByName("Hexanow Portal Door")
 --local entityTypeHexanowPortal = Isaac.GetEntityTypeByName("Hexanow Blue Portal")
@@ -96,812 +106,6 @@ portalColor[3][2] = Color(255 / 255, 0 / 255, 255 / 255)
 portalColor[4] = {}
 portalColor[4][1] = Color(255 / 255, 0 / 255, 0 / 255)
 portalColor[4][2] = Color(0 / 255, 255 / 255, 0 / 255)
-
-local roomWall = {}
-local function loadRoomWall()
-	roomWall[RoomShape.ROOMSHAPE_1x1] = {}
-	roomWall[RoomShape.ROOMSHAPE_1x1][0] = 15
-	roomWall[RoomShape.ROOMSHAPE_1x1][1] = "up"
-	roomWall[RoomShape.ROOMSHAPE_1x1][2] = "up"
-	roomWall[RoomShape.ROOMSHAPE_1x1][3] = "up"
-	roomWall[RoomShape.ROOMSHAPE_1x1][4] = "up"
-	roomWall[RoomShape.ROOMSHAPE_1x1][5] = "up"
-	roomWall[RoomShape.ROOMSHAPE_1x1][6] = "up"
-	roomWall[RoomShape.ROOMSHAPE_1x1][7] = "up"
-	roomWall[RoomShape.ROOMSHAPE_1x1][8] = "up"
-	roomWall[RoomShape.ROOMSHAPE_1x1][9] = "up"
-	roomWall[RoomShape.ROOMSHAPE_1x1][10] = "up"
-	roomWall[RoomShape.ROOMSHAPE_1x1][11] = "up"
-	roomWall[RoomShape.ROOMSHAPE_1x1][12] = "up"
-	roomWall[RoomShape.ROOMSHAPE_1x1][13] = "up"
-	roomWall[RoomShape.ROOMSHAPE_1x1][14] = 29
-	roomWall[RoomShape.ROOMSHAPE_1x1][15] = "left"
-	roomWall[RoomShape.ROOMSHAPE_1x1][29] = "right"
-	roomWall[RoomShape.ROOMSHAPE_1x1][30] = "left"
-	roomWall[RoomShape.ROOMSHAPE_1x1][44] = "right"
-	roomWall[RoomShape.ROOMSHAPE_1x1][45] = "left"
-	roomWall[RoomShape.ROOMSHAPE_1x1][59] = "right"
-	roomWall[RoomShape.ROOMSHAPE_1x1][60] = "left"
-	roomWall[RoomShape.ROOMSHAPE_1x1][74] = "right"
-	roomWall[RoomShape.ROOMSHAPE_1x1][75] = "left"
-	roomWall[RoomShape.ROOMSHAPE_1x1][89] = "right"
-	roomWall[RoomShape.ROOMSHAPE_1x1][90] = "left"
-	roomWall[RoomShape.ROOMSHAPE_1x1][104] = "right"
-	roomWall[RoomShape.ROOMSHAPE_1x1][105] = "left"
-	roomWall[RoomShape.ROOMSHAPE_1x1][119] = "right"
-	roomWall[RoomShape.ROOMSHAPE_1x1][120] = 105
-	roomWall[RoomShape.ROOMSHAPE_1x1][121] = "down"
-	roomWall[RoomShape.ROOMSHAPE_1x1][122] = "down"
-	roomWall[RoomShape.ROOMSHAPE_1x1][123] = "down"
-	roomWall[RoomShape.ROOMSHAPE_1x1][124] = "down"
-	roomWall[RoomShape.ROOMSHAPE_1x1][125] = "down"
-	roomWall[RoomShape.ROOMSHAPE_1x1][126] = "down"
-	roomWall[RoomShape.ROOMSHAPE_1x1][127] = "down"
-	roomWall[RoomShape.ROOMSHAPE_1x1][128] = "down"
-	roomWall[RoomShape.ROOMSHAPE_1x1][129] = "down"
-	roomWall[RoomShape.ROOMSHAPE_1x1][130] = "down"
-	roomWall[RoomShape.ROOMSHAPE_1x1][131] = "down"
-	roomWall[RoomShape.ROOMSHAPE_1x1][132] = "down"
-	roomWall[RoomShape.ROOMSHAPE_1x1][133] = "down"
-	roomWall[RoomShape.ROOMSHAPE_1x1][134] = 119
-
-	roomWall[RoomShape.ROOMSHAPE_IH] = {}
-	roomWall[RoomShape.ROOMSHAPE_IH][30] = 45
-	roomWall[RoomShape.ROOMSHAPE_IH][45] = "left"
-	roomWall[RoomShape.ROOMSHAPE_IH][60] = "left"
-	roomWall[RoomShape.ROOMSHAPE_IH][75] = "left"
-	roomWall[RoomShape.ROOMSHAPE_IH][90] = 75
-	roomWall[RoomShape.ROOMSHAPE_IH][44] = 59
-	roomWall[RoomShape.ROOMSHAPE_IH][59] = "right"
-	roomWall[RoomShape.ROOMSHAPE_IH][74] = "right"
-	roomWall[RoomShape.ROOMSHAPE_IH][89] = "right"
-	roomWall[RoomShape.ROOMSHAPE_IH][104] = 104
-	roomWall[RoomShape.ROOMSHAPE_IH][31] = "up"
-	roomWall[RoomShape.ROOMSHAPE_IH][32] = "up"
-	roomWall[RoomShape.ROOMSHAPE_IH][33] = "up"
-	roomWall[RoomShape.ROOMSHAPE_IH][34] = "up"
-	roomWall[RoomShape.ROOMSHAPE_IH][35] = "up"
-	roomWall[RoomShape.ROOMSHAPE_IH][36] = "up"
-	roomWall[RoomShape.ROOMSHAPE_IH][37] = "up"
-	roomWall[RoomShape.ROOMSHAPE_IH][38] = "up"
-	roomWall[RoomShape.ROOMSHAPE_IH][39] = "up"
-	roomWall[RoomShape.ROOMSHAPE_IH][40] = "up"
-	roomWall[RoomShape.ROOMSHAPE_IH][41] = "up"
-	roomWall[RoomShape.ROOMSHAPE_IH][42] = "up"
-	roomWall[RoomShape.ROOMSHAPE_IH][43] = "up"
-	roomWall[RoomShape.ROOMSHAPE_IH][91] = "down"
-	roomWall[RoomShape.ROOMSHAPE_IH][92] = "down"
-	roomWall[RoomShape.ROOMSHAPE_IH][93] = "down"
-	roomWall[RoomShape.ROOMSHAPE_IH][94] = "down"
-	roomWall[RoomShape.ROOMSHAPE_IH][95] = "down"
-	roomWall[RoomShape.ROOMSHAPE_IH][96] = "down"
-	roomWall[RoomShape.ROOMSHAPE_IH][97] = "down"
-	roomWall[RoomShape.ROOMSHAPE_IH][98] = "down"
-	roomWall[RoomShape.ROOMSHAPE_IH][99] = "down"
-	roomWall[RoomShape.ROOMSHAPE_IH][100] = "down"
-	roomWall[RoomShape.ROOMSHAPE_IH][101] = "down"
-	roomWall[RoomShape.ROOMSHAPE_IH][102] = "down"
-	roomWall[RoomShape.ROOMSHAPE_IH][103] = "down"
-
-	roomWall[RoomShape.ROOMSHAPE_IV] = {}
-	roomWall[RoomShape.ROOMSHAPE_IV][4] = 19
-	roomWall[RoomShape.ROOMSHAPE_IV][19] = "left"
-	roomWall[RoomShape.ROOMSHAPE_IV][34] = "left"
-	roomWall[RoomShape.ROOMSHAPE_IV][49] = "left"
-	roomWall[RoomShape.ROOMSHAPE_IV][64] = "left"
-	roomWall[RoomShape.ROOMSHAPE_IV][79] = "left"
-	roomWall[RoomShape.ROOMSHAPE_IV][94] = "left"
-	roomWall[RoomShape.ROOMSHAPE_IV][109] = "left"
-	roomWall[RoomShape.ROOMSHAPE_IV][124] = 109
-	roomWall[RoomShape.ROOMSHAPE_IV][10] = 25
-	roomWall[RoomShape.ROOMSHAPE_IV][25] = "right"
-	roomWall[RoomShape.ROOMSHAPE_IV][40] = "right"
-	roomWall[RoomShape.ROOMSHAPE_IV][55] = "right"
-	roomWall[RoomShape.ROOMSHAPE_IV][70] = "right"
-	roomWall[RoomShape.ROOMSHAPE_IV][85] = "right"
-	roomWall[RoomShape.ROOMSHAPE_IV][100] = "right"
-	roomWall[RoomShape.ROOMSHAPE_IV][115] = "right"
-	roomWall[RoomShape.ROOMSHAPE_IV][130] = 115
-	roomWall[RoomShape.ROOMSHAPE_IV][5] = "up"
-	roomWall[RoomShape.ROOMSHAPE_IV][6] = "up"
-	roomWall[RoomShape.ROOMSHAPE_IV][7] = "up"
-	roomWall[RoomShape.ROOMSHAPE_IV][8] = "up"
-	roomWall[RoomShape.ROOMSHAPE_IV][9] = "up"
-	roomWall[RoomShape.ROOMSHAPE_IV][125] = "down"
-	roomWall[RoomShape.ROOMSHAPE_IV][126] = "down"
-	roomWall[RoomShape.ROOMSHAPE_IV][127] = "down"
-	roomWall[RoomShape.ROOMSHAPE_IV][128] = "down"
-	roomWall[RoomShape.ROOMSHAPE_IV][129] = "down"
-
-	roomWall[RoomShape.ROOMSHAPE_1x2] = {}
-	roomWall[RoomShape.ROOMSHAPE_1x2][0] = 15
-	roomWall[RoomShape.ROOMSHAPE_1x2][1] = "up"
-	roomWall[RoomShape.ROOMSHAPE_1x2][2] = "up"
-	roomWall[RoomShape.ROOMSHAPE_1x2][3] = "up"
-	roomWall[RoomShape.ROOMSHAPE_1x2][4] = "up"
-	roomWall[RoomShape.ROOMSHAPE_1x2][5] = "up"
-	roomWall[RoomShape.ROOMSHAPE_1x2][6] = "up"
-	roomWall[RoomShape.ROOMSHAPE_1x2][7] = "up"
-	roomWall[RoomShape.ROOMSHAPE_1x2][8] = "up"
-	roomWall[RoomShape.ROOMSHAPE_1x2][9] = "up"
-	roomWall[RoomShape.ROOMSHAPE_1x2][10] = "up"
-	roomWall[RoomShape.ROOMSHAPE_1x2][11] = "up"
-	roomWall[RoomShape.ROOMSHAPE_1x2][12] = "up"
-	roomWall[RoomShape.ROOMSHAPE_1x2][13] = "up"
-	roomWall[RoomShape.ROOMSHAPE_1x2][14] = 29
-	roomWall[RoomShape.ROOMSHAPE_1x2][15] = "left"
-	roomWall[RoomShape.ROOMSHAPE_1x2][29] = "right"
-	roomWall[RoomShape.ROOMSHAPE_1x2][30] = "left"
-	roomWall[RoomShape.ROOMSHAPE_1x2][44] = "right"
-	roomWall[RoomShape.ROOMSHAPE_1x2][45] = "left"
-	roomWall[RoomShape.ROOMSHAPE_1x2][59] = "right"
-	roomWall[RoomShape.ROOMSHAPE_1x2][60] = "left"
-	roomWall[RoomShape.ROOMSHAPE_1x2][74] = "right"
-	roomWall[RoomShape.ROOMSHAPE_1x2][75] = "left"
-	roomWall[RoomShape.ROOMSHAPE_1x2][89] = "right"
-	roomWall[RoomShape.ROOMSHAPE_1x2][90] = "left"
-	roomWall[RoomShape.ROOMSHAPE_1x2][104] = "right"
-	roomWall[RoomShape.ROOMSHAPE_1x2][105] = "left"
-	roomWall[RoomShape.ROOMSHAPE_1x2][119] = "right"
-	roomWall[RoomShape.ROOMSHAPE_1x2][120] = "left"
-	roomWall[RoomShape.ROOMSHAPE_1x2][134] = "right"
-	roomWall[RoomShape.ROOMSHAPE_1x2][135] = "left"
-	roomWall[RoomShape.ROOMSHAPE_1x2][149] = "right"
-	roomWall[RoomShape.ROOMSHAPE_1x2][135] = "left"
-	roomWall[RoomShape.ROOMSHAPE_1x2][149] = "right"
-	roomWall[RoomShape.ROOMSHAPE_1x2][150] = "left"
-	roomWall[RoomShape.ROOMSHAPE_1x2][164] = "right"
-	roomWall[RoomShape.ROOMSHAPE_1x2][165] = "left"
-	roomWall[RoomShape.ROOMSHAPE_1x2][179] = "right"
-	roomWall[RoomShape.ROOMSHAPE_1x2][180] = "left"
-	roomWall[RoomShape.ROOMSHAPE_1x2][194] = "right"
-	roomWall[RoomShape.ROOMSHAPE_1x2][195] = "left"
-	roomWall[RoomShape.ROOMSHAPE_1x2][209] = "right"
-	roomWall[RoomShape.ROOMSHAPE_1x2][210] = "left"
-	roomWall[RoomShape.ROOMSHAPE_1x2][224] = "right"
-	roomWall[RoomShape.ROOMSHAPE_1x2][225] = 210
-	roomWall[RoomShape.ROOMSHAPE_1x2][226] = "up"
-	roomWall[RoomShape.ROOMSHAPE_1x2][227] = "up"
-	roomWall[RoomShape.ROOMSHAPE_1x2][228] = "up"
-	roomWall[RoomShape.ROOMSHAPE_1x2][229] = "up"
-	roomWall[RoomShape.ROOMSHAPE_1x2][230] = "up"
-	roomWall[RoomShape.ROOMSHAPE_1x2][231] = "up"
-	roomWall[RoomShape.ROOMSHAPE_1x2][232] = "up"
-	roomWall[RoomShape.ROOMSHAPE_1x2][233] = "up"
-	roomWall[RoomShape.ROOMSHAPE_1x2][234] = "up"
-	roomWall[RoomShape.ROOMSHAPE_1x2][235] = "up"
-	roomWall[RoomShape.ROOMSHAPE_1x2][236] = "up"
-	roomWall[RoomShape.ROOMSHAPE_1x2][237] = "up"
-	roomWall[RoomShape.ROOMSHAPE_1x2][238] = "up"
-	roomWall[RoomShape.ROOMSHAPE_1x2][239] = 224
-
-	roomWall[RoomShape.ROOMSHAPE_IIV] = {}
-	roomWall[RoomShape.ROOMSHAPE_IIV][5] = "up"
-	roomWall[RoomShape.ROOMSHAPE_IIV][6] = "up"
-	roomWall[RoomShape.ROOMSHAPE_IIV][7] = "up"
-	roomWall[RoomShape.ROOMSHAPE_IIV][8] = "up"
-	roomWall[RoomShape.ROOMSHAPE_IIV][9] = "up"
-	roomWall[RoomShape.ROOMSHAPE_IIV][230] = "down"
-	roomWall[RoomShape.ROOMSHAPE_IIV][231] = "down"
-	roomWall[RoomShape.ROOMSHAPE_IIV][232] = "down"
-	roomWall[RoomShape.ROOMSHAPE_IIV][233] = "down"
-	roomWall[RoomShape.ROOMSHAPE_IIV][234] = "down"
-	roomWall[RoomShape.ROOMSHAPE_IIV][15*0+4] = 19
-	roomWall[RoomShape.ROOMSHAPE_IIV][15*1+4] = "left"
-	roomWall[RoomShape.ROOMSHAPE_IIV][15*2+4] = "left"
-	roomWall[RoomShape.ROOMSHAPE_IIV][15*3+4] = "left"
-	roomWall[RoomShape.ROOMSHAPE_IIV][15*4+4] = "left"
-	roomWall[RoomShape.ROOMSHAPE_IIV][15*5+4] = "left"
-	roomWall[RoomShape.ROOMSHAPE_IIV][15*6+4] = "left"
-	roomWall[RoomShape.ROOMSHAPE_IIV][15*7+4] = "left"
-	roomWall[RoomShape.ROOMSHAPE_IIV][15*8+4] = "left"
-	roomWall[RoomShape.ROOMSHAPE_IIV][15*9+4] = "left"
-	roomWall[RoomShape.ROOMSHAPE_IIV][15*10+4] = "left"
-	roomWall[RoomShape.ROOMSHAPE_IIV][15*12+4] = "left"
-	roomWall[RoomShape.ROOMSHAPE_IIV][15*13+4] = "left"
-	roomWall[RoomShape.ROOMSHAPE_IIV][15*14+4] = "left"
-	roomWall[RoomShape.ROOMSHAPE_IIV][15*15+4] = "left"
-	roomWall[RoomShape.ROOMSHAPE_IIV][15*16+4] = 229
-	roomWall[RoomShape.ROOMSHAPE_IIV][15*0+10] = 25
-	roomWall[RoomShape.ROOMSHAPE_IIV][15*1+10] = "right"
-	roomWall[RoomShape.ROOMSHAPE_IIV][15*2+10] = "right"
-	roomWall[RoomShape.ROOMSHAPE_IIV][15*3+10] = "right"
-	roomWall[RoomShape.ROOMSHAPE_IIV][15*4+10] = "right"
-	roomWall[RoomShape.ROOMSHAPE_IIV][15*5+10] = "right"
-	roomWall[RoomShape.ROOMSHAPE_IIV][15*6+10] = "right"
-	roomWall[RoomShape.ROOMSHAPE_IIV][15*7+10] = "right"
-	roomWall[RoomShape.ROOMSHAPE_IIV][15*8+10] = "right"
-	roomWall[RoomShape.ROOMSHAPE_IIV][15*9+10] = "right"
-	roomWall[RoomShape.ROOMSHAPE_IIV][15*10+10] = "right"
-	roomWall[RoomShape.ROOMSHAPE_IIV][15*12+10] = "right"
-	roomWall[RoomShape.ROOMSHAPE_IIV][15*13+10] = "right"
-	roomWall[RoomShape.ROOMSHAPE_IIV][15*14+10] = "right"
-	roomWall[RoomShape.ROOMSHAPE_IIV][15*15+10] = "right"
-	roomWall[RoomShape.ROOMSHAPE_IIV][15*16+10] = 235
-
-	roomWall[RoomShape.ROOMSHAPE_2x1] = {}
-	roomWall[RoomShape.ROOMSHAPE_2x1][28*0] = 28
-	roomWall[RoomShape.ROOMSHAPE_2x1][28*1] = "left"
-	roomWall[RoomShape.ROOMSHAPE_2x1][28*2] = "left"
-	roomWall[RoomShape.ROOMSHAPE_2x1][28*3] = "left"
-	roomWall[RoomShape.ROOMSHAPE_2x1][28*4] = "left"
-	roomWall[RoomShape.ROOMSHAPE_2x1][28*5] = "left"
-	roomWall[RoomShape.ROOMSHAPE_2x1][28*6] = "left"
-	roomWall[RoomShape.ROOMSHAPE_2x1][28*7] = "left"
-	roomWall[RoomShape.ROOMSHAPE_2x1][28*8] = 196
-	roomWall[RoomShape.ROOMSHAPE_2x1][28*0+27] = 55
-	roomWall[RoomShape.ROOMSHAPE_2x1][28*1+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_2x1][28*2+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_2x1][28*3+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_2x1][28*4+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_2x1][28*5+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_2x1][28*6+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_2x1][28*7+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_2x1][28*8+27] = 223
-	roomWall[RoomShape.ROOMSHAPE_2x1][1] = "up"
-	roomWall[RoomShape.ROOMSHAPE_2x1][2] = "up"
-	roomWall[RoomShape.ROOMSHAPE_2x1][3] = "up"
-	roomWall[RoomShape.ROOMSHAPE_2x1][4] = "up"
-	roomWall[RoomShape.ROOMSHAPE_2x1][5] = "up"
-	roomWall[RoomShape.ROOMSHAPE_2x1][6] = "up"
-	roomWall[RoomShape.ROOMSHAPE_2x1][7] = "up"
-	roomWall[RoomShape.ROOMSHAPE_2x1][8] = "up"
-	roomWall[RoomShape.ROOMSHAPE_2x1][9] = "up"
-	roomWall[RoomShape.ROOMSHAPE_2x1][10] = "up"
-	roomWall[RoomShape.ROOMSHAPE_2x1][11] = "up"
-	roomWall[RoomShape.ROOMSHAPE_2x1][12] = "up"
-	roomWall[RoomShape.ROOMSHAPE_2x1][13] = "up"
-	roomWall[RoomShape.ROOMSHAPE_2x1][14] = "up"
-	roomWall[RoomShape.ROOMSHAPE_2x1][15] = "up"
-	roomWall[RoomShape.ROOMSHAPE_2x1][16] = "up"
-	roomWall[RoomShape.ROOMSHAPE_2x1][17] = "up"
-	roomWall[RoomShape.ROOMSHAPE_2x1][18] = "up"
-	roomWall[RoomShape.ROOMSHAPE_2x1][19] = "up"
-	roomWall[RoomShape.ROOMSHAPE_2x1][20] = "up"
-	roomWall[RoomShape.ROOMSHAPE_2x1][21] = "up"
-	roomWall[RoomShape.ROOMSHAPE_2x1][22] = "up"
-	roomWall[RoomShape.ROOMSHAPE_2x1][23] = "up"
-	roomWall[RoomShape.ROOMSHAPE_2x1][24] = "up"
-	roomWall[RoomShape.ROOMSHAPE_2x1][25] = "up"
-	roomWall[RoomShape.ROOMSHAPE_2x1][26] = "up"
-	roomWall[RoomShape.ROOMSHAPE_2x1][1+224] = "down"
-	roomWall[RoomShape.ROOMSHAPE_2x1][2+224] = "down"
-	roomWall[RoomShape.ROOMSHAPE_2x1][3+224] = "down"
-	roomWall[RoomShape.ROOMSHAPE_2x1][4+224] = "down"
-	roomWall[RoomShape.ROOMSHAPE_2x1][5+224] = "down"
-	roomWall[RoomShape.ROOMSHAPE_2x1][6+224] = "down"
-	roomWall[RoomShape.ROOMSHAPE_2x1][7+224] = "down"
-	roomWall[RoomShape.ROOMSHAPE_2x1][8+224] = "down"
-	roomWall[RoomShape.ROOMSHAPE_2x1][9+224] = "down"
-	roomWall[RoomShape.ROOMSHAPE_2x1][10+224] = "down"
-	roomWall[RoomShape.ROOMSHAPE_2x1][11+224] = "down"
-	roomWall[RoomShape.ROOMSHAPE_2x1][12+224] = "down"
-	roomWall[RoomShape.ROOMSHAPE_2x1][13+224] = "down"
-	roomWall[RoomShape.ROOMSHAPE_2x1][14+224] = "down"
-	roomWall[RoomShape.ROOMSHAPE_2x1][15+224] = "down"
-	roomWall[RoomShape.ROOMSHAPE_2x1][16+224] = "down"
-	roomWall[RoomShape.ROOMSHAPE_2x1][17+224] = "down"
-	roomWall[RoomShape.ROOMSHAPE_2x1][18+224] = "down"
-	roomWall[RoomShape.ROOMSHAPE_2x1][19+224] = "down"
-	roomWall[RoomShape.ROOMSHAPE_2x1][20+224] = "down"
-	roomWall[RoomShape.ROOMSHAPE_2x1][21+224] = "down"
-	roomWall[RoomShape.ROOMSHAPE_2x1][22+224] = "down"
-	roomWall[RoomShape.ROOMSHAPE_2x1][23+224] = "down"
-	roomWall[RoomShape.ROOMSHAPE_2x1][24+224] = "down"
-	roomWall[RoomShape.ROOMSHAPE_2x1][25+224] = "down"
-	roomWall[RoomShape.ROOMSHAPE_2x1][26+224] = "down"
-
-	roomWall[RoomShape.ROOMSHAPE_IIH] = {}
-	roomWall[RoomShape.ROOMSHAPE_IIH][28*2] = 84
-	roomWall[RoomShape.ROOMSHAPE_IIH][28*3] = "left"
-	roomWall[RoomShape.ROOMSHAPE_IIH][28*4] = "left"
-	roomWall[RoomShape.ROOMSHAPE_IIH][28*5] = "left"
-	roomWall[RoomShape.ROOMSHAPE_IIH][28*6] = 140
-	roomWall[RoomShape.ROOMSHAPE_IIH][28*2+27] = 111
-	roomWall[RoomShape.ROOMSHAPE_IIH][28*3+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_IIH][28*4+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_IIH][28*5+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_IIH][28*6+27] = 167
-	roomWall[RoomShape.ROOMSHAPE_IIH][1+56] = "up"
-	roomWall[RoomShape.ROOMSHAPE_IIH][2+56] = "up"
-	roomWall[RoomShape.ROOMSHAPE_IIH][3+56] = "up"
-	roomWall[RoomShape.ROOMSHAPE_IIH][4+56] = "up"
-	roomWall[RoomShape.ROOMSHAPE_IIH][5+56] = "up"
-	roomWall[RoomShape.ROOMSHAPE_IIH][6+56] = "up"
-	roomWall[RoomShape.ROOMSHAPE_IIH][7+56] = "up"
-	roomWall[RoomShape.ROOMSHAPE_IIH][8+56] = "up"
-	roomWall[RoomShape.ROOMSHAPE_IIH][9+56] = "up"
-	roomWall[RoomShape.ROOMSHAPE_IIH][10+56] = "up"
-	roomWall[RoomShape.ROOMSHAPE_IIH][11+56] = "up"
-	roomWall[RoomShape.ROOMSHAPE_IIH][12+56] = "up"
-	roomWall[RoomShape.ROOMSHAPE_IIH][13+56] = "up"
-	roomWall[RoomShape.ROOMSHAPE_IIH][14+56] = "up"
-	roomWall[RoomShape.ROOMSHAPE_IIH][15+56] = "up"
-	roomWall[RoomShape.ROOMSHAPE_IIH][16+56] = "up"
-	roomWall[RoomShape.ROOMSHAPE_IIH][17+56] = "up"
-	roomWall[RoomShape.ROOMSHAPE_IIH][18+56] = "up"
-	roomWall[RoomShape.ROOMSHAPE_IIH][19+56] = "up"
-	roomWall[RoomShape.ROOMSHAPE_IIH][20+56] = "up"
-	roomWall[RoomShape.ROOMSHAPE_IIH][21+56] = "up"
-	roomWall[RoomShape.ROOMSHAPE_IIH][22+56] = "up"
-	roomWall[RoomShape.ROOMSHAPE_IIH][23+56] = "up"
-	roomWall[RoomShape.ROOMSHAPE_IIH][24+56] = "up"
-	roomWall[RoomShape.ROOMSHAPE_IIH][25+56] = "up"
-	roomWall[RoomShape.ROOMSHAPE_IIH][26+56] = "up"
-	roomWall[RoomShape.ROOMSHAPE_IIH][1+168] = "down"
-	roomWall[RoomShape.ROOMSHAPE_IIH][2+168] = "down"
-	roomWall[RoomShape.ROOMSHAPE_IIH][3+168] = "down"
-	roomWall[RoomShape.ROOMSHAPE_IIH][4+168] = "down"
-	roomWall[RoomShape.ROOMSHAPE_IIH][5+168] = "down"
-	roomWall[RoomShape.ROOMSHAPE_IIH][6+168] = "down"
-	roomWall[RoomShape.ROOMSHAPE_IIH][7+168] = "down"
-	roomWall[RoomShape.ROOMSHAPE_IIH][8+168] = "down"
-	roomWall[RoomShape.ROOMSHAPE_IIH][9+168] = "down"
-	roomWall[RoomShape.ROOMSHAPE_IIH][10+168] = "down"
-	roomWall[RoomShape.ROOMSHAPE_IIH][11+168] = "down"
-	roomWall[RoomShape.ROOMSHAPE_IIH][12+168] = "down"
-	roomWall[RoomShape.ROOMSHAPE_IIH][13+168] = "down"
-	roomWall[RoomShape.ROOMSHAPE_IIH][14+168] = "down"
-	roomWall[RoomShape.ROOMSHAPE_IIH][15+168] = "down"
-	roomWall[RoomShape.ROOMSHAPE_IIH][16+168] = "down"
-	roomWall[RoomShape.ROOMSHAPE_IIH][17+168] = "down"
-	roomWall[RoomShape.ROOMSHAPE_IIH][18+168] = "down"
-	roomWall[RoomShape.ROOMSHAPE_IIH][19+168] = "down"
-	roomWall[RoomShape.ROOMSHAPE_IIH][20+168] = "down"
-	roomWall[RoomShape.ROOMSHAPE_IIH][21+168] = "down"
-	roomWall[RoomShape.ROOMSHAPE_IIH][22+168] = "down"
-	roomWall[RoomShape.ROOMSHAPE_IIH][23+168] = "down"
-	roomWall[RoomShape.ROOMSHAPE_IIH][24+168] = "down"
-	roomWall[RoomShape.ROOMSHAPE_IIH][25+168] = "down"
-	roomWall[RoomShape.ROOMSHAPE_IIH][26+168] = "down"
-
-	roomWall[RoomShape.ROOMSHAPE_2x2] = {}
-	roomWall[RoomShape.ROOMSHAPE_2x2][28*0] = 28
-	roomWall[RoomShape.ROOMSHAPE_2x2][28*1] = "left"
-	roomWall[RoomShape.ROOMSHAPE_2x2][28*2] = "left"
-	roomWall[RoomShape.ROOMSHAPE_2x2][28*3] = "left"
-	roomWall[RoomShape.ROOMSHAPE_2x2][28*4] = "left"
-	roomWall[RoomShape.ROOMSHAPE_2x2][28*5] = "left"
-	roomWall[RoomShape.ROOMSHAPE_2x2][28*6] = "left"
-	roomWall[RoomShape.ROOMSHAPE_2x2][28*7] = "left"
-	roomWall[RoomShape.ROOMSHAPE_2x2][28*8] = "left"
-	roomWall[RoomShape.ROOMSHAPE_2x2][28*9] = "left"
-	roomWall[RoomShape.ROOMSHAPE_2x2][28*10] = "left"
-	roomWall[RoomShape.ROOMSHAPE_2x2][28*11] = "left"
-	roomWall[RoomShape.ROOMSHAPE_2x2][28*12] = "left"
-	roomWall[RoomShape.ROOMSHAPE_2x2][28*13] = "left"
-	roomWall[RoomShape.ROOMSHAPE_2x2][28*14] = "left"
-	roomWall[RoomShape.ROOMSHAPE_2x2][28*15] = 392
-	roomWall[RoomShape.ROOMSHAPE_2x2][28*0+27] = 55
-	roomWall[RoomShape.ROOMSHAPE_2x2][28*1+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_2x2][28*2+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_2x2][28*3+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_2x2][28*4+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_2x2][28*5+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_2x2][28*6+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_2x2][28*7+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_2x2][28*8+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_2x2][28*9+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_2x2][28*10+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_2x2][28*11+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_2x2][28*12+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_2x2][28*13+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_2x2][28*14+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_2x2][28*15+27] = 419
-	roomWall[RoomShape.ROOMSHAPE_2x2][1] = "up"
-	roomWall[RoomShape.ROOMSHAPE_2x2][2] = "up"
-	roomWall[RoomShape.ROOMSHAPE_2x2][3] = "up"
-	roomWall[RoomShape.ROOMSHAPE_2x2][4] = "up"
-	roomWall[RoomShape.ROOMSHAPE_2x2][5] = "up"
-	roomWall[RoomShape.ROOMSHAPE_2x2][6] = "up"
-	roomWall[RoomShape.ROOMSHAPE_2x2][7] = "up"
-	roomWall[RoomShape.ROOMSHAPE_2x2][8] = "up"
-	roomWall[RoomShape.ROOMSHAPE_2x2][9] = "up"
-	roomWall[RoomShape.ROOMSHAPE_2x2][10] = "up"
-	roomWall[RoomShape.ROOMSHAPE_2x2][11] = "up"
-	roomWall[RoomShape.ROOMSHAPE_2x2][12] = "up"
-	roomWall[RoomShape.ROOMSHAPE_2x2][13] = "up"
-	roomWall[RoomShape.ROOMSHAPE_2x2][14] = "up"
-	roomWall[RoomShape.ROOMSHAPE_2x2][15] = "up"
-	roomWall[RoomShape.ROOMSHAPE_2x2][16] = "up"
-	roomWall[RoomShape.ROOMSHAPE_2x2][17] = "up"
-	roomWall[RoomShape.ROOMSHAPE_2x2][18] = "up"
-	roomWall[RoomShape.ROOMSHAPE_2x2][19] = "up"
-	roomWall[RoomShape.ROOMSHAPE_2x2][20] = "up"
-	roomWall[RoomShape.ROOMSHAPE_2x2][21] = "up"
-	roomWall[RoomShape.ROOMSHAPE_2x2][22] = "up"
-	roomWall[RoomShape.ROOMSHAPE_2x2][23] = "up"
-	roomWall[RoomShape.ROOMSHAPE_2x2][24] = "up"
-	roomWall[RoomShape.ROOMSHAPE_2x2][25] = "up"
-	roomWall[RoomShape.ROOMSHAPE_2x2][26] = "up"
-	roomWall[RoomShape.ROOMSHAPE_2x2][1+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_2x2][2+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_2x2][3+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_2x2][4+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_2x2][5+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_2x2][6+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_2x2][7+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_2x2][8+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_2x2][9+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_2x2][10+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_2x2][11+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_2x2][12+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_2x2][13+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_2x2][14+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_2x2][15+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_2x2][16+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_2x2][17+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_2x2][18+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_2x2][19+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_2x2][20+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_2x2][21+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_2x2][22+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_2x2][23+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_2x2][24+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_2x2][25+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_2x2][26+420] = "down"
-
-	roomWall[RoomShape.ROOMSHAPE_LTL] = {}
-	roomWall[RoomShape.ROOMSHAPE_LTL][13+28*0] = 41
-	roomWall[RoomShape.ROOMSHAPE_LTL][13+28*1] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LTL][13+28*2] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LTL][13+28*3] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LTL][13+28*4] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LTL][13+28*5] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LTL][13+28*6] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LTL][13+28*7] = 181
-	roomWall[RoomShape.ROOMSHAPE_LTL][28*7] = 224
-	roomWall[RoomShape.ROOMSHAPE_LTL][28*8] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LTL][28*9] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LTL][28*10] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LTL][28*11] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LTL][28*12] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LTL][28*13] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LTL][28*14] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LTL][28*15] = 392
-	roomWall[RoomShape.ROOMSHAPE_LTL][28*0+27] = 55
-	roomWall[RoomShape.ROOMSHAPE_LTL][28*1+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LTL][28*2+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LTL][28*3+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LTL][28*4+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LTL][28*5+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LTL][28*6+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LTL][28*7+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LTL][28*8+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LTL][28*9+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LTL][28*10+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LTL][28*11+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LTL][28*12+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LTL][28*13+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LTL][28*14+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LTL][28*15+27] = 419
-	roomWall[RoomShape.ROOMSHAPE_LTL][1+196] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LTL][2+196] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LTL][3+196] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LTL][4+196] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LTL][5+196] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LTL][6+196] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LTL][7+196] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LTL][8+196] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LTL][9+196] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LTL][10+196] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LTL][11+196] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LTL][12+196] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LTL][14] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LTL][15] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LTL][16] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LTL][17] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LTL][18] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LTL][19] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LTL][20] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LTL][21] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LTL][22] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LTL][23] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LTL][24] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LTL][25] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LTL][26] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LTL][1+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LTL][2+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LTL][3+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LTL][4+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LTL][5+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LTL][6+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LTL][7+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LTL][8+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LTL][9+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LTL][10+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LTL][11+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LTL][12+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LTL][13+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LTL][14+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LTL][15+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LTL][16+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LTL][17+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LTL][18+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LTL][19+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LTL][20+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LTL][21+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LTL][22+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LTL][23+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LTL][24+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LTL][25+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LTL][26+420] = "down"
-
-	roomWall[RoomShape.ROOMSHAPE_LTR] = {}
-	roomWall[RoomShape.ROOMSHAPE_LTR][28*0] = 28
-	roomWall[RoomShape.ROOMSHAPE_LTR][28*1] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LTR][28*2] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LTR][28*3] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LTR][28*4] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LTR][28*5] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LTR][28*6] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LTR][28*7] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LTR][28*8] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LTR][28*9] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LTR][28*10] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LTR][28*11] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LTR][28*12] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LTR][28*13] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LTR][28*14] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LTR][28*15] = 392
-	roomWall[RoomShape.ROOMSHAPE_LTR][28*0+14] = 42
-	roomWall[RoomShape.ROOMSHAPE_LTR][28*1+14] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LTR][28*2+14] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LTR][28*3+14] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LTR][28*4+14] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LTR][28*5+14] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LTR][28*6+14] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LTR][28*7+14] = 182
-	roomWall[RoomShape.ROOMSHAPE_LTR][28*7+27] = 251
-	roomWall[RoomShape.ROOMSHAPE_LTR][28*8+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LTR][28*9+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LTR][28*10+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LTR][28*11+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LTR][28*12+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LTR][28*13+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LTR][28*14+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LTR][28*15+27] = 419
-	roomWall[RoomShape.ROOMSHAPE_LTR][1] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LTR][2] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LTR][3] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LTR][4] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LTR][5] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LTR][6] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LTR][7] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LTR][8] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LTR][9] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LTR][10] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LTR][11] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LTR][12] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LTR][13] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LTR][15+196] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LTR][16+196] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LTR][17+196] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LTR][18+196] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LTR][19+196] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LTR][20+196] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LTR][21+196] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LTR][22+196] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LTR][23+196] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LTR][24+196] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LTR][25+196] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LTR][26+196] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LTR][1+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LTR][2+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LTR][3+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LTR][4+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LTR][5+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LTR][6+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LTR][7+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LTR][8+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LTR][9+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LTR][10+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LTR][11+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LTR][12+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LTR][13+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LTR][14+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LTR][15+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LTR][16+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LTR][17+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LTR][18+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LTR][19+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LTR][20+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LTR][21+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LTR][22+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LTR][23+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LTR][24+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LTR][25+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LTR][26+420] = "down"
-
-	roomWall[RoomShape.ROOMSHAPE_LBL] = {}
-	roomWall[RoomShape.ROOMSHAPE_LBL][28*0] = 28
-	roomWall[RoomShape.ROOMSHAPE_LBL][28*1] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LBL][28*2] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LBL][28*3] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LBL][28*4] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LBL][28*5] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LBL][28*6] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LBL][28*7] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LBL][28*8] = 196
-	roomWall[RoomShape.ROOMSHAPE_LBL][28*8+13] = 265
-	roomWall[RoomShape.ROOMSHAPE_LBL][28*9+13] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LBL][28*10+13] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LBL][28*11+13] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LBL][28*12+13] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LBL][28*13+13] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LBL][28*14+13] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LBL][28*15+13] = 405
-	roomWall[RoomShape.ROOMSHAPE_LBL][28*0+27] = 55
-	roomWall[RoomShape.ROOMSHAPE_LBL][28*1+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LBL][28*2+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LBL][28*3+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LBL][28*4+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LBL][28*5+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LBL][28*6+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LBL][28*7+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LBL][28*8+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LBL][28*9+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LBL][28*10+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LBL][28*11+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LBL][28*12+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LBL][28*13+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LBL][28*14+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LBL][28*15+27] = 419
-	roomWall[RoomShape.ROOMSHAPE_LBL][1] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LBL][2] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LBL][3] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LBL][4] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LBL][5] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LBL][6] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LBL][7] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LBL][8] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LBL][9] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LBL][10] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LBL][11] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LBL][12] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LBL][13] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LBL][14] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LBL][15] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LBL][16] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LBL][17] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LBL][18] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LBL][19] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LBL][20] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LBL][21] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LBL][22] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LBL][23] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LBL][24] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LBL][25] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LBL][26] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LBL][1+420-196] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LBL][2+420-196] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LBL][3+420-196] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LBL][4+420-196] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LBL][5+420-196] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LBL][6+420-196] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LBL][7+420-196] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LBL][8+420-196] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LBL][9+420-196] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LBL][10+420-196] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LBL][11+420-196] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LBL][12+420-196] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LBL][14+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LBL][15+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LBL][16+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LBL][17+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LBL][18+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LBL][19+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LBL][20+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LBL][21+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LBL][22+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LBL][23+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LBL][24+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LBL][25+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LBL][26+420] = "down"
-
-	roomWall[RoomShape.ROOMSHAPE_LBR] = {}
-	roomWall[RoomShape.ROOMSHAPE_LBR][28*0] = 28
-	roomWall[RoomShape.ROOMSHAPE_LBR][28*1] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LBR][28*2] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LBR][28*3] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LBR][28*4] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LBR][28*5] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LBR][28*6] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LBR][28*7] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LBR][28*8] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LBR][28*9] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LBR][28*10] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LBR][28*11] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LBR][28*12] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LBR][28*13] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LBR][28*14] = "left"
-	roomWall[RoomShape.ROOMSHAPE_LBR][28*15] = 392
-	roomWall[RoomShape.ROOMSHAPE_LBR][28*0+27] = 55
-	roomWall[RoomShape.ROOMSHAPE_LBR][28*1+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LBR][28*2+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LBR][28*3+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LBR][28*4+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LBR][28*5+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LBR][28*6+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LBR][28*7+27] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LBR][28*8+27] = 223
-	roomWall[RoomShape.ROOMSHAPE_LBR][28*8+27-13] = 266
-	roomWall[RoomShape.ROOMSHAPE_LBR][28*9+27-13] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LBR][28*10+27-13] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LBR][28*11+27-13] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LBR][28*12+27-13] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LBR][28*13+27-13] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LBR][28*14+27-13] = "right"
-	roomWall[RoomShape.ROOMSHAPE_LBR][28*15+27-13] = 406
-	roomWall[RoomShape.ROOMSHAPE_LBR][1] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LBR][2] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LBR][3] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LBR][4] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LBR][5] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LBR][6] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LBR][7] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LBR][8] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LBR][9] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LBR][10] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LBR][11] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LBR][12] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LBR][13] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LBR][14] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LBR][15] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LBR][16] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LBR][17] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LBR][18] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LBR][19] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LBR][20] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LBR][21] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LBR][22] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LBR][23] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LBR][24] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LBR][25] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LBR][26] = "up"
-	roomWall[RoomShape.ROOMSHAPE_LBR][1+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LBR][2+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LBR][3+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LBR][4+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LBR][5+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LBR][6+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LBR][7+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LBR][8+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LBR][9+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LBR][10+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LBR][11+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LBR][12+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LBR][13+420] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LBR][15+420-196] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LBR][16+420-196] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LBR][17+420-196] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LBR][18+420-196] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LBR][19+420-196] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LBR][20+420-196] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LBR][21+420-196] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LBR][22+420-196] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LBR][23+420-196] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LBR][24+420-196] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LBR][25+420-196] = "down"
-	roomWall[RoomShape.ROOMSHAPE_LBR][26+420-196] = "down"
-end
-loadRoomWall()
-
-local function ValidPortalWall(roomShape, roomGrid)
-	local shapeWallData = roomWall[roomShape]
-	if shapeWallData == nil then return end
-	local wallDirType = shapeWallData[roomGrid]
-	for i=1,1000 do
-		if type(wallDirType) == "number" then
-			roomGrid = wallDirType
-			wallDirType = shapeWallData[roomGrid]
-		else
-			break
-		end
-	end
-	if wallDirType == nil then return nil end
-	return roomGrid, wallDirType
-end
 
 local levelPosition = { RoomInLevelListIndex = -1, InRoomGridIndex = -1 }
 levelPosition.__index = levelPosition
@@ -1168,7 +372,7 @@ end
 
 -- 更新玩家外观，按需执行
 local function UpdateCostumes(player)
-	if player:GetPlayerType() == playerTypeHexanow then
+	if IsHexanow(player) then
 		player:ClearCostumes()
 		player:RemoveSkinCostume()
 		
@@ -1187,6 +391,7 @@ local function UpdateCostumes(player)
 		if color.R < 1.0
 		or color.G < 1.0
 		or color.B < 1.0
+		or color.A < 1.0
 		then
 			player:SetColor(Color (1.0, 1.0, 1.0, 1.0), -1, 999999999, false, false)
 		end
@@ -1224,6 +429,7 @@ local function ApplyEternalCharge(player)
 	end
 end
 
+--[[
 -- 确保随从数量
 local function EnsureFamiliars(player)
 	local roomEntities = Isaac.GetRoomEntities()
@@ -1243,6 +449,7 @@ local function EnsureFamiliars(player)
 		end
 	-- end
 end
+]]
 
 -- 移除红心外的所有心
 local function RearrangeHearts(player)
@@ -1568,7 +775,7 @@ local function TeleportToPortalLocation(entity, portalOwnerPlayerID, portalColor
 	local location = HexanowPlayerDatas[portalOwnerPlayerID].CreatedPortals[GetCurrentDimension()][portalColorType]
 	if location ~= nil then
 		if IsPortalInSameRoom(portalOwnerPlayerID, portalColorType) then
-			local inInRoomGridIndex, direction = ValidPortalWall(room:GetRoomShape(), location.InRoomGridIndex)
+			local inInRoomGridIndex, direction = ValidHexanowPortalWall(room:GetRoomShape(), location.InRoomGridIndex)
 			local pos = room:GetGridPosition(inInRoomGridIndex)
 			direction = fromDirectionString(direction)
 			if pos ~= nil and direction ~= Direction.NO_DIRECTION then
@@ -1649,7 +856,7 @@ local function MaintainPortal(skipCreationAnim)
 			if levelPosition ~= nil then
 				isInRoom = levelPosition.RoomInLevelListIndex == roomDesc.ListIndex
 				if isInRoom then
-					inInRoomGridIndex, direction = ValidPortalWall(room:GetRoomShape(), levelPosition.InRoomGridIndex)
+					inInRoomGridIndex, direction = ValidHexanowPortalWall(room:GetRoomShape(), levelPosition.InRoomGridIndex)
 					pos = room:GetGridPosition(inInRoomGridIndex)
 					direction = fromDirectionString(direction)
 					if inInRoomGridIndex == nil or direction == Direction.NO_DIRECTION or pos == nil or room:GetType() == RoomType.ROOM_DUNGEON then
@@ -1721,7 +928,7 @@ local function SetPortal(player, typeNum, room, roomDesc, pos)
 	pos.Y = math.floor((pos.Y+ 20)/40.0)*40
 	local playerID = GetPlayerID(player)
 	local dimension = GetCurrentDimension()
-	local inInRoomGridIndex, direction = ValidPortalWall(room:GetRoomShape(), room:GetGridIndex(pos))
+	local inInRoomGridIndex, direction = ValidHexanowPortalWall(room:GetRoomShape(), room:GetGridIndex(pos))
 	if inInRoomGridIndex == nil or direction == nil then
 		HexanowPlayerDatas[playerID].CreatedPortals[dimension][typeNum] = nil
 		MaintainPortal(false)
@@ -1788,8 +995,8 @@ local function HexanowLaserOverPortalLocation(player, degrees, colorType)
 	then
 		return nil
 	end
-	local inInRoomGridIndex1, direction1 = ValidPortalWall(room:GetRoomShape(), thisPortal.InRoomGridIndex)
-	local inInRoomGridIndex2, direction2 = ValidPortalWall(room:GetRoomShape(), otherPortal.InRoomGridIndex)
+	local inInRoomGridIndex1, direction1 = ValidHexanowPortalWall(room:GetRoomShape(), thisPortal.InRoomGridIndex)
+	local inInRoomGridIndex2, direction2 = ValidHexanowPortalWall(room:GetRoomShape(), otherPortal.InRoomGridIndex)
 	direction1 = fromDirectionString(direction1)
 	direction2 = fromDirectionString(direction2)
 	
@@ -1912,10 +1119,10 @@ end
 
 -- 玩家刻事件，每一帧执行
 local function TickEventHexanow(player)
-	if player:GetPlayerType() == playerTypeHexanowTainted then
+	if IsHexanowTainted(player) then
 		player:ChangePlayerType(playerTypeHexanow)
 	end
-	if player:GetPlayerType() == playerTypeHexanow then
+	if IsHexanow(player) then
 		local game = Game()
 		local level = game:GetLevel()
 		local room = game:GetRoom()
@@ -2257,7 +1464,7 @@ end
 
 -- 玩家攻击，每一帧执行
 local function TryCastFireHexanow(player)
-	if player:GetPlayerType() == playerTypeHexanow then
+	if IsHexanow(player) then
 		local game = Game()
 		local level = game:GetLevel()
 		local room = game:GetRoom()
@@ -2288,7 +1495,7 @@ local function InitPlayerHexanowTainted(player)
 	--print("CALLED!")
 	--print("PType", player:GetPlayerType())
 	--print("TType", playerTypeHexanowTainted)
-	if player:GetPlayerType() == playerTypeHexanowTainted then
+	if IsHexanowTainted(player) then
 		--print("CALLED ACCEPT!")
 		player:ChangePlayerType(playerTypeHexanow)
 		
@@ -2326,7 +1533,7 @@ end
 
 -- 初始化人物
 local function InitPlayerHexanow(player)
-	if player:GetPlayerType() == playerTypeHexanow then
+	if IsHexanow(player) then
 		local itemPool = Game():GetItemPool()
 		
 		player:AddHearts(-player:GetHearts())
@@ -2833,7 +2040,7 @@ hexanowMod:AddCallback(ModCallbacks.MC_USE_ITEM, hexanowMod.UsePortalTool, hexan
 -- 时间回溯
 function hexanowMod:UseGlowingHourGlass(itemId, itemRng, player, useFlags, activeSlot, customVarData)
 	if itemId == CollectibleType.COLLECTIBLE_GLOWING_HOUR_GLASS
-	--and player:GetPlayerType() == playerTypeHexanow
+	--and IsHexanow(player)
 	then
 		RewindLastRoomVar()
 	end
@@ -2873,7 +2080,7 @@ function hexanowMod:PostNewLevel()
 	--[[
 	CallForEveryPlayer(
 		function(player)
-			if player:GetPlayerType() == playerTypeHexanow then
+			if IsHexanow(player) then
 				if Game():GetLevel():GetStage() ~= 13 then
 					player:UseActiveItem(hexanowPortalTool, false, false, true, false)
 				end
@@ -2892,7 +2099,7 @@ function hexanowMod:PostNewRoom()
 		HexanowPlayerDatas[playerID].InRoomCreatedPortals[2] = nil
 	end
 	if queuedNextRoomGrid ~= nil then
-		local inInRoomGridIndex, direction = ValidPortalWall(room:GetRoomShape(), queuedNextRoomGrid)
+		local inInRoomGridIndex, direction = ValidHexanowPortalWall(room:GetRoomShape(), queuedNextRoomGrid)
 		direction = fromDirectionString(direction)
 		local pos = room:GetGridPosition(inInRoomGridIndex)
 		if pos ~= nil and direction ~= Direction.NO_DIRECTION then
@@ -2925,7 +2132,7 @@ function hexanowMod:PostNewRoom()
 	CallForEveryPlayer(
 		function(player)
 			UpdateCostumes(player)
-			if player:GetPlayerType() == playerTypeHexanow then
+			if IsHexanow(player) then
 				ApplyEternalHearts(player)
 				if not Game():GetRoom():IsClear() then
 					roomClearBounsEnabled = false
@@ -2996,7 +2203,7 @@ hexanowMod:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, hexanowMod.PostNewRoom)
 function hexanowMod:PreSpawnCleanAward(Rng, SpawnPos)
 	CallForEveryPlayer(
 		function(player)
-			if player:GetPlayerType() == playerTypeHexanow then
+			if IsHexanow(player) then
 				ApplyEternalHearts(player)
 			end
 		end
@@ -3009,7 +2216,7 @@ function hexanowMod:EntityTakeDmg(TookDamage, DamageAmount, DamageFlag, DamageSo
 	if TookDamage.Type == EntityType.ENTITY_PLAYER then
 		local player = TookDamage:ToPlayer()
 		local room = Game():GetRoom()
-		if player:GetPlayerType() == playerTypeHexanow then
+		if IsHexanow(player) then
 			RearrangeHearts(player)
 			local num1,num2=math.modf( math.max(player:GetSoulHearts() - DamageAmount, 0)*0.5 )
 			if num2 ~= 0 then
@@ -3075,7 +2282,7 @@ hexanowMod:AddCallback(ModCallbacks.MC_POST_CURSE_EVAL , hexanowMod.PostCurseEva
 
 -- 改变玩家碰撞行为
 function hexanowMod:PrePlayerCollision(player, collider, low)
-	if player:GetPlayerType() == playerTypeHexanow then
+	if IsHexanow(player) then
 		if collider.Type == 306 then
 			return true
 		end
@@ -3088,7 +2295,7 @@ function hexanowMod:PreTearCollision(tear, collider, low)
 	if tear.Parent ~= nil then
 		local player = tear.Parent:ToPlayer()
 		if player ~= nil
-		and player:GetPlayerType() == playerTypeHexanow
+		and IsHexanow(player)
 		and collider.Type == 963
 		then
 			return true
@@ -3101,7 +2308,7 @@ hexanowMod:AddCallback(ModCallbacks.MC_PRE_TEAR_COLLISION , hexanowMod.PreTearCo
 function hexanowMod:PrePickupCollision(pickup, collider, low)
 	local player = collider:ToPlayer()
 	if player ~= nil
-	and player:GetPlayerType() == playerTypeHexanow
+	and IsHexanow(player)
 	then
 		if hexanowFlags:HasFlag("TAINTED") and not hexanowFlags:HasFlag("TEFFECT_DEATHCERTIFICATE_USED")
 		and pickup.Variant == PickupVariant.PICKUP_COLLECTIBLE
@@ -3303,7 +2510,7 @@ function hexanowMod:EvaluateCache(player, cacheFlag, tear)
 		tear range: 300%
 		luck: -3
 	]]
-	if player:GetPlayerType() == playerTypeHexanow then
+	if IsHexanow(player) then
 		if cacheFlag == CacheFlag.CACHE_SPEED then
 			if roomClearBounsEnabled then
 				player.MoveSpeed = player.MoveSpeed + 0.15 --  * (1.0 + 0.15 * player:GetMaxHearts() / 24.0)
@@ -3391,7 +2598,7 @@ function hexanowMod:PostUpdate()
 	]]
 	CallForEveryPlayer(
 		function(player)
-			if player:GetPlayerType() == playerTypeHexanow then
+			if IsHexanow(player) then
 				TickEventHexanow(player)
 				TryCastFireHexanow(player)
 			end
@@ -3432,7 +2639,7 @@ function hexanowMod:PostUpdate()
 				if tear ~= nil and tear.Parent ~= nil then
 					if tear.Parent.Type == EntityType.ENTITY_PLAYER then
 						local player = tear.Parent:ToPlayer()
-						if player:GetPlayerType() == playerTypeHexanow
+						if IsHexanow(player)
 						then							
 							if tear.Variant ~= TearVariant.ICE then
 								tear:ChangeVariant(TearVariant.ICE)
@@ -3740,7 +2947,7 @@ function hexanowMod:PostUpdate()
 		if tear ~= nil then
 			if      tear.Parent.Type == EntityType.ENTITY_PLAYER then
 				local player = tear.Parent:ToPlayer()
-				if player:GetPlayerType() == playerTypeHexanow
+				if IsHexanow(player)
 				then
 					-- tear.Height = tear.Height + tear.FallingSpeed * 2 / 3
 					-- local roomEntities = Isaac.GetRoomEntities()
@@ -3804,7 +3011,7 @@ function hexanowMod:PostUpdate()
 				if tear.Parent ~= nil
 				and tear.Parent.Type == EntityType.ENTITY_PLAYER then
 					local player = tear.Parent:ToPlayer()
-					if player:GetPlayerType() == playerTypeHexanow
+					if IsHexanow(player)
 					then
 						--tear.Visible = false
 						--Isaac.Spawn(1000, 59, 0, tear.Position, Vector(0, 0), player)
@@ -3861,7 +3068,7 @@ function hexanowMod:PostRender()
 		local sortNum = 0
 		CallForEveryPlayer(
 			function(player)
-				if player:GetPlayerType() == playerTypeHexanow then
+				if IsHexanow(player) then
 					SelManageRander(baseOffset + Vector(42, -36) + offsetModSel, GetPlayerID(player), sortNum)
 					sortNum = sortNum + 1
 				end
@@ -3877,12 +3084,12 @@ function hexanowMod:PostRender()
 end
 hexanowMod:AddCallback(ModCallbacks.MC_POST_RENDER, hexanowMod.PostRender)
 
+--[[
 -- 初始化随从
 function hexanowMod:FamiliarInit(_, fam)
 	print("Initiating Hearts Blender")
 end
 hexanowMod:AddCallback(ModCallbacks.MC_FAMILIAR_INIT, hexanowMod.FamiliarInit, entityVariantHeartsBlender)
-
 -- 更新随从行为
 function hexanowMod:FamiliarUpdate(_, fam)
 	local roomEntities = Isaac.GetRoomEntities()
@@ -3893,7 +3100,7 @@ function hexanowMod:FamiliarUpdate(_, fam)
     local parent = fam.Player
 	--[[if parent:ToPlayer() ~= nil then
 		parent = fam.Parent:ToPlayer()
-	end]]
+	end] ]
 	
 	--[[
 	for i,entity in ipairs(roomEntities) do
@@ -3928,7 +3135,7 @@ function hexanowMod:FamiliarUpdate(_, fam)
 			end
 		end
 	end
-	]]
+	] ]
 	
 	if targetPos ~= nil then
 		--  targetPos = parent.Position
@@ -3942,7 +3149,7 @@ function hexanowMod:FamiliarUpdate(_, fam)
     end
 end
 hexanowMod:AddCallback(ModCallbacks.MC_FAMILIAR_UPDATE, hexanowMod.FamiliarUpdate, entityVariantHeartsBlender)
-
+]]
 -- 更新眼泪行为，在每一帧后执行
 function hexanowMod:PostTearUpdate(tear)
 end

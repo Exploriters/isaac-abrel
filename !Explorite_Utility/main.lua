@@ -7,5 +7,6 @@ require("misc")
 require("exploriteFlags")
 require("exploriteObjectives")
 require("completionMarksUtility")
+require("simpleTranslate")
 
 --Isaac.ConsoleOutput("Init mod Explorite end\n")
