@@ -86,6 +86,20 @@ function PlayerTypeExistInGame(playerType)
 	return false
 end
 
+-- 检测游戏中是否存在指定的玩家类型以外的玩家类型
+function PlayerTypeUniqueInGame(playerType)
+	local atLeastOne = false
+	local numPlayers = Game():GetNumPlayers()
+	for i=0,numPlayers-1,1 do
+		if Isaac.GetPlayer(i):GetPlayerType() == playerType then
+			atLeastOne = true
+		else
+			return false
+		end
+	end
+	return atLeastOne
+end
+
 function StringConvertToBoolean(str)
     if str == nil then
         return false
