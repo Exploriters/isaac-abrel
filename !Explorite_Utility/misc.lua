@@ -75,15 +75,25 @@ function CallForEveryEntity(func)
 	end
 end
 
--- 检测游戏中是否存在指定的玩家类型
-function PlayerTypeExistInGame(playerType)
+-- 查找游戏中第一个符合断言的玩家的玩家
+function PlayerFindFirst(predicate)
 	local numPlayers = Game():GetNumPlayers()
 	for i=0,numPlayers-1,1 do
-		if Isaac.GetPlayer(i):GetPlayerType() == playerType then
-			return true
+		if predicate(Isaac.GetPlayer(i)) then
+			return Isaac.GetPlayer(i)
 		end
 	end
-	return false
+	return nil
+end
+
+-- 查找游戏中第一个目标玩家类型的玩家
+function PlayerTypeFirstOneInGame(playerType)
+	return PlayerFindFirst(function (player) return player:GetPlayerType() == playerType end)
+end
+
+-- 检测游戏中是否存在指定的玩家类型
+function PlayerTypeExistInGame(playerType)
+	return PlayerTypeFirstOneInGame(playerType) ~= nil
 end
 
 -- 检测游戏中是否存在指定的玩家类型以外的玩家类型

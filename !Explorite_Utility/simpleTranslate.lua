@@ -15,12 +15,15 @@ function Explorite.SimpleTranslate()
 	return cted
 end
 
-function exploriteTranslate:TranslatedString(str, ...)
+function exploriteTranslate:_(str, ...)
 	local language = Options.Language
 	if self.data[language] == nil or self.data[language][str] == nil then
 		language = "en"
 	end
 	local result = self.data[language][str]
+	if result == nil then
+		return str
+	end
 	for i,value in ipairs(...) do
 		result = string.gsub(result, "{"..i.."}", tostring(value))
 		result = string.gsub(result, "{\\"..i.."}", "{"..i.."}")
