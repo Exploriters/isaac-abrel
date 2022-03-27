@@ -1,4 +1,3 @@
-local hexanowMod = RegisterMod("Hexanow", 1);
 
 local playerTypeHexanow = Isaac.GetPlayerTypeByName("Hexanow")
 local playerTypeHexanowTainted = Isaac.GetPlayerTypeByName("Tainted Hexanow", true)
@@ -11,34 +10,6 @@ local function IsHexanowTainted(player)
 	return player:GetPlayerType() == playerTypeHexanowTainted
 end
 
-if Explorite == nil then
-	function hexanowMod:checkMissingExploriteStart(loadedFromSaves)
-		local numPlayers = Game():GetNumPlayers()
-		for i=0,numPlayers-1,1 do
-			local player = Isaac.GetPlayer(i)
-			if IsHexanow(player) then
-				player:AddControlsCooldown(2147483647)
-				if not loadedFromSaves then
-					player.Visible = false
-					player:AddBrokenHearts(2147483647)
-				end
-			end
-		end
-	end
-	hexanowMod:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, hexanowMod.checkMissingExploriteStart)
-
-	function hexanowMod:checkMissingExploriteRend()
-		if Explorite == nil then
-			Isaac.RenderText("Explorite utility is missing.", (Isaac.GetScreenWidth() - Isaac.GetTextWidth("Explorite utility is missing.")) / 2, Isaac.GetScreenHeight() / 2, 255, 0, 0, 255)
-		end
-	end
-	hexanowMod:AddCallback(ModCallbacks.MC_POST_RENDER, hexanowMod.checkMissingExploriteRend)
-	return
-end
-
-require("roomWall")
-require("lang")
-require("apioverride")
 --[[
 local baseEntityPlayerGetHeartsLimit = APIOverride.GetCurrentClassFunction(EntityPlayer, "GetHeartLimit")
 APIOverride.OverrideClassFunction(EntityPlayer, "GetHeartLimit", function(interval)
@@ -72,17 +43,12 @@ end)
 ---------- 变量初始化
 ----------
 
-local hexanowFlags = Explorite.NewExploriteFlags()
-local hexanowObjectives = Explorite.NewExploriteObjectives()
-
 --local hexanowItem = Isaac.GetItemIdByName( "Hexanow's Soul" )
 local hexanowPortalTool = Isaac.GetItemIdByName("Eternal Portal")
 local hexanowStatTriggerItem = Isaac.GetItemIdByName( "Hexanow overall stat trigger" )
 local hexanowHairCostume = Isaac.GetCostumeIdByPath("gfx/characters/HexanowHair.anm2")
 local hexanowBodyCostume = Isaac.GetCostumeIdByPath("gfx/characters/HexanowBody.anm2")
 local hexanowBodyFlightCostume = Isaac.GetCostumeIdByPath("gfx/characters/HexanowFlight.anm2")
-
-local hexanowSoulStoneID = Isaac.GetCardIdByName("Soul of Hexanow")
 
 --local entityVariantHeartsBlender = Isaac.GetEntityVariantByName("Hearts Blender")
 local entityVariantHexanowLaser = Isaac.GetEntityVariantByName("Laser (Hexanow)")
@@ -253,7 +219,7 @@ end
 
 -- 抹除临时变量
 local function WipeTempVar()
-	hexanowFlags:Wipe()
+	HexanowFlags:Wipe()
 
 	gameInited = false
 
@@ -279,9 +245,9 @@ local function RewindLastRoomVar()
 	UpdateLastRoomVar()
 end
 
-function hexanowObjectives:Apply()
-	hexanowFlags:Wipe()
-	hexanowFlags:LoadFromString(self:Read("Flags", ""))
+function HexanowObjectives:Apply()
+	HexanowFlags:Wipe()
+	HexanowFlags:LoadFromString(self:Read("Flags", ""))
 	EternalCharges = tonumber(self:Read("EternalCharges", "0"))
 	for playerID=1,4 do
 		HexanowPlayerDatas[playerID].SelectedWhiteItem = tonumber(self:Read("Player"..playerID.."-SelectedWhiteItem", "1"))
@@ -306,8 +272,8 @@ function hexanowObjectives:Apply()
 	UpdateLastRoomVar()
 end
 
-function hexanowObjectives:Recieve()
-	self:Write("Flags", hexanowFlags:ToString())
+function HexanowObjectives:Recieve()
+	self:Write("Flags", HexanowFlags:ToString())
 	self:Write("EternalCharges", tostring(EternalCharges))
 	for playerID=1,4 do
 		self:Write("Player"..playerID.."-SelectedWhiteItem", tostring(HexanowPlayerDatas[playerID].SelectedWhiteItem))
@@ -336,10 +302,10 @@ end
 
 -- 读取mod数据
 local function LoadHexanowModData()
-	--Isaac.SaveModData(hexanowMod, "someThingWrong\nsomeThingWrong")
+	--Isaac.SaveModData(HexanowMod, "someThingWrong\nsomeThingWrong")
 	local str = ""
-	if Isaac.HasModData(hexanowMod) then
-		str = Isaac.LoadModData(hexanowMod)
+	if Isaac.HasModData(HexanowMod) then
+		str = Isaac.LoadModData(HexanowMod)
 	--	if str == nil then
 	--		print("Null readout!")
 	--	else
@@ -348,17 +314,17 @@ local function LoadHexanowModData()
 	--else
 	--	print("Data does not exist")
 	end
-	hexanowObjectives:Wipe()
-	hexanowObjectives:LoadFromString(str)
-	hexanowObjectives:Apply()
+	HexanowObjectives:Wipe()
+	HexanowObjectives:LoadFromString(str)
+	HexanowObjectives:Apply()
 end
 
 -- 存储mod数据
 local function SaveHexanowModData()
-	hexanowObjectives:Recieve()
-	local str = hexanowObjectives:ToString(true)
+	HexanowObjectives:Recieve()
+	local str = HexanowObjectives:ToString(true)
 	--print("Save Readout: ", str)
-	Isaac.SaveModData(hexanowMod, str)
+	Isaac.SaveModData(HexanowMod, str)
 end
 
 ------------------------------------------------------------
@@ -1106,7 +1072,7 @@ local function CastHexanowLaser(player, position, degrees, colorType, fromOtherB
 end
 
 local function TaintedHexanowRoomOverride()
-	if not hexanowFlags:HasFlag("TAINTED") then
+	if not HexanowFlags:HasFlag("TAINTED") then
 		return nil
 	end
 
@@ -1123,9 +1089,9 @@ local function TaintedHexanowRoomOverride()
 			local pickup = entity:ToPickup()
 			if pickup ~= nil then
 				if pickup.Variant == PickupVariant.PICKUP_COLLECTIBLE and pickup.SubType ~= 0 then
-					if not hexanowFlags:HasFlag("TEFFECT_REDKEY_GEN") and room:GetBackdropType() == 51 and pickup.SubType ~= CollectibleType.COLLECTIBLE_RED_KEY then
+					if not HexanowFlags:HasFlag("TEFFECT_REDKEY_GEN") and room:GetBackdropType() == 51 and pickup.SubType ~= CollectibleType.COLLECTIBLE_RED_KEY then
 						pickup:Morph(pickup.Type, pickup.Variant, CollectibleType.COLLECTIBLE_RED_KEY, true)
-						hexanowFlags:AddFlag("TEFFECT_REDKEY_GEN")
+						HexanowFlags:AddFlag("TEFFECT_REDKEY_GEN")
 					end
 
 					if pickup.SubType == CollectibleType.COLLECTIBLE_R_KEY
@@ -1135,7 +1101,7 @@ local function TaintedHexanowRoomOverride()
 						pickup:Morph(pickup.Type, pickup.Variant, CollectibleType.COLLECTIBLE_BREAKFAST, true)
 					end
 				end
-				if not hexanowFlags:HasFlag("TEFFECT_CHESTWIPE") and room:GetBackdropType() == 49 and
+				if not HexanowFlags:HasFlag("TEFFECT_CHESTWIPE") and room:GetBackdropType() == 49 and
 					 ( pickup.Variant == PickupVariant.PICKUP_CHEST
 					or pickup.Variant == PickupVariant.PICKUP_BOMBCHEST
 					or pickup.Variant == PickupVariant.PICKUP_SPIKEDCHEST
@@ -1145,17 +1111,17 @@ local function TaintedHexanowRoomOverride()
 					)
 				then
 					pickup:Remove()
-					hexanowFlags:AddFlag("TEFFECT_CHESTWIPE")
+					HexanowFlags:AddFlag("TEFFECT_CHESTWIPE")
 				end
 			end
 
-			if not hexanowFlags:HasFlag("TEFFECT_DEATHCERTIFICATE_GEN") and
+			if not HexanowFlags:HasFlag("TEFFECT_DEATHCERTIFICATE_GEN") and
 			(entity.Type == EntityType.ENTITY_SHOPKEEPER
 			or (pickup ~= nil and pickup.Variant == PickupVariant.PICKUP_COLLECTIBLE and pickup.SubType == CollectibleType.COLLECTIBLE_INNER_CHILD)
 			)then
 				Isaac.Spawn(EntityType.ENTITY_PICKUP, PickupVariant.PICKUP_COLLECTIBLE, CollectibleType.COLLECTIBLE_DEATH_CERTIFICATE, entity.Position, Vector(0,0), entity)
 				entity:Remove()
-				hexanowFlags:AddFlag("TEFFECT_DEATHCERTIFICATE_GEN")
+				HexanowFlags:AddFlag("TEFFECT_DEATHCERTIFICATE_GEN")
 			end
 
 
@@ -1548,8 +1514,8 @@ local function InitPlayerHexanowTainted(player)
 
 		local level = Game():GetLevel()
 
-		if not hexanowFlags:HasFlag("TAINTED") then
-			hexanowFlags:AddFlag("TAINTED")
+		if not HexanowFlags:HasFlag("TAINTED") then
+			HexanowFlags:AddFlag("TAINTED")
 			--player:AddCard(Card.CARD_CRACKED_KEY)
 			--player:AddCollectible(CollectibleType.COLLECTIBLE_DEATH_CERTIFICATE, 0, false)
 			player:AddCoins(99)
@@ -1596,7 +1562,7 @@ local function InitPlayerHexanow(player)
 		--player:AddHearts(-1)
 		--player:AddCard(Card.CARD_JUSTICE)
 		--player:AddCard(Card.CARD_CRACKED_KEY)
-		if hexanowFlags:HasFlag("TAINTED") then
+		if HexanowFlags:HasFlag("TAINTED") then
 			player:AddMaxHearts(12)
 			player:AddHearts(13)
 			player:AddTrinket(TrinketType.TRINKET_PERFECTION | 32768)
@@ -1754,7 +1720,7 @@ end
 ----------
 
 -- 在游戏被初始化后运行
-function hexanowMod:PostGameStarted(loadedFromSaves)
+function HexanowMod:PostGameStarted(loadedFromSaves)
 	WipeTempVar()
 	LoadHexanowModData()
 	if not loadedFromSaves then -- 仅限新游戏
@@ -1765,10 +1731,10 @@ function hexanowMod:PostGameStarted(loadedFromSaves)
 	end
 	gameInited = true
 end
-hexanowMod:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, hexanowMod.PostGameStarted)
+HexanowMod:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, HexanowMod.PostGameStarted)
 
 -- 在游戏退出前运行
-function hexanowMod:PreGameExit(shouldSave)
+function HexanowMod:PreGameExit(shouldSave)
 	if not shouldSave then
 		WipeTempVar()
 	end
@@ -1776,10 +1742,10 @@ function hexanowMod:PreGameExit(shouldSave)
 	WipeTempVar()
 	gameInited = false
 end
-hexanowMod:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, hexanowMod.PreGameExit)
+HexanowMod:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, HexanowMod.PreGameExit)
 
 -- 自定义命令行
-function hexanowMod:ExecuteCmd(cmd, params)
+function HexanowMod:ExecuteCmd(cmd, params)
 	--[[
 	if cmd == "hudoffset" then
 		if tonumber(params) ~= nil
@@ -1957,34 +1923,34 @@ function hexanowMod:ExecuteCmd(cmd, params)
 		end
 
 		if subcmd == "" or subcmd == "report" then
-			print(hexanowFlags:ToString())
+			print(HexanowFlags:ToString())
 		elseif subcmd == "add" then
-			hexanowFlags:AddFlag(subcmd_arg)
-			print(hexanowFlags:ToString())
+			HexanowFlags:AddFlag(subcmd_arg)
+			print(HexanowFlags:ToString())
 		elseif subcmd == "remove" then
-			hexanowFlags:RemoveFlag(subcmd_arg)
-			print(hexanowFlags:ToString())
+			HexanowFlags:RemoveFlag(subcmd_arg)
+			print(HexanowFlags:ToString())
 		elseif subcmd == "test" then
-			print(hexanowFlags:HasFlag(subcmd_arg))
+			print(HexanowFlags:HasFlag(subcmd_arg))
 		else
 			Isaac.ConsoleOutput("Invalid args\nRequires either \"report\", \"add\", \"remove\" or \"test\".")
 		end
 
 	end
 end
-hexanowMod:AddCallback(ModCallbacks.MC_EXECUTE_CMD, hexanowMod.ExecuteCmd);
+HexanowMod:AddCallback(ModCallbacks.MC_EXECUTE_CMD, HexanowMod.ExecuteCmd);
 
 -- 在玩家被加载后运行
-function hexanowMod:PostPlayerInit(player)
+function HexanowMod:PostPlayerInit(player)
 	InitPlayerHexanow(player)
 	InitPlayerHexanowTainted(player)
 	UpdateCostumes(player)
 	--SaveHexanowModData()
 end
-hexanowMod:AddCallback(ModCallbacks.MC_POST_PLAYER_INIT, hexanowMod.PostPlayerInit)
+HexanowMod:AddCallback(ModCallbacks.MC_POST_PLAYER_INIT, HexanowMod.PostPlayerInit)
 
 -- 使用传送门工具的效果
-function hexanowMod:UsePortalTool(itemId, itemRng, player, useFlags, activeSlot, customVarData)
+function HexanowMod:UsePortalTool(itemId, itemRng, player, useFlags, activeSlot, customVarData)
 	local result = {
 		Discharge = false,
 		Remove = false,
@@ -2000,33 +1966,20 @@ function hexanowMod:UsePortalTool(itemId, itemRng, player, useFlags, activeSlot,
 
 	return result
 end
-hexanowMod:AddCallback(ModCallbacks.MC_USE_ITEM, hexanowMod.UsePortalTool, hexanowPortalTool)
+HexanowMod:AddCallback(ModCallbacks.MC_USE_ITEM, HexanowMod.UsePortalTool, hexanowPortalTool)
 
 -- 时间回溯
-function hexanowMod:UseGlowingHourGlass(itemId, itemRng, player, useFlags, activeSlot, customVarData)
+function HexanowMod:UseGlowingHourGlass(itemId, itemRng, player, useFlags, activeSlot, customVarData)
 	if itemId == CollectibleType.COLLECTIBLE_GLOWING_HOUR_GLASS
 	--and IsHexanow(player)
 	then
 		RewindLastRoomVar()
 	end
 end
-hexanowMod:AddCallback(ModCallbacks.MC_USE_ITEM, hexanowMod.UseGlowingHourGlass)
-
--- 使用灵魂石的效果
-function hexanowMod:UseHexanowSoulStone(cardId, player, useFlags)
-	SFXManager():Play(564, 1, 0, false, 1 )
-	SFXManager():Play(564, 1, 0, false, 1 )
-	SFXManager():Play(564, 1, 0, false, 1 )
-	SFXManager():Play(548, 1, 0, false, 1 )
-	SFXManager():Play(187, 1, 0, false, 1 )
-
-	--player:AddBrokenHearts(100)
-	hexanowFlags:AddFlag("HEXANOW_SOULSTONE_P"..tostring(GetPlayerID(player)).."_ACTIVED")
-end
-hexanowMod:AddCallback(ModCallbacks.MC_USE_CARD, hexanowMod.UseHexanowSoulStone, hexanowSoulStoneID)
+HexanowMod:AddCallback(ModCallbacks.MC_USE_ITEM, HexanowMod.UseGlowingHourGlass)
 
 -- 在玩家进入新楼层后运行
-function hexanowMod:PostNewLevel()
+function HexanowMod:PostNewLevel()
 	for playerID=1,4 do
 		HexanowPlayerDatas[playerID].CreatedPortals[0][1] = nil
 		HexanowPlayerDatas[playerID].CreatedPortals[0][2] = nil
@@ -2038,11 +1991,11 @@ function hexanowMod:PostNewLevel()
 		HexanowPlayerDatas[playerID].InRoomCreatedPortals[2] = nil
 	end
 	MaintainPortal(true)
-	if hexanowFlags:HasFlag("TREASURE_ROOM_NOT_ENTERED") then
+	if HexanowFlags:HasFlag("TREASURE_ROOM_NOT_ENTERED") then
 		EternalCharges = EternalCharges + 0
 	end
-	hexanowFlags:AddFlag("TREASURE_ROOM_NOT_ENTERED")
-	hexanowFlags:RemoveFlag("MIRROR_WORLD_PORTALS_GENERATED")
+	HexanowFlags:AddFlag("TREASURE_ROOM_NOT_ENTERED")
+	HexanowFlags:RemoveFlag("MIRROR_WORLD_PORTALS_GENERATED")
 	--[[
 	CallForEveryPlayer(
 		function(player)
@@ -2055,10 +2008,10 @@ function hexanowMod:PostNewLevel()
 	)
 	]]
 end
-hexanowMod:AddCallback(ModCallbacks.MC_POST_NEW_LEVEL, hexanowMod.PostNewLevel)
+HexanowMod:AddCallback(ModCallbacks.MC_POST_NEW_LEVEL, HexanowMod.PostNewLevel)
 
 -- 在玩家进入新房间后运行
-function hexanowMod:PostNewRoom()
+function HexanowMod:PostNewRoom()
 	local room = Game():GetRoom()
 	for playerID=1,4 do
 		HexanowPlayerDatas[playerID].InRoomCreatedPortals[1] = nil
@@ -2085,8 +2038,8 @@ function hexanowMod:PostNewRoom()
 	MaintainPortal(true)
 	UpdateLastRoomVar()
 
-	if room:IsMirrorWorld() and not hexanowFlags:HasFlag("MIRROR_WORLD_PORTALS_GENERATED") then
-		hexanowFlags:AddFlag("MIRROR_WORLD_PORTALS_GENERATED")
+	if room:IsMirrorWorld() and not HexanowFlags:HasFlag("MIRROR_WORLD_PORTALS_GENERATED") then
+		HexanowFlags:AddFlag("MIRROR_WORLD_PORTALS_GENERATED")
 		for playerID=1,4 do
 			HexanowPlayerDatas[playerID].CreatedPortals[1][1] = HexanowPlayerDatas[playerID].CreatedPortals[0][1]
 			HexanowPlayerDatas[playerID].CreatedPortals[1][2] = HexanowPlayerDatas[playerID].CreatedPortals[0][2]
@@ -2094,7 +2047,7 @@ function hexanowMod:PostNewRoom()
 	end
 
 	if room:GetType() == RoomType.ROOM_TREASURE and not room:IsMirrorWorld() then
-		hexanowFlags:RemoveFlag("TREASURE_ROOM_NOT_ENTERED")
+		HexanowFlags:RemoveFlag("TREASURE_ROOM_NOT_ENTERED")
 	end
 
 	if room:GetAliveEnemiesCount() <= 0 then
@@ -2172,10 +2125,10 @@ function hexanowMod:PostNewRoom()
 		SaveHexanowModData()
 	end
 end
-hexanowMod:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, hexanowMod.PostNewRoom)
+HexanowMod:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, HexanowMod.PostNewRoom)
 
 -- 在房间被清理后运行
-function hexanowMod:PreSpawnCleanAward(Rng, SpawnPos)
+function HexanowMod:PreSpawnCleanAward(Rng, SpawnPos)
 	CallForEveryPlayer(
 		function(player)
 			if IsHexanow(player) then
@@ -2184,10 +2137,10 @@ function hexanowMod:PreSpawnCleanAward(Rng, SpawnPos)
 		end
 	)
 end
-hexanowMod:AddCallback(ModCallbacks.MC_PRE_SPAWN_CLEAN_AWARD, hexanowMod.PreSpawnCleanAward)
+HexanowMod:AddCallback(ModCallbacks.MC_PRE_SPAWN_CLEAN_AWARD, HexanowMod.PreSpawnCleanAward)
 
 -- 在玩家受伤时运行
-function hexanowMod:EntityTakeDmg(TookDamage, DamageAmount, DamageFlag, DamageSource, DamageCountdownFrames)
+function HexanowMod:EntityTakeDmg(TookDamage, DamageAmount, DamageFlag, DamageSource, DamageCountdownFrames)
 	if TookDamage.Type == EntityType.ENTITY_PLAYER then
 		local player = TookDamage:ToPlayer()
 		local room = Game():GetRoom()
@@ -2205,10 +2158,10 @@ function hexanowMod:EntityTakeDmg(TookDamage, DamageAmount, DamageFlag, DamageSo
 		end
 	end
 end
-hexanowMod:AddCallback(ModCallbacks.MC_ENTITY_TAKE_DMG , hexanowMod.EntityTakeDmg)
+HexanowMod:AddCallback(ModCallbacks.MC_ENTITY_TAKE_DMG , HexanowMod.EntityTakeDmg)
 
 -- 在生物被移除时运行
-function hexanowMod:PostEntityRemove(entity)
+function HexanowMod:PostEntityRemove(entity)
 	if entity.Type == 963 then
 		CallForEveryPlayer(
 			function(player)
@@ -2224,10 +2177,10 @@ function hexanowMod:PostEntityRemove(entity)
 		)
 	end
 end
-hexanowMod:AddCallback(ModCallbacks.MC_POST_ENTITY_REMOVE , hexanowMod.PostEntityRemove)
+HexanowMod:AddCallback(ModCallbacks.MC_POST_ENTITY_REMOVE , HexanowMod.PostEntityRemove)
 
 -- 干涉掉落物生成
-function hexanowMod:PostPickupSelection(Pickup, Variant, SubType)
+function HexanowMod:PostPickupSelection(Pickup, Variant, SubType)
 	if PlayerTypeExistInGame(playerTypeHexanow) then
 		--[[
 		if Variant == PickupVariant.PICKUP_HEART and
@@ -2245,28 +2198,28 @@ function hexanowMod:PostPickupSelection(Pickup, Variant, SubType)
 		]]
 	end
 end
-hexanowMod:AddCallback(ModCallbacks.MC_POST_PICKUP_SELECTION , hexanowMod.PostPickupSelection)
+HexanowMod:AddCallback(ModCallbacks.MC_POST_PICKUP_SELECTION , HexanowMod.PostPickupSelection)
 
 -- 干涉诅咒选择
-function hexanowMod:PostCurseEval(curses)
+function HexanowMod:PostCurseEval(curses)
 	if PlayerTypeExistInGame(playerTypeHexanow) then
 		return ~( ~curses | LevelCurse.CURSE_OF_DARKNESS | LevelCurse.CURSE_OF_MAZE | LevelCurse.CURSE_OF_THE_UNKNOWN | LevelCurse.CURSE_OF_BLIND | LevelCurse.CURSE_OF_THE_LOST )
 	end
 end
-hexanowMod:AddCallback(ModCallbacks.MC_POST_CURSE_EVAL , hexanowMod.PostCurseEval)
+HexanowMod:AddCallback(ModCallbacks.MC_POST_CURSE_EVAL , HexanowMod.PostCurseEval)
 
 -- 改变玩家碰撞行为
-function hexanowMod:PrePlayerCollision(player, collider, low)
+function HexanowMod:PrePlayerCollision(player, collider, low)
 	if IsHexanow(player) then
 		if collider.Type == 306 then
 			return true
 		end
 	end
 end
-hexanowMod:AddCallback(ModCallbacks.MC_PRE_PLAYER_COLLISION , hexanowMod.PrePlayerCollision)
+HexanowMod:AddCallback(ModCallbacks.MC_PRE_PLAYER_COLLISION , HexanowMod.PrePlayerCollision)
 
 -- 改变眼泪碰撞行为
-function hexanowMod:PreTearCollision(tear, collider, low)
+function HexanowMod:PreTearCollision(tear, collider, low)
 	if tear.Parent ~= nil then
 		local player = tear.Parent:ToPlayer()
 		if player ~= nil
@@ -2277,20 +2230,20 @@ function hexanowMod:PreTearCollision(tear, collider, low)
 		end
 	end
 end
-hexanowMod:AddCallback(ModCallbacks.MC_PRE_TEAR_COLLISION , hexanowMod.PreTearCollision)
+HexanowMod:AddCallback(ModCallbacks.MC_PRE_TEAR_COLLISION , HexanowMod.PreTearCollision)
 
 -- 改变掉落物拾取行为
-function hexanowMod:PrePickupCollision(pickup, collider, low)
+function HexanowMod:PrePickupCollision(pickup, collider, low)
 	local player = collider:ToPlayer()
 	if player ~= nil
 	and IsHexanow(player)
 	then
-		if hexanowFlags:HasFlag("TAINTED") and not hexanowFlags:HasFlag("TEFFECT_DEATHCERTIFICATE_USED")
+		if HexanowFlags:HasFlag("TAINTED") and not HexanowFlags:HasFlag("TEFFECT_DEATHCERTIFICATE_USED")
 		and pickup.Variant == PickupVariant.PICKUP_COLLECTIBLE
 		and pickup.SubType == CollectibleType.COLLECTIBLE_DEATH_CERTIFICATE
 		and not pickup:IsShopItem()
 		then
-			hexanowFlags:AddFlag("TEFFECT_DEATHCERTIFICATE_USED")
+			HexanowFlags:AddFlag("TEFFECT_DEATHCERTIFICATE_USED")
 			player:UseActiveItem(CollectibleType.COLLECTIBLE_DEATH_CERTIFICATE,false,false,true,false, -1)
 			--player:RemoveCollectible(WhiteHexanowCollectibleID, true)
 			--SetWhiteHexanowCollectible(player, 0)
@@ -2473,10 +2426,10 @@ function hexanowMod:PrePickupCollision(pickup, collider, low)
 		return nil
 	end
 end
-hexanowMod:AddCallback(ModCallbacks.MC_PRE_PICKUP_COLLISION , hexanowMod.PrePickupCollision)
+HexanowMod:AddCallback(ModCallbacks.MC_PRE_PICKUP_COLLISION , HexanowMod.PrePickupCollision)
 
 -- 后期处理属性缓存
-function hexanowMod:EvaluateCache(player, cacheFlag, tear)
+function HexanowMod:EvaluateCache(player, cacheFlag, tear)
 	--[[
 		Hexanow stats
 		damage: 300%
@@ -2557,10 +2510,10 @@ function hexanowMod:EvaluateCache(player, cacheFlag, tear)
 		player.Damage = player.Damage * 3 * 20 * 100 * 1000
 	end
 end
-hexanowMod:AddCallback(ModCallbacks.MC_EVALUATE_CACHE, hexanowMod.EvaluateCache)
+HexanowMod:AddCallback(ModCallbacks.MC_EVALUATE_CACHE, HexanowMod.EvaluateCache)
 
 -- 在每一帧后执行
-function hexanowMod:PostUpdate()
+function HexanowMod:PostUpdate()
 	local game = Game()
 	local level = game:GetLevel()
 	local room = game:GetRoom()
@@ -3002,10 +2955,10 @@ function hexanowMod:PostUpdate()
 	--SaveHexanowModData()
 	MaintainPortal(true)
 end
-hexanowMod:AddCallback(ModCallbacks.MC_POST_UPDATE, hexanowMod.PostUpdate)
+HexanowMod:AddCallback(ModCallbacks.MC_POST_UPDATE, HexanowMod.PostUpdate)
 
 -- 渲染器，每一帧执行
-function hexanowMod:PostRender()
+function HexanowMod:PostRender()
 	if not Game():GetHUD():IsVisible() then
 		return nil
 	end
@@ -3060,16 +3013,16 @@ function hexanowMod:PostRender()
 		--DrawSimNumberSingle("s", Vector(35+6, 84), false)
 	end
 end
-hexanowMod:AddCallback(ModCallbacks.MC_POST_RENDER, hexanowMod.PostRender)
+HexanowMod:AddCallback(ModCallbacks.MC_POST_RENDER, HexanowMod.PostRender)
 
 --[[
 -- 初始化随从
-function hexanowMod:FamiliarInit(_, fam)
+function HexanowMod:FamiliarInit(_, fam)
 	print("Initiating Hearts Blender")
 end
-hexanowMod:AddCallback(ModCallbacks.MC_FAMILIAR_INIT, hexanowMod.FamiliarInit, entityVariantHeartsBlender)
+HexanowMod:AddCallback(ModCallbacks.MC_FAMILIAR_INIT, HexanowMod.FamiliarInit, entityVariantHeartsBlender)
 -- 更新随从行为
-function hexanowMod:FamiliarUpdate(_, fam)
+function HexanowMod:FamiliarUpdate(_, fam)
 	local roomEntities = Isaac.GetRoomEntities()
 
 	local targetPos = nil
@@ -3126,9 +3079,9 @@ function hexanowMod:FamiliarUpdate(_, fam)
     if fam.FrameCount%300 == 0 then
     end
 end
-hexanowMod:AddCallback(ModCallbacks.MC_FAMILIAR_UPDATE, hexanowMod.FamiliarUpdate, entityVariantHeartsBlender)
+HexanowMod:AddCallback(ModCallbacks.MC_FAMILIAR_UPDATE, HexanowMod.FamiliarUpdate, entityVariantHeartsBlender)
 ]]
 -- 更新眼泪行为，在每一帧后执行
-function hexanowMod:PostTearUpdate(tear)
+function HexanowMod:PostTearUpdate(tear)
 end
-hexanowMod:AddCallback(ModCallbacks.MC_POST_TEAR_UPDATE , hexanowMod.PostTearUpdate)
+HexanowMod:AddCallback(ModCallbacks.MC_POST_TEAR_UPDATE , HexanowMod.PostTearUpdate)
