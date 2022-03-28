@@ -1036,9 +1036,33 @@ local function TickEventLairub(player)
 							data.tearInitedForLairub = true
 							local tearSprite = tear:GetSprite()
 							if LairubPlayerDatas[playerID].form == 2 then
-								tearSprite:ReplaceSpritesheet(0,"gfx/Lairub_Tears_TakeSoul.png")
+								if tear.Variant == TearVariant.BLUE or tear.Variant == TearVariant.BLOOD then
+									tearSprite:ReplaceSpritesheet(0,"gfx/Tears/Lairub_Tears_Normal.png")
+									tearSprite:LoadGraphics("gfx/Tears/Lairub_Tears_Normal.png")
+								elseif tear.Variant == TearVariant.EYE or tear.Variant == TearVariant.EYE_BLOOD then
+									tearSprite:ReplaceSpritesheet(0,"gfx/Tears/Lairub_Tears_Pop_Normal.png")
+									tearSprite:LoadGraphics("gfx/Tears/Lairub_Tears_Pop_Normal.png")
+								elseif tear.Variant == TearVariant.NAIL or tear.Variant == TearVariant.NAIL_BLOOD then
+									tearSprite:ReplaceSpritesheet(0,"gfx/Tears/Lairub_8inchnails_tears.png")
+									tearSprite:LoadGraphics("gfx/Tears/Lairub_8inchnails_tears.png")
+								elseif tear.Variant == TearVariant.SCHYTHE then
+									tearSprite:ReplaceSpritesheet(0,"gfx/Tears/Lairub_Scythe_Tears.png")
+									tearSprite:LoadGraphics("gfx/Tears/Lairub_Scythe_Tears.png")
+								end
 							else
-								tearSprite:ReplaceSpritesheet(0,"gfx/Lairub_Tears_Normal.png")
+								if tear.Variant == TearVariant.BLUE or tear.Variant == TearVariant.BLOOD then
+									tearSprite:ReplaceSpritesheet(0,"gfx/Tears/Lairub_Tears_Normal.png")
+									tearSprite:LoadGraphics("gfx/Tears/Lairub_Tears_Normal.png")
+								elseif tear.Variant == TearVariant.EYE or tear.Variant == TearVariant.EYE_BLOOD then
+									tearSprite:ReplaceSpritesheet(0,"gfx/Tears/Lairub_Tears_Pop_Normal.png")
+									tearSprite:LoadGraphics("gfx/Tears/Lairub_Tears_Pop_Normal.png")
+								elseif tear.Variant == TearVariant.NAIL or tear.Variant == TearVariant.NAIL_BLOOD then
+									tearSprite:ReplaceSpritesheet(0,"gfx/Tears/Lairub_8inchnails_tears.png")
+									tearSprite:LoadGraphics("gfx/Tears/Lairub_8inchnails_tears.png")
+								elseif tear.Variant == TearVariant.SCHYTHE then
+									tearSprite:ReplaceSpritesheet(0,"gfx/Tears/Lairub_Scythe_Tears.png")
+									tearSprite:LoadGraphics("gfx/Tears/Lairub_Scythe_Tears.png")
+								end
 							end
 							tearSprite:LoadGraphics()
 							tearSprite.Rotation = tear.Velocity:GetAngleDegrees()
