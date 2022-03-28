@@ -1,44 +1,12 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <entities anm2root="gfx/" version="5">
-  <!--- -Shift- - -->
-  <entity name="LairubAnmChangedToTakeSoul" anm2path="LairubAnm_ChangedToTakeSoul.anm2" baseHP="0" boss="0" champion="0" collisionDamage="0" id="3" collisionMass="0" collisionRadius="0" friction="1" numGridCollisionPoints="0" shadowSize="11" stageHP="0" variant="616580" subtype="0">
-    <gibs amount="0" blood="1" bone="0" eye="0" gut="0" large="0" />
-  </entity>
-  <entity name="LairubAnmChangedToNormal" anm2path="LairubAnm_ChangedToNormal.anm2" baseHP="0" boss="0" champion="0" collisionDamage="0" id="3" collisionMass="0" collisionRadius="0" friction="1" numGridCollisionPoints="0" shadowSize="11" stageHP="0" variant="616581" subtype="0">
-    <gibs amount="0" blood="1" bone="0" eye="0" gut="0" large="0" />
-  </entity>
-  <!--- -Alt- - -->
-  <entity name="LairubAnmReleaseSoul" anm2path="LairubAnm_ReleaseSoul.anm2" baseHP="0" boss="0" champion="0" collisionDamage="0" id="3" collisionMass="0" collisionRadius="0" friction="1" numGridCollisionPoints="0" shadowSize="11" stageHP="0" variant="616582" subtype="0">
-    <gibs amount="0" blood="1" bone="0" eye="0" gut="0" large="0" />
+  <!--- -SoulEffect- - -->
+  <entity name="LairubSoulEffect" anm2path="Lairub_SoulEffect.anm2" baseHP="0" boss="0" champion="0" collisionDamage="0" id="1000" collisionMass="0" collisionRadius="0" friction="1" numGridCollisionPoints="0" shadowSize="11" stageHP="0" variant="616585" subtype="0">
+    <gibs amount="0" blood="0" bone="0" eye="0" gut="0" large="0" />
   </entity>
   <!--- -Ctrl- - -->
-  <entity name="LairubSoulCross" anm2path="Lairub_SoulCross.anm2" baseHP="0" boss="0" champion="0" collisionDamage="0" id="3" collisionMass="0" collisionRadius="0" friction="1" numGridCollisionPoints="0" shadowSize="11" stageHP="0" variant="616583" subtype="0">
+  <entity name="LairubSoulCross" anm2path="Lairub_SoulCross.anm2" baseHP="100000000000000" boss="0" champion="0" collisionDamage="0" id="1000" collisionMass="0" collisionRadius="0" friction="1" numGridCollisionPoints="0" shadowSize="11" stageHP="0" variant="616583" subtype="0">
     <gibs amount="0" blood="0" bone="5" eye="0" gut="0" large="0" />
-  </entity>
-  <entity name="LairubAnmReadySpawnCross" anm2path="LairubAnm_ReadySpawnCross.anm2" baseHP="0" boss="0" champion="0" collisionDamage="0" id="3" collisionMass="0" collisionRadius="0" friction="1" numGridCollisionPoints="0" shadowSize="11" stageHP="0" variant="616584" subtype="0">
-    <gibs amount="0" blood="1" bone="0" eye="0" gut="0" large="0" />
-  </entity>
-  <!--- -SoulEffect- - -->
-  <entity name="LairubSoulEffect" anm2path="Lairub_SoulEffect.anm2" baseHP="0" boss="0" champion="0" collisionDamage="0" id="3" collisionMass="0" collisionRadius="0" friction="1" numGridCollisionPoints="0" shadowSize="11" stageHP="0" variant="616585" subtype="0">
-    <gibs amount="0" blood="1" bone="0" eye="0" gut="0" large="0" />
-  </entity>
-  <!--- -Talk- - -->
-  <entity name="LairubAnmTalkNormal" anm2path="LairubAnm_Talk_Normal.anm2" baseHP="0" boss="0" champion="0" collisionDamage="0" id="3" collisionMass="0" collisionRadius="0" friction="1" numGridCollisionPoints="0" shadowSize="11" stageHP="0" variant="616586" subtype="0">
-    <gibs amount="0" blood="1" bone="0" eye="0" gut="0" large="0" />
-  </entity>
-  <entity name="LairubAnmTalkHappy" anm2path="LairubAnm_Talk_Happy.anm2" baseHP="0" boss="0" champion="0" collisionDamage="0" id="3" collisionMass="0" collisionRadius="0" friction="1" numGridCollisionPoints="0" shadowSize="11" stageHP="0" variant="616587" subtype="0">
-    <gibs amount="0" blood="1" bone="0" eye="0" gut="0" large="0" />
-  </entity>
-  <!--- -Teleport To Devil Room- - -->
-  <entity name="LairubAnmTeleportToDevilRoom" anm2path="LairubAnm_TeleportToDevilRoom.anm2" baseHP="0" boss="0" champion="0" collisionDamage="0" id="3" collisionMass="0" collisionRadius="0" friction="1" numGridCollisionPoints="0" shadowSize="11" stageHP="0" variant="616588" subtype="0">
-    <gibs amount="0" blood="1" bone="0" eye="0" gut="0" large="0" />
-  </entity>
-  <!--- -Talk(Sheol)- - -->
-  <entity name="LairubAnmTalkFear" anm2path="LairubAnm_Talk_Fear.anm2" baseHP="0" boss="0" champion="0" collisionDamage="0" id="3" collisionMass="0" collisionRadius="0" friction="1" numGridCollisionPoints="0" shadowSize="11" stageHP="0" variant="616589" subtype="0">
-    <gibs amount="0" blood="1" bone="0" eye="0" gut="0" large="0" />
-  </entity>
-  <entity name="LairubAnmTalkSigh" anm2path="LairubAnm_Talk_Sigh.anm2" baseHP="0" boss="0" champion="0" collisionDamage="0" id="3" collisionMass="0" collisionRadius="0" friction="1" numGridCollisionPoints="0" shadowSize="11" stageHP="0" variant="616590" subtype="0">
-    <gibs amount="0" blood="1" bone="0" eye="0" gut="0" large="0" />
   </entity>
   <!--- -SoulStone- - -->
   <entity anm2path="Pickups_SoulOfLairub.anm2" baseHP="0" boss="0" champion="0" collisionDamage="0" collisionMass="3" collisionRadius="12" friction="1" id="5" name="Soul of Lairub" numGridCollisionPoints="24" shadowSize="16" stageHP="0" variant="300" subtype="616580">
@@ -46,11 +14,11 @@
     <preload-snd id="8" />
   </entity>
   <!--- -TheAttackMark- - -->
-  <entity name="TheAttackMarker" anm2path="Lairub_TheAttackMarker.anm2" baseHP="0" boss="0" champion="0" collisionDamage="0" id="3" collisionMass="0" collisionRadius="0" friction="1" numGridCollisionPoints="0" shadowSize="11" stageHP="0" variant="616591" subtype="0">
+  <entity name="TheAttackMarker" anm2path="Lairub_TheAttackMarker.anm2" baseHP="0" boss="0" champion="0" collisionDamage="0" id="1000" collisionMass="0" collisionRadius="0" friction="1" numGridCollisionPoints="0" shadowSize="11" stageHP="0" variant="616591" subtype="0">
     <gibs amount="0" blood="1" bone="0" eye="0" gut="0" large="0" />
   </entity>
   <!--- -TheBone- - -->
-  <entity name="LairubTheBone" anm2path="Lairub_TheBone.anm2" baseHP="0" boss="0" champion="0" collisionDamage="0" id="3" collisionMass="0" collisionRadius="0" friction="1" numGridCollisionPoints="0" shadowSize="11" stageHP="0" variant="616592" subtype="0">
+  <entity name="LairubTheBone" anm2path="Lairub_TheBone.anm2" baseHP="0" boss="0" champion="0" collisionDamage="0" id="1000" collisionMass="0" collisionRadius="0" friction="1" numGridCollisionPoints="0" shadowSize="11" stageHP="0" variant="616592" subtype="0">
     <gibs amount="0" blood="0" bone="5" eye="0" gut="0" large="0" />
   </entity>
 </entities>

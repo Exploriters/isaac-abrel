@@ -1,6 +1,6 @@
 
 local exploriteTranslate = {}
-exploriteTranslate.__index = exploriteFlags
+exploriteTranslate.__index = exploriteTranslate
 function Explorite.SimpleTranslate()
 	local cted = {}
 	setmetatable(cted, exploriteTranslate)
@@ -24,7 +24,7 @@ function exploriteTranslate:_(str, ...)
 	if result == nil then
 		return str
 	end
-	for i,value in ipairs(...) do
+	for i,value in ipairs{...} do
 		result = string.gsub(result, "{"..i.."}", tostring(value))
 		result = string.gsub(result, "{\\"..i.."}", "{"..i.."}")
 	end

@@ -62,7 +62,7 @@ function exploriteObjectives:ToString(ignoreUnused)
 	return str
 end
 
-function exploriteObjectives:LoadFromString(str)	
+function exploriteObjectives:LoadFromString(str)
 	local strTable = {}
 	local lastPoint = 0
 	while true do
@@ -73,7 +73,6 @@ function exploriteObjectives:LoadFromString(str)
 		lastPoint = point2
 		table.insert(strTable, string.sub(str, point1, point2))
 	end
-	
 	for i,str in ipairs(strTable) do
 		local point = string.find(str, "=", 1)
 		if point ~= nil then

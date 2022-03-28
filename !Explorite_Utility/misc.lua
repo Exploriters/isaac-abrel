@@ -134,6 +134,20 @@ function ReverseTable(tab)
 	return tmp
 end
 
+function BreakStringByLine(str)
+	local strTable = {}
+	local lastPoint = 0
+	while true do
+		local point1,point2 = string.find(str, "[^\n]+", lastPoint + 1)
+		if point1 == nil then
+			break
+		end
+		lastPoint = point2
+		table.insert(strTable, string.sub(str, point1, point2))
+	end
+	return strTable
+end
+
 function ComputeIntersection(start1, end1, start2, end2) -- start end start end
 	local ax, ay, bx, by, cx, cy, dx, dy = start1.X, start1.Y, end1.X, end1.Y, start2.X, start2.Y, end2.X, end2.Y
     local d = (ax-bx)*(cy-dy)-(ay-by)*(cx-dx)
@@ -146,4 +160,13 @@ function ComputeIntersection(start1, end1, start2, end2) -- start end start end
         -- between start and end of both lines
         return Vector(x,y)
     end
+end
+
+function Parse00(value)
+	local str = tostring(value)
+	local num = tonumber(value)
+	if num ~= nil and num % 1 == 0 and num <= 9 and num >= 0 then
+		str = "0"..str
+	end
+	return str
 end

@@ -1,4 +1,4 @@
-
+--[[
 local SimNumbersPath = "gfx/ui/SimNumbers.anm2"
 
 -- 渲染单个数字
@@ -81,3 +81,4 @@ function DrawSimNumbers(num, pos)
 	DrawSimNumberSeries(nums, pos, true)
 	DrawSimNumberSeries(nums, pos, false)
 end
+]]

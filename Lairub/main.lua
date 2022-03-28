@@ -3,12 +3,20 @@ local lairub = RegisterMod("Lairub", 1);
 local playerType_Lairub = Isaac.GetPlayerTypeByName("Lairub")
 local playerType_Tainted_Lairub = Isaac.GetPlayerTypeByName("Tainted Lairub", true)
 
+local function IsLairub(player)
+	return player ~= nil and player:GetPlayerType() == playerType_Lairub
+end
+
+local function IsLairubTainted(player)
+	return player ~= nil and player:GetPlayerType() == playerType_Tainted_Lairub
+end
+
 if Explorite == nil then
 	function lairub:checkMissingExploriteStart(loadedFromSaves)
 		local numPlayers = Game():GetNumPlayers()
 		for i=0,numPlayers-1,1 do
 			local player = Isaac.GetPlayer(i)
-			if player:GetPlayerType() == playerType_Lairub then
+			if IsLairub(player) then
 				player:AddControlsCooldown(2147483647)
 				if not loadedFromSaves then
 					player.Visible = false
@@ -21,15 +29,18 @@ if Explorite == nil then
 
 	function lairub:checkMissingExploriteRend()
 		if Explorite == nil then
-			Isaac.RenderText("Explorite utility is missing.", (Isaac.GetScreenWidth() - Isaac.GetTextWidth("Explorite utility is missing.")) / 2, Isaac.GetScreenHeight() / 2, 255, 0, 0, 255)
+			Explorite.RenderText("Explorite utility is missing.", (Isaac.GetScreenWidth() - Explorite.GetTextWidth("Explorite utility is missing.")) / 2, Isaac.GetScreenHeight() / 2, 255, 0, 0, 255)
 		end
 	end
 	lairub:AddCallback(ModCallbacks.MC_POST_RENDER, lairub.checkMissingExploriteRend)
 	return
 end
 
-local LairubFlags = Explorite.NewExploriteFlags()
-local LairubObjectives = Explorite.NewExploriteObjectives()
+LairubFlags = Explorite.NewExploriteFlags()
+LairubObjectives = Explorite.NewExploriteObjectives()
+
+require("lang")
+require("datas")
 
 --==== Const values ====--
 --==Costume and something else==--
@@ -41,62 +52,19 @@ local costume_Lairub_Head_TakeSoulBase = Isaac.GetCostumeIdByPath("gfx/character
 
 local LairubStatUpdateItem = Isaac.GetItemIdByName( "Lairub Stat Trigger" )
 
+local LairubSoulCross_Variant = Isaac.GetEntityVariantByName("LairubSoulCross")
+local LairubSoulEffect_Variant = Isaac.GetEntityVariantByName("LairubSoulEffect")
+
 local costume_TaintedLairub_Body = Isaac.GetCostumeIdByPath("gfx/characters/TaintedLairubBody.anm2")
 local costume_TaintedLairub_Head = Isaac.GetCostumeIdByPath("gfx/characters/TaintedLairubHead.anm2")
 
+local SoulSign = Sprite()
+SoulSign:Load("gfx/Lairub_SoulSign.anm2", true)
+SoulSign:SetOverlayRenderPriority(true)
+SoulSign:SetFrame("SoulSign", 1)
+
 --==== Temporary values ====--
 local gameInited = false
-
---==Animation==--
-local AnimationEnd = true
-local AnimationEnd_ReadySpawnCross = true
---==Shift(Changed TakeSoul)==--
-local ShiftChanged = 1
-local IsShiftChanged = true
-local PressingShift = false
-local PressedShiftOnce = false
---==Alt(Release Soul)==--
-local PressingAlt = false
-local PressedAltOnce = false
-local ReleaseingSoul = false
---==Ctrl(Spawn Soul Cross)==--
-local PressingCtrl = false
-local PressedCtrlOnce = false
---==Soul Cross==--
-local ReadySpawnCross = false
-local DetermineDirection = false
-local SpawnedCross = false
-
---==Z(Talk to player)==--
-local PressingZ = false
-local PressedZOnce = false
-local Dialogue = 0
-local Dialogue_Sheol = 0
---local DialogueOver = false
---local DialogueOver_Sheol = false
-
---==X(Teleport To Devil Room)==--
-local PressingX = false
-local PressedXOnce = false
-local LairubTeleportReadyTime = 0
-
---==H(Help List)==--
-local ShowHelpList = false
-local PressingH = false
-local PressedHOnce = false
-local ShowedInitialTips = false
-
---==Misc==--
-local AnmTalkStat = true
-local FinishedTalkAnmPart = 0
-local FinishedTalkAnmPart_Sheol = 0
-
-local NPCdis = 0
-
---==HuntedDown==--
-local HuntedDownReadout = "none" -- none, safe, BOSS, Vigilant, DANGER
-local HuntedDownReadoutNumber = 0
-local huntDownEnabled = false
 
 --== Soul Stone ==--
 
@@ -109,60 +77,119 @@ local BaseGameFrameCount = 0
 local DMGtoEveryNPC = false
 local TotalRoomFrame = 0
 
+--==HuntedDown==--
+local HuntedDownReadout = "none" -- none, safe, BOSS, Vigilant, DANGER
+local HuntedDownReadoutNumber = 0
+
 --==== Saved values ====--
 
 local SoulCount = 0
 local HuntedDownFrame = -1
 
+Explorite.RegistSideBar("LairubSouls", function()
+	if not PlayerTypeExistInGame(playerType_Lairub) then return nil end
+	return SoulSign, Parse00(SoulCount)
+end)
+
+local LairubDialogueManager = {}
+LairubDialogueManager.onGoingDialogue = nil
+LairubDialogueManager.step = 0
+
+local lairubPlayerData = {
+}
+lairubPlayerData.__index = lairubPlayerData
+
+function lairubPlayerData:UpdateLastRoomVar()
+	self.lastRoom = {}
+	self.lastRoom.form = self.form
+end
+function lairubPlayerData:RewindLastRoomVar()
+	self.form = self.lastRoom.form
+	self:UpdateLastRoomVar()
+end
+function lairubPlayerData:GenSpriteCaches()
+	self.sprites = {}
+	self.sprites.AttackIcon = Sprite()
+	self.sprites.AttackIcon:Load("gfx/Lairub_AttackIcon.anm2", true)
+	self.sprites.AttackIcon:SetOverlayRenderPriority(true)
+	self.sprites.CrossIcon = Sprite()
+	self.sprites.CrossIcon:Load("gfx/Lairub_CrossIcon.anm2", true)
+	self.sprites.CrossIcon:SetOverlayRenderPriority(true)
+	self.sprites.ReleaseIcon = Sprite()
+	self.sprites.ReleaseIcon:Load("gfx/Lairub_ReleaseIcon.anm2", true)
+	self.sprites.ReleaseIcon:SetOverlayRenderPriority(true)
+	self.sprites.TeleportSign = Sprite()
+	self.sprites.TeleportSign:Load("gfx/Lairub_TeleportSign.anm2", true)
+	self.sprites.TeleportSign:SetOverlayRenderPriority(true)
+end
+
+local function LairubPlayerData()
+	local cted = {}
+	setmetatable(cted, lairubPlayerData)
+	cted.form = 1
+	cted.crossPlaced = nil
+	cted.crossPlacedOnce = false
+	cted.pressingKeys = Explorite.NewExploriteFlags()
+	cted.pressedKeys = Explorite.NewExploriteFlags()
+	cted.releasedKeys = Explorite.NewExploriteFlags()
+
+	cted.overlayName = nil
+	cted.overlaySprite = nil
+	cted.overlayOffset = nil
+	cted.overlayFrame = 0
+	cted.overlayWearoff = 0
+	
+	cted.enabledAbility = nil
+	cted.justDisabledAbility = nil
+	cted.enabledAbilityTime = 0
+
+	cted:UpdateLastRoomVar()
+	cted:GenSpriteCaches()
+	return cted
+end
+
+local LairubPlayerDatas = {}
+LairubPlayerDatas[1] = LairubPlayerData()
+LairubPlayerDatas[2] = LairubPlayerData()
+LairubPlayerDatas[3] = LairubPlayerData()
+LairubPlayerDatas[4] = LairubPlayerData()
+
+local LastRoom = {}
+
 --==== Data Management ====--
+
+local function UpdateLastRoomVar()
+	LastRoom = {}
+	LastRoom.SoulCount = SoulCount
+	for playerID=1,4 do
+		LairubPlayerDatas[playerID]:UpdateLastRoomVar()
+	end
+end
+
+local function RewindLastRoomVar()
+	SoulCount = LastRoom.SoulCount
+	for playerID=1,4 do
+		LairubPlayerDatas[playerID]:RewindLastRoomVar()
+	end
+	UpdateLastRoomVar()
+end
+
 local function WipeTempVar()
 	LairubFlags:Wipe()
-	
-	ShiftChanged = 1
-	PressingShift = false
-	PressedShiftOnce = false
-	IsShiftChanged = true
+	LairubPlayerDatas = {}
+	LairubPlayerDatas[1] = LairubPlayerData()
+	LairubPlayerDatas[2] = LairubPlayerData()
+	LairubPlayerDatas[3] = LairubPlayerData()
+	LairubPlayerDatas[4] = LairubPlayerData()
+
+	HuntedDownReadout = "none"
+	HuntedDownReadoutNumber = 0
+
+	LairubDialogueManager = {}
+	LairubDialogueManager.onGoingDialogue = nil
+	LairubDialogueManager.step = 0
 	
 	SoulCount = 0
-	PressingAlt = false
-	PressedAltOnce = false
-	
-	PressingCtrl = false
-	PressedCtrlOnce = false
-	
-	ReadySpawnCross = false
-	DetermineDirection = false
-	SpawnedCross = false
-	
-	AnimationEnd = true
-	AnimationEnd_ReadySpawnCross = true
-	
-	NPCdis = 0
-	
-	PressingZ = false
-	PressedZOnce = false
-	--DialogueOver = false
-	Dialogue = 0
-	
-	--DialogueOver_Sheol = false
-	Dialogue_Sheol = 0
-	
-	PressingX = false
-	PressedXOnce = false
-	LairubTeleportReadyTime = 0
-	
-	ShowHelpList = false
-	PressingH = false
-	PressedHOnce = false
-	ShowedInitialTips = false
-	
-	DMGcount = 1
-	CountDown = 60
-	DMGCountDown = 3
-	
-	AnmTalkStat = true
-	FinishedTalkAnmPart = 0
-	FinishedTalkAnmPart_Sheol = 0
 	
 	UsedLairubSoulStone = false
 	TriggeredCount = 0
@@ -178,6 +205,8 @@ local function WipeTempVar()
 	RoomKillCount = 0
 	LevelDevourOnce = false
 	BoneCount = 0
+
+	UpdateLastRoomVar()
 end
 
 --==== Store mod Data ====--
@@ -187,7 +216,7 @@ function LairubObjectives:Apply()
 	LairubFlags:LoadFromString(self:Read("Flags", ""))
 	SoulCount = tonumber(self:Read("SoulCount", "0"))
 	HuntedDownReadout = self:Read("HuntedDownReadout", "none")
-	HuntedDownReadoutNumber = self:Read("HuntedDownReadoutNumber", "0")
+	HuntedDownReadoutNumber = tonumber(self:Read("HuntedDownReadoutNumber", "0"))
 
 	--DialogueOver = StringConvertToBoolean(self:Read("DialogueOver", "false"))
 	
@@ -223,28 +252,6 @@ function lairub:PostGameStarted(loadedFromSaves)
 	LoadLairubModData()
 	if not loadedFromSaves then -- Only new games
 		WipeTempVar()
-		local game = Game()
-		local level = game:GetLevel()
-		local player = Isaac.GetPlayer(0)
-		local room = game:GetRoom()
-		local roomEntities = Isaac.GetRoomEntities()
-		for i, entity in pairs(roomEntities) do
-			if entity.Type == EntityType.ENTITY_FAMILIAR then
-				if entity.Variant == LairubSoulCross_Variant then
-					entity:Remove()
-				end
-				if entity.Variant == LairubTheBone_Variant then
-					entity:Remove()
-				end
-			end
-		end
-		if player:GetPlayerType() == playerType_Lairub then
-			player:TryRemoveNullCostume(costume_Lairub_Body)
-			player:AddNullCostume(costume_Lairub_Body)
-			player:TryRemoveNullCostume(costume_Lairub_Head)
-			player:AddNullCostume(costume_Lairub_Head)
-			player:TryRemoveNullCostume(costume_Lairub_Head_TakeSoulBase)
-		end
 		SaveLairubModData()
 	end
 	gameInited = true
@@ -266,11 +273,10 @@ local HuntedDownDamagePerShot = 2 -- Damage value
 local function HuntedDownInterval()
 	local game = Game()
 	local level = game:GetLevel()
-	local player = Isaac.GetPlayer(0)
 	local room = game:GetRoom()
 
 	-- if not in Sheol or Dark Room, hide timer
-	if not LairubFlags:HasFlag("HUNTED_DOWN") then
+	if not LairubFlags:HasFlag("HUNTED_DOWN") or not PlayerTypeExistInGame(playerType_Lairub) then
 		HuntedDownReadout = "none"
 		HuntedDownReadoutNumber = 0
 		HuntedDownFrame = -1
@@ -309,13 +315,20 @@ local function HuntedDownInterval()
 	HuntedDownReadoutNumber = math.ceil((HuntedDownDamageRate - (HuntedDownFrame - HuntedDownThreshold) % HuntedDownDamageRate) / 30)
 
 	if (HuntedDownFrame - HuntedDownThreshold) % HuntedDownDamageRate == 0 then
-		player:TakeDamage(HuntedDownDamagePerShot, DamageFlag.DAMAGE_DEVIL | DamageFlag.DAMAGE_INVINCIBLE , EntityRef(player), 0)
+		
+		CallForEveryPlayer(
+			function(player)
+				if IsLairub(player) then
+					player:TakeDamage(HuntedDownDamagePerShot, DamageFlag.DAMAGE_DEVIL | DamageFlag.DAMAGE_INVINCIBLE , EntityRef(player), 0)
+				end
+			end
+		)
 	end
 	
 end
 
 local function HuntedDownRendering()
-	if HuntedDownReadout ~= "none" then
+	if LairubFlags:HasFlag("DIALOGUE_OVER_HUNTDOWN") and HuntedDownReadout ~= "none" and PlayerFindFirst(function(player) return IsLairubButtonPressed(player,"hide_ui") end) == nil then
 		-- safe: white
 		-- BOSS: pink
 		-- Vigilant: pink
@@ -336,11 +349,158 @@ local function HuntedDownRendering()
 			displayNumber = tostring(HuntedDownReadoutNumber)
 		end
 		
-		Isaac.RenderScaledText(displayNumber, 212 - Isaac.GetTextWidth (displayNumber) * 2 / 2, 60, 2, 2, R, G, B, A)
-		Isaac.RenderScaledText(HuntedDownReadout, 212 - Isaac.GetTextWidth (HuntedDownReadout) * 0.9 / 2, 80, 0.9, 0.9, R, G, B, A)
+		Explorite.RenderScaledText(displayNumber, (Isaac.GetScreenWidth() - Explorite.GetTextWidth(displayNumber)*2) / 2, 60, 2, 2, R, G, B, A)
+		Explorite.RenderScaledText(HuntedDownReadout, (Isaac.GetScreenWidth() - Explorite.GetTextWidth(HuntedDownReadout)) / 2, 80, 1, 1, R, G, B, A)
 	end
 end
+
+--==== Overlay claim ====--
+
+local function MaintainOverlay(player)
+	local playerID = GetPlayerID(player)
+	local overlayName = LairubPlayerDatas[playerID].overlayName
+	if type(LairubOverlayDatas[overlayName]) ~= "function" then
+		overlayName = nil
+		LairubPlayerDatas[playerID].overlayName = nil
+	end
+	if overlayName == nil then
+		if LairubPlayerDatas[playerID].overlaySprite ~= nil then
+			if LairubPlayerDatas[playerID].overlayWearoff < 4 then
+				LairubPlayerDatas[playerID].overlayWearoff = LairubPlayerDatas[playerID].overlayWearoff + 1
+			else
+				LairubPlayerDatas[playerID].overlayWearoff = 0
+				LairubPlayerDatas[playerID].overlaySprite = nil
+				LairubPlayerDatas[playerID].overlayOffset = nil
+				LairubPlayerDatas[playerID].overlayFrame = 0
+			end
+		end
+	else
+		if LairubPlayerDatas[playerID].overlaySprite == nil then
+			LairubPlayerDatas[playerID].overlaySprite, LairubPlayerDatas[playerID].overlayOffset = LairubOverlayDatas[overlayName]()
+		end
+		--player:PlayExtraAnimation("NOTEXIST BUT WORKS!!!!!!")
+		player:SetColor(Color(1, 1, 1, 0, 255, 255, 255), 2, 1, false, false)
+	end
+	if LairubPlayerDatas[playerID].overlaySprite ~= nil then
+		player.ControlsCooldown = math.max(1, player.ControlsCooldown)
+	end
+end
+local function SetLairubOverlay(player, overlayName)
+	local playerID = GetPlayerID(player)
+	if type(LairubOverlayDatas[overlayName]) == "function" then
+		LairubPlayerDatas[playerID].overlayName = overlayName
+		LairubPlayerDatas[playerID].overlaySprite = nil
+		LairubPlayerDatas[playerID].overlayFrame = 0
+		LairubPlayerDatas[playerID].overlayWearoff = 0
+		MaintainOverlay(player)
+	end
+end
+local function ClearLairubOverlay(player, overlayName)
+	local playerID = GetPlayerID(player)
+	if LairubPlayerDatas[playerID].overlayName == overlayName then
+		LairubPlayerDatas[playerID].overlayName = nil
+		MaintainOverlay(player)
+	end
+end
+
+function lairub:LairubSoulEffectUpdate(entity)
+	entity:GetSprite():Play("SoulEffect", false)
+	if entity:GetSprite():WasEventTriggered("End") then
+		entity:Remove()
+	end
+end
+lairub:AddCallback(ModCallbacks.MC_POST_EFFECT_UPDATE, lairub.LairubSoulEffectUpdate, LairubSoulEffect_Variant)
+
+--==== Ability claim ====--
+local lairubAbilityData = {}
+lairubAbilityData.__index = lairubAbilityData
+local function LairubAbilityData()
+	local cted = {}
+	setmetatable(cted, lairubAbilityData)
+	cted.name = ""
+	cted.startingInterval = function (player) end
+	cted.endingInterval = function (player) end
+	cted.enabledInterval = function (player) end
+	cted.onEnable = function (player) end
+	cted.onDisable = function (player) end
+	return cted
+end
+local LairubAbilityDatas = {}
+
+local function CanEnableAbility(player, ability)
+	local playerID = GetPlayerID(player)
+	if LairubAbilityDatas[ability] == nil then
+		return false
+	end
+	if ability == "dialogue" then
+		return true
+	end
+	return LairubPlayerDatas[playerID].justDisabledAbility ~= ability and (LairubPlayerDatas[playerID].enabledAbility == nil or LairubPlayerDatas[playerID].enabledAbility == ability)
+end
+
+local function IsAbilityEnabled(player, ability)
+	return LairubPlayerDatas[GetPlayerID(player)].enabledAbility == ability
+end
+
+local function ReleaseAbility(player, ability)
+	local playerID = GetPlayerID(player)
+	if LairubPlayerDatas[playerID].enabledAbility == ability then
+		LairubAbilityDatas[ability].onDisable(player)
+		LairubPlayerDatas[playerID].justDisabledAbility = ability
+		LairubPlayerDatas[playerID].enabledAbility = nil
+		LairubPlayerDatas[playerID].enabledAbilityTime = 0
+		return true
+	end
+	return false
+end
+
+local function ClaimAbility(player, ability)
+	local playerID = GetPlayerID(player)
+	if CanEnableAbility(player, ability) then
+		if LairubPlayerDatas[playerID].enabledAbility ~= nil then
+			ReleaseAbility(player, ability)
+		end
+		if LairubPlayerDatas[playerID].enabledAbility ~= ability then
+			LairubPlayerDatas[playerID].enabledAbility = ability
+			LairubPlayerDatas[playerID].enabledAbilityTime = 0
+			LairubAbilityDatas[ability].onEnable(player)
+		end
+		return true
+	end
+	return false
+end
+
 --==== Key process ====--
+local function LairubButtonName(player, name)
+	if player == nil and false then
+		return ""
+	elseif name == "hide_ui" then
+		return "TAB"
+	elseif name == "swap_form" then
+		return "LSHIFT"
+	elseif name == "soul_cross" then
+		return "LCTRL"
+	elseif name == "release_souls" then
+		return "LALT"
+	elseif name == "up" then
+		return "UP"
+	elseif name == "down" then
+		return "DOWN"
+	elseif name == "left" then
+		return "LEFT"
+	elseif name == "right" then
+		return "RIGHT"
+	elseif name == "teleport_to_devil_room" then
+		return "X"
+	elseif name == "step_dialogue" then
+		return "Z"
+	elseif name == "help" then
+		return "H"
+	else
+		return ""
+	end
+end
+
 local function IsLairubButtonPressed(player, name)
 	if player == nil then
 		return false
@@ -348,12 +508,10 @@ local function IsLairubButtonPressed(player, name)
 		return false
 	elseif name == "hide_ui" then
 		return Input.IsButtonPressed(Keyboard.KEY_TAB, player.ControllerIndex)
-	elseif name == "swap_form" then
-		return Input.IsButtonPressed(Keyboard.KEY_LEFT_SHIFT, player.ControllerIndex)
-	elseif name == "soul_cross" then
-		return Input.IsButtonPressed(Keyboard.KEY_LEFT_CONTROL, player.ControllerIndex)
-	elseif name == "release_souls" then
-		return Input.IsButtonPressed(Keyboard.KEY_LEFT_ALT, player.ControllerIndex)
+	elseif name == "step_dialogue" then
+		return Input.IsButtonPressed(Keyboard.KEY_Z, player.ControllerIndex)
+	elseif name == "help" then
+		return Input.IsButtonPressed(Keyboard.KEY_H, player.ControllerIndex)
 	elseif name == "up" then
 		return Input.IsButtonPressed(Keyboard.KEY_UP, player.ControllerIndex)
 	elseif name == "down" then
@@ -362,108 +520,97 @@ local function IsLairubButtonPressed(player, name)
 		return Input.IsButtonPressed(Keyboard.KEY_LEFT, player.ControllerIndex)
 	elseif name == "right" then
 		return Input.IsButtonPressed(Keyboard.KEY_RIGHT, player.ControllerIndex)
-	elseif name == "teleport_to_devil_room" then
+	elseif name == "swap_form" and CanEnableAbility(player, "swap_form") then
+		return Input.IsButtonPressed(Keyboard.KEY_LEFT_SHIFT, player.ControllerIndex)
+	elseif name == "soul_cross" and CanEnableAbility(player, "soul_cross") then
+		return Input.IsButtonPressed(Keyboard.KEY_LEFT_CONTROL, player.ControllerIndex)
+	elseif name == "release_souls" and CanEnableAbility(player, "release_souls") then
+		return Input.IsButtonPressed(Keyboard.KEY_LEFT_ALT, player.ControllerIndex)
+	elseif name == "teleport_to_devil_room" and CanEnableAbility(player, "teleport_to_devil_room") then
 		return Input.IsButtonPressed(Keyboard.KEY_X, player.ControllerIndex)
-	elseif name == "step_dialogue" then
-		return Input.IsButtonPressed(Keyboard.KEY_Z, player.ControllerIndex)
-	elseif name == "help" then
-		return Input.IsButtonPressed(Keyboard.KEY_H, player.ControllerIndex)
 	else
 		return false
 	end
 end
 
+local function UpdateMonitKey(player, name)
+	local playerID = GetPlayerID(player)
+	if IsLairubButtonPressed(player, name) then
+		if not LairubPlayerDatas[playerID].pressingKeys:HasFlag(name) then
+			LairubPlayerDatas[playerID].pressingKeys:AddFlag(name)
+			LairubPlayerDatas[playerID].pressedKeys:AddFlag(name)
+		end
+	else
+		if LairubPlayerDatas[playerID].pressingKeys:HasFlag(name) then
+			LairubPlayerDatas[playerID].pressingKeys:RemoveFlag(name)
+			LairubPlayerDatas[playerID].releasedKeys:AddFlag(name)
+		end
+	end
+end
+
+local function MonitKeyPress(player, name)
+	return LairubPlayerDatas[GetPlayerID(player)].pressedKeys:HasFlag(name)
+end
+
+local function MonitKeyRelease(player, name)
+	return LairubPlayerDatas[GetPlayerID(player)].releasedKeys:HasFlag(name)
+end
+
+local function UpdateMonitKeys(player)
+	local playerID = GetPlayerID(player)
+	LairubPlayerDatas[playerID].pressedKeys:Wipe()
+	LairubPlayerDatas[playerID].releasedKeys:Wipe()
+	UpdateMonitKey(player, "hide_ui")
+	UpdateMonitKey(player, "swap_form")
+	UpdateMonitKey(player, "soul_cross")
+	UpdateMonitKey(player, "release_souls")
+	UpdateMonitKey(player, "up")
+	UpdateMonitKey(player, "down")
+	UpdateMonitKey(player, "left")
+	UpdateMonitKey(player, "right")
+	UpdateMonitKey(player, "teleport_to_devil_room")
+	UpdateMonitKey(player, "step_dialogue")
+	UpdateMonitKey(player, "help")
+end
+
 --================================--
 
 function UpdateCache(player)
-	player:AddCacheFlags(CacheFlag.CACHE_DAMAGE)
-	player:AddCacheFlags(CacheFlag.CACHE_SPEED)
-	player:AddCacheFlags(CacheFlag.CACHE_FIREDELAY)
+	player:RemoveCollectible(LairubStatUpdateItem)
+	--player:AddCacheFlags(CacheFlag.CACHE_DAMAGE)
+	--player:AddCacheFlags(CacheFlag.CACHE_SPEED)
+	--player:AddCacheFlags(CacheFlag.CACHE_FIREDELAY)
 end
 
-function lairub:Update(player)
-	local game = Game()
-	local level = game:GetLevel()
-	local player = Isaac.GetPlayer(0)
-	local room = game:GetRoom()
-	--==Costume==--
-	if room:GetFrameCount() == 1 and player:GetPlayerType() == playerType_Lairub and not player:IsDead() then
-		if ShiftChanged == 1 then
-			if player:HasCollectible(CollectibleType.COLLECTIBLE_GUILLOTINE) or player:HasCollectible(CollectibleType.COLLECTIBLE_TRANSCENDENCE) then
-				if not player:HasCollectible(CollectibleType.COLLECTIBLE_JUPITER) then
-					player:TryRemoveNullCostume(costume_Lairub_Body)
-					player:AddNullCostume(costume_Lairub_Body)
-				end
-				player:AddNullCostume(costume_Lairub_Head)
-			else
-				if not player:HasCollectible(CollectibleType.COLLECTIBLE_JUPITER) then
-					player:TryRemoveNullCostume(costume_Lairub_Body)
-					player:AddNullCostume(costume_Lairub_Body)
-				end
-				player:TryRemoveNullCostume(costume_Lairub_Head)
-				player:AddNullCostume(costume_Lairub_Head)
-			end
-		elseif ShiftChanged == 2 then
-			if player:HasCollectible(CollectibleType.COLLECTIBLE_GUILLOTINE) or player:HasCollectible(CollectibleType.COLLECTIBLE_TRANSCENDENCE) then
-				if not player:HasCollectible(CollectibleType.COLLECTIBLE_JUPITER) then
-					player:TryRemoveNullCostume(costume_Lairub_Body)
-					player:AddNullCostume(costume_Lairub_Body)
-				end
-				player:AddNullCostume(costume_Lairub_Head_TakeSoul)
-				player:AddNullCostume(costume_Lairub_Head_TakeSoulBase)
-			else
-				if not player:HasCollectible(CollectibleType.COLLECTIBLE_JUPITER) then
-					player:TryRemoveNullCostume(costume_Lairub_Body)
-					player:AddNullCostume(costume_Lairub_Body)
-				end
-				player:TryRemoveNullCostume(costume_Lairub_Head_TakeSoul)
-				player:AddNullCostume(costume_Lairub_Head_TakeSoul)
-				player:TryRemoveNullCostume(costume_Lairub_Head_TakeSoulBase)
-				player:AddNullCostume(costume_Lairub_Head_TakeSoulBase)
-			end
-		end
-		if player:HasCollectible(CollectibleType.COLLECTIBLE_JUPITER) then
-			player:TryRemoveNullCostume(costume_Lairub_Body)
-		end
-	end
-	--==Remove Costume if player isn't Lairub==--
-	if player:GetPlayerType() ~= playerType_Lairub then
+function UpdateCostume(player)
+	if IsLairub(player) then
 		player:TryRemoveNullCostume(costume_Lairub_Body)
-		player:TryRemoveNullCostume(costume_Lairub_Head)
-		player:TryRemoveNullCostume(costume_Lairub_Head_TakeSoul)
-		player:TryRemoveNullCostume(costume_Lairub_Head_TakeSoulBase)
-	end
-end
-lairub:AddCallback( ModCallbacks.MC_POST_UPDATE, lairub.Update)
-
-function lairub:PostPlayerInit(player)
-	if player:GetPlayerType() == playerType_Lairub then
-		if ShiftChanged == 1 then
-			player:TryRemoveNullCostume(costume_Lairub_Body)
+		if not player:HasCollectible(CollectibleType.COLLECTIBLE_JUPITER) then
 			player:AddNullCostume(costume_Lairub_Body)
+		end
+		if LairubPlayerDatas[GetPlayerID(player)].form ~= 2 then
 			player:TryRemoveNullCostume(costume_Lairub_Head)
 			player:AddNullCostume(costume_Lairub_Head)
-		elseif ShiftChanged == 2 then
-			player:TryRemoveNullCostume(costume_Lairub_Body)
-			player:AddNullCostume(costume_Lairub_Body)
+		else
 			player:TryRemoveNullCostume(costume_Lairub_Head_TakeSoul)
-			player:AddNullCostume(costume_Lairub_Head_TakeSoul)
 			player:TryRemoveNullCostume(costume_Lairub_Head_TakeSoulBase)
+			player:AddNullCostume(costume_Lairub_Head_TakeSoul)
 			player:AddNullCostume(costume_Lairub_Head_TakeSoulBase)
 		end
-		costumeEquipped = true
 	else
 		player:TryRemoveNullCostume(costume_Lairub_Body)
 		player:TryRemoveNullCostume(costume_Lairub_Head)
 		player:TryRemoveNullCostume(costume_Lairub_Head_TakeSoul)
 		player:TryRemoveNullCostume(costume_Lairub_Head_TakeSoulBase)
-		costumeEquipped = false
 	end
+end
+
+function lairub:PostPlayerInit(player)
 end
 lairub:AddCallback( ModCallbacks.MC_POST_PLAYER_INIT, lairub.PostPlayerInit)
 
 function lairub:EvaluateCache(player, cacheFlag)
-	if player:GetPlayerType() == playerType_Lairub then
+	if IsLairub(player) then
 		if cacheFlag == CacheFlag.CACHE_SPEED then
 			player.MoveSpeed = player.MoveSpeed - 0.3
 		elseif cacheFlag == CacheFlag.CACHE_DAMAGE then
@@ -479,56 +626,17 @@ function lairub:EvaluateCache(player, cacheFlag)
 		elseif cacheFlag == CacheFlag.CACHE_LUCK then
 			player.Luck = player.Luck - 1
 		elseif cacheFlag == CacheFlag.CACHE_FLYING then
-			if player:HasCollectible(CollectibleType.COLLECTIBLE_TRANSCENDENCE) then
-				if ShiftChanged == 1 then
-					if not player:HasCollectible(CollectibleType.COLLECTIBLE_JUPITER) then
-						player:TryRemoveNullCostume(costume_Lairub_Body)
-						player:AddNullCostume(costume_Lairub_Body)
-					end
-					player:TryRemoveNullCostume(costume_Lairub_Head)
-					player:AddNullCostume(costume_Lairub_Head)
-				elseif ShiftChanged == 2 then
-					if not player:HasCollectible(CollectibleType.COLLECTIBLE_JUPITER) then
-						player:TryRemoveNullCostume(costume_Lairub_Body)
-						player:AddNullCostume(costume_Lairub_Body)
-					end
-					player:TryRemoveNullCostume(costume_Lairub_Head_TakeSoul)
-					player:AddNullCostume(costume_Lairub_Head_TakeSoul)
-					player:TryRemoveNullCostume(costume_Lairub_Head_TakeSoulBase)
-					player:AddNullCostume(costume_Lairub_Head_TakeSoulBase)
-				end
-			end
+			UpdateCostume(player)
 		elseif cacheFlag == CacheFlag.CACHE_FAMILIARS then
 			local maybeFamiliars = Isaac.GetRoomEntities()
 			for m = 1, #maybeFamiliars do
 				local variant = maybeFamiliars[m].Variant
 				if variant == (FamiliarVariant.GUILLOTINE) or variant == (FamiliarVariant.ISAACS_BODY) or variant == (FamiliarVariant.SCISSORS) then
-					if ShiftChanged == 1 then
-						if not player:HasCollectible(CollectibleType.COLLECTIBLE_JUPITER) then
-							player:TryRemoveNullCostume(costume_Lairub_Body)
-							player:AddNullCostume(costume_Lairub_Body)
-						else
-							player:TryRemoveNullCostume(costume_Lairub_Body)
-						end
-						player:TryRemoveNullCostume(costume_Lairub_Head)
-						player:AddNullCostume(costume_Lairub_Head)
-					elseif ShiftChanged == 2 then
-						if not player:HasCollectible(CollectibleType.COLLECTIBLE_JUPITER) then
-							player:TryRemoveNullCostume(costume_Lairub_Body)
-							player:AddNullCostume(costume_Lairub_Body)
-						else
-							player:TryRemoveNullCostume(costume_Lairub_Body)
-						end
-						player:TryRemoveNullCostume(costume_Lairub_Head_TakeSoul)
-						player:AddNullCostume(costume_Lairub_Head_TakeSoul)
-						player:TryRemoveNullCostume(costume_Lairub_Head_TakeSoulBase)
-						player:AddNullCostume(costume_Lairub_Head_TakeSoulBase)
-					end
+					UpdateCostume(player)
 				end
 			end
 		end
-		-- Normal -> TakeSoul
-		if ShiftChanged == 2 then
+		if LairubPlayerDatas[GetPlayerID(player)].form == 2 then
 			if cacheFlag == CacheFlag.CACHE_SPEED then
 				player.MoveSpeed = player.MoveSpeed - 0.2
 			elseif cacheFlag == CacheFlag.CACHE_DAMAGE then
@@ -536,844 +644,548 @@ function lairub:EvaluateCache(player, cacheFlag)
 			elseif cacheFlag == CacheFlag.CACHE_FIREDELAY then
 				player.MaxFireDelay = player.MaxFireDelay + 8
 			end
-			IsShiftChanged = true
 		end
-		-- TakeSoul -> Normal
-		if ShiftChanged ==  1 then
-			--[[if cacheFlag == CacheFlag.CACHE_SPEED then
-				player.MoveSpeed = player.MoveSpeed + 0.2
-			elseif cacheFlag == CacheFlag.CACHE_DAMAGE then
-				player.Damage = player.Damage - 1
-			elseif cacheFlag == CacheFlag.CACHE_FIREDELAY then
-				player.MaxFireDelay = player.MaxFireDelay - 10
-			end]]--
-			IsShiftChanged = true
-		end
-		--========--
 	end
 end
 lairub:AddCallback( ModCallbacks.MC_EVALUATE_CACHE, lairub.EvaluateCache)
 
+--==== Abilities ====--
 
-local AttackIcon = Sprite()
-AttackIcon:Load("gfx/Lairub_AttackIcon.anm2", true)
-local SoulSign = Sprite()
-SoulSign:Load("gfx/Lairub_SoulSign.anm2", true)
-local CrossIcon = Sprite()
-CrossIcon:Load("gfx/Lairub_CrossIcon.anm2", true)
-local ReleaseIcon = Sprite()
-ReleaseIcon:Load("gfx/Lairub_ReleaseIcon.anm2", true)
-local TeleportSign = Sprite()
-TeleportSign:Load("gfx/Lairub_TeleportSign.anm2", true)
+LairubAbilityDatas.swap_form = LairubAbilityData()
+LairubAbilityDatas.swap_form.name = "swap_form"
+LairubAbilityDatas.swap_form.startingInterval = function (player) if MonitKeyPress(player,"swap_form") then ClaimAbility(player, "swap_form") end end
+LairubAbilityDatas.swap_form.endingInterval = function (player) if LairubPlayerDatas[GetPlayerID(player)].enabledAbilityTime > 30 then ReleaseAbility(player, "swap_form") end end
+LairubAbilityDatas.swap_form.onEnable = function (player)
+	local playerID = GetPlayerID(player)
+	if LairubPlayerDatas[playerID].form == 2 then
+		LairubPlayerDatas[playerID].form = 1
+		SetLairubOverlay(player, "ChangedToNormal")
+	else
+		LairubPlayerDatas[playerID].form = 2
+		SetLairubOverlay(player, "ChangedToTakeSoul")
+	end
+	--player.Velocity = Vector(0, 0)
+	player.ControlsCooldown = math.max(30, player.ControlsCooldown)
+	UpdateCostume(player)
+	UpdateCache(player)
+end
+LairubAbilityDatas.swap_form.onDisable = function (player)
+	ClearLairubOverlay(player, "ChangedToTakeSoul")
+	ClearLairubOverlay(player, "ChangedToNormal")
+end
 
-function lairub:PostRender()
-	local game = Game()
-	local level = game:GetLevel()
-	local player = Isaac.GetPlayer(0)
-	local room = game:GetRoom()
-	local playerPos = room:WorldToScreenPosition(player.Position)
-	if player:GetPlayerType() == playerType_Lairub then
-		--==Initial tips==--
---		if ShowedInitialTips == false then
-		if Game():GetFrameCount() <= 60 then
-			Isaac.RenderText("Pressing'Tap' to hide skill icon.", playerPos.X - 96, playerPos.Y + 6, 255, 255, 255, 255)
-			Isaac.RenderText("Press'H' to show help list.", playerPos.X - 96, playerPos.Y + 16, 255, 255, 255, 255)
-		else
-			--Do nothing
-		end
-		--==== Can Hide ====--
-		if not IsLairubButtonPressed(player,"hide_ui") then
-			--==SoulSign==--
-			SoulSign:SetOverlayRenderPriority(true)
-			SoulSign:SetFrame("SoulSign", 1)
-			SoulSign:Render(Vector(64,76), Vector(0,0), Vector(0,0))
-			Isaac.RenderText(tostring(SoulCount), 78, 70, 255, 255, 255, 255)
-			--==AttackIcon==--
-			AttackIcon:SetOverlayRenderPriority(true)
-				if ShiftChanged == 1 then
-					AttackIcon:SetFrame("Normal", 1)
-				elseif ShiftChanged == 2 then
-					AttackIcon:SetFrame("Take Soul", 1)
-				end
-			AttackIcon:Render(Vector(64,52), Vector(0,0), Vector(0,0))
-			--==CrossIcon==--
-			CrossIcon:SetOverlayRenderPriority(true)
-			if SpawnedCross == true then
-				CrossIcon:SetFrame("Locking", 1)
-			else
-				CrossIcon:SetFrame("Ready", 1)
-			end
-			CrossIcon:Render(Vector(96,52), Vector(0,0), Vector(0,0))
-			--==ReleaseIcon==--
-			ReleaseIcon:SetOverlayRenderPriority(true)
-			if SoulCount > 0 then
-				ReleaseIcon:SetFrame("Ready", 1)
-			elseif SoulCount <= 0 then
-				ReleaseIcon:SetFrame("Locking", 1)
-			end
-			ReleaseIcon:Render(Vector(128,52), Vector(0,0), Vector(0,0))
-			--==Teleport To Devil Room==--
-			TeleportSign:SetOverlayRenderPriority(true)
-			TeleportSign:SetFrame("TeleportSign", 1)
-			TeleportSign:Render(Vector(112,76), Vector(0,0), Vector(0,0))
-			Isaac.RenderScaledText("'X'", 120, 70, 0.9, 0.9, 255, 255, 255, 255)
-			--==Hunted down readout==--
-			HuntedDownRendering()
-			--==CountDown==--
-			--[[
-			if (level:GetStage() == 10 and room:GetBackdropType() == 14) or (level:GetStage() == 11 and room:GetBackdropType() == 16) then
-				if DialogueOver_Sheol == false and level:GetStage() == 10 and room:GetBackdropType() == 14 then
-					--Do nothing
-				else
-					if room:IsClear() then
-						Isaac.RenderScaledText("00", 200, 60, 2, 2, 1, 1, 1, 1)
-						Isaac.RenderScaledText("safe", 200, 80, 0.9, 0.9, 1, 1, 1, 1)
-					elseif room:GetType() == RoomType.ROOM_BOSS then
-						Isaac.RenderScaledText("00", 200, 60, 2, 2, 1, 0.5, 0.5, 0.8)
-						Isaac.RenderScaledText("BOSS", 200, 80, 0.9, 0.9, 1, 0.5, 0.5, 0.8)
-					elseif not (room:IsClear() and room:GetType() == RoomType.ROOM_BOSS) then
-						if room:GetFrameCount() <= 1800 then
-							if CountDown < 10 then
-								Isaac.RenderScaledText("0"..tostring(CountDown), 200, 60, 2, 2, 1, 0.5, 0.5, 0.8)
-							else
-								Isaac.RenderScaledText(tostring(CountDown), 200, 60, 2, 2, 1, 0.5, 0.5, 0.8)
-							end
-							Isaac.RenderScaledText("Vigilant", 190, 80, 0.9, 0.9, 1, 0.5, 0.5, 0.8)
-						elseif room:GetFrameCount() >= 1800 then
-							Isaac.RenderScaledText("0"..tostring(DMGCountDown), 200, 60, 2, 2, 1, 0, 0, 0.8)
-							Isaac.RenderScaledText("DANGER", 195, 80, 0.9, 0.9, 1, 0, 0, 0.8)
-						end
+LairubAbilityDatas.release_souls = LairubAbilityData()
+LairubAbilityDatas.release_souls.name = "release_souls"
+LairubAbilityDatas.release_souls.startingInterval = function (player) if IsLairubButtonPressed(player,"release_souls") then ClaimAbility(player, "release_souls") end end
+LairubAbilityDatas.release_souls.endingInterval = function (player) if not IsLairubButtonPressed(player,"release_souls") then ReleaseAbility(player, "release_souls") end end
+LairubAbilityDatas.release_souls.onEnable = function (player)
+	--player.Velocity = Vector(0, 0)
+	SetLairubOverlay(player, "ReleaseSoul")
+end
+LairubAbilityDatas.release_souls.onDisable = function (player)
+	ClearLairubOverlay(player, "ReleaseSoul")
+end
+LairubAbilityDatas.release_souls.enabledInterval = function (player)
+	player.ControlsCooldown = math.max(1, player.ControlsCooldown)
+	if SoulCount > 0 then
+		CallForEveryEntity(function(entity)
+			local NPC = entity:ToNPC()
+			if NPC ~= nil and NPC:IsVulnerableEnemy() and not NPC:IsInvincible() and not NPC:HasEntityFlags(EntityFlag.FLAG_FRIENDLY) then
+				if (player.Position - NPC.Position):Length() < 192 or Game():GetLevel():GetStage() == 13 then
+					SoulCount = SoulCount - 1
+					NPC:TakeDamage(player.Damage, 0, EntityRef(player), 0)
+					NPC:SetColor(Color(0, 0, 0, 1, 0, 0, 0), 30, 999, true, true)
+					if SoulCount < 0 then
+						SoulCount = 0
 					end
 				end
 			end
-			]]--
-			
-			--== Help List ==--
-			if ShowHelpList == true then
-				-- Shift --
-				Isaac.RenderScaledText("Shift - ChangeFrom", 64, 86, 0.9, 0.9, 1, 1, 1, 0.7)
-				Isaac.RenderScaledText("Changed to 'TakeSoul' or normal.", 70, 96, 0.9, 0.9, 1, 1, 1, 0.7)
-				Isaac.RenderScaledText("When you're in 'TakeSoul', you can collect souls", 70, 106, 0.9, 0.9, 1, 1, 1, 0.7)
-				Isaac.RenderScaledText("for ReleaseSoul.", 70, 116, 0.9, 0.9, 1, 1, 1, 0.7)
-				-- Ctrl --
-				Isaac.RenderScaledText("Ctrl - SoulCross", 64, 126, 0.9, 0.9, 1, 1, 1, 0.7)
-				Isaac.RenderScaledText("Spawn a SoulCross that will attack the", 70, 136, 0.9, 0.9, 1, 1, 1, 0.7)
-				Isaac.RenderScaledText("enemy autonomously.(DMG = player.Damage * 50%)", 70, 146, 0.9, 0.9, 1, 1, 1, 0.7)
-				Isaac.RenderScaledText("When SoulCross is spawned, it can damage enemies", 70, 156, 0.9, 0.9, 1, 1, 1, 0.7)
-				Isaac.RenderScaledText("with a radius of 90 pixels.(DMG = player.Damage * 200%)", 70, 166, 0.9, 0.9, 1, 1, 1, 0.7)
-				-- Alt --
-				Isaac.RenderScaledText("Alt - ReleaseSoul", 64, 176, 0.9, 0.9, 1, 1, 1, 0.7)
-				Isaac.RenderScaledText("Consume soul and deal damage to enemies with", 70, 186, 0.9, 0.9, 1, 1, 1, 0.7)
-				Isaac.RenderScaledText("radius 192 pixels.(DMG = player.Damage)", 70, 196, 0.9, 0.9, 1, 1, 1, 0.7)
-				-- X --
-				Isaac.RenderScaledText("X - Teleport To Devil Room", 64, 206, 0.9, 0.9, 1, 1, 1, 0.7)
-				Isaac.RenderScaledText("Hold 'X' for 6 seconds and teleport to devil room.", 70, 216, 0.9, 0.9, 1, 1, 1, 0.7)
-			else
-				-- Do nothing
-			end
-			--====--
-		else
-			--Do nothing
-		end
-		--========--
-		--==Talk to player==--
-		if (not LairubFlags:HasFlag("DIALOGUE_OVER")) and level:GetStage() == 13 then
-			--Lowest Y = -64--
-			Isaac.RenderText("(Press 'Z' to continue)", playerPos.X - 64, playerPos.Y - 64, 255, 255, 255, 255)
-			if Dialogue == 0 then
-				Isaac.RenderText("Lairub:", playerPos.X - 96, playerPos.Y - 84, 255, 255, 255, 255)
-				Isaac.RenderText("...", playerPos.X - 96, playerPos.Y - 74, 255, 255, 255, 255)
-			elseif Dialogue == 1 then
-				Isaac.RenderText("Lairub:", playerPos.X - 96, playerPos.Y - 94, 255, 255, 255, 255)
-				Isaac.RenderText("It seems that we have a stronger", playerPos.X - 96, playerPos.Y - 84, 255, 255, 255, 255)
-				Isaac.RenderText("enemy to deal with.", playerPos.X - 96, playerPos.Y - 74, 255, 255, 255, 255)
-			elseif Dialogue == 2 then
-				Isaac.RenderText("Lairub:", playerPos.X - 96, playerPos.Y - 94, 255, 255, 255, 255)
-				Isaac.RenderText("For the next battle, my skill 'Release Soul'", playerPos.X - 96, playerPos.Y - 84, 255, 255, 255, 255)
-				Isaac.RenderText("has been enhanced to full screen.", playerPos.X - 96, playerPos.Y - 74, 255, 255, 255, 255)
-			elseif Dialogue == 3 then
-				Isaac.RenderText("Lairub:", playerPos.X - 96, playerPos.Y - 84, 255, 255, 255, 255)
-				Isaac.RenderText("Good luck.", playerPos.X - 96, playerPos.Y - 74, 255, 255, 255, 255)
-			elseif Dialogue == 4 then
-				Isaac.RenderText("Lairub:", playerPos.X - 96, playerPos.Y - 84, 255, 255, 255, 255)
-				Isaac.RenderText("...And that bed doesn't work for me.", playerPos.X - 96, playerPos.Y - 74, 255, 255, 255, 255)
-			end
-		end
-		--==Be Hunted Down In Stage10, BackdropType14(Sheol) And Stage11, BackdropType16(DarkRoom)==-
-		--==Dialogue(Sheol)==--
-		if (not LairubFlags:HasFlag("DIALOGUE_OVER_SHEOL")) and LairubFlags:HasFlag("HUNTED_DOWN") then
-			Isaac.RenderText("(Press 'Z' to continue)", playerPos.X - 64, playerPos.Y - 64, 255, 255, 255, 255)
-			if Dialogue_Sheol == 0 then
-				Isaac.RenderText("Lairub:", playerPos.X - 96, playerPos.Y - 84, 255, 255, 255, 255)
-				Isaac.RenderText("...What", playerPos.X - 96, playerPos.Y - 74, 255, 255, 255, 255)
-			elseif Dialogue_Sheol == 1 then
-				Isaac.RenderText("Lairub:", playerPos.X - 96, playerPos.Y - 84, 255, 255, 255, 255)
-				Isaac.RenderText("Wh-What are you doing? This is my home!", playerPos.X - 96, playerPos.Y - 74, 255, 255, 255, 255)
-			elseif Dialogue_Sheol == 2 then
-				Isaac.RenderText("Lairub:", playerPos.X - 96, playerPos.Y - 84, 255, 255, 255, 255)
-				Isaac.RenderText("If I'm reckless here, It-It'll kill me!", playerPos.X - 96, playerPos.Y - 74, 255, 255, 255, 255)
-			elseif Dialogue_Sheol == 3 then
-				Isaac.RenderText("Lairub:", playerPos.X - 96, playerPos.Y - 84, 255, 255, 255, 255)
-				Isaac.RenderText("...*Sigh*", playerPos.X - 96, playerPos.Y - 74, 255, 255, 255, 255)
-			elseif Dialogue_Sheol == 4 then
-				Isaac.RenderText("Lairub:", playerPos.X - 96, playerPos.Y - 84, 255, 255, 255, 255)
-				Isaac.RenderText("All right, whatever you want.", playerPos.X - 96, playerPos.Y - 74, 255, 255, 255, 255)
-			end
-		end
-		--====--
+		end)
 	end
+end
+
+LairubAbilityDatas.soul_cross = LairubAbilityData()
+LairubAbilityDatas.soul_cross.name = "soul_cross"
+LairubAbilityDatas.soul_cross.startingInterval = function (player)
+	if MonitKeyPress(player,"soul_cross") and (
+		LairubPlayerDatas[GetPlayerID(player)].crossPlaced == nil or LairubPlayerDatas[GetPlayerID(player)].crossPlaced:IsDead()
+	) then
+		ClaimAbility(player, "soul_cross")
+	end
+end
+LairubAbilityDatas.soul_cross.onEnable = function (player)
+	--player.Velocity = Vector(0, 0)
+	SetLairubOverlay(player, "ReadySpawnCross")
+end
+LairubAbilityDatas.soul_cross.onDisable = function (player)
+	ClearLairubOverlay(player, "ReadySpawnCross")
+end
+LairubAbilityDatas.soul_cross.endingInterval = function (player)
+	local playerID = GetPlayerID(player)
+	if MonitKeyPress(player,"soul_cross") or (LairubPlayerDatas[GetPlayerID(player)].crossPlaced ~= nil and not LairubPlayerDatas[GetPlayerID(player)].crossPlaced:IsDead()) then
+		ReleaseAbility(player, "soul_cross")
+		return
+	end
+	
+	local dirKeys = 0
+	local offset = Vector(0,0)
+	if MonitKeyPress(player,"up") then
+		dirKeys = dirKeys + 1
+		offset = Vector(0, -40)
+	end
+	if MonitKeyPress(player,"down") then
+		dirKeys = dirKeys + 1
+		offset = Vector(0, 40)
+	end
+	if MonitKeyPress(player,"left") then
+		dirKeys = dirKeys + 1
+		offset = Vector(-40, 0)
+	end
+	if MonitKeyPress(player,"right") then
+		dirKeys = dirKeys + 1
+		offset = Vector(40, 0)
+	end
+	
+	if dirKeys ~= 1 then
+		player.ControlsCooldown = math.max(1, player.ControlsCooldown)
+		return
+	end
+	
+	local pos = Vector(math.floor((player.Position.X + offset.X + 20)/40.0)*40, math.floor((player.Position.Y + offset.Y + 20)/40.0)*40)
+
+	SFXManager():Play(2, 2, 0, false, 0.7 )
+	LairubCross = Isaac.Spawn(EntityType.ENTITY_EFFECT, LairubSoulCross_Variant, 0, pos, Vector(0,0), player)
+	LairubCross:GetData().cross_owner = player
+	LairubCross:BloodExplode()
+	if not LairubPlayerDatas[playerID].crossPlacedOnce then
+		CallForEveryEntity(function (entity)
+			local NPC = entity:ToNPC()
+			if NPC ~= nil and NPC:IsVulnerableEnemy() then
+				if (player.Position - NPC.Position):Length() < 90 then
+					NPC:TakeDamage((player.Damage * 2), 0, EntityRef(player), 0)
+				end
+			end
+		end)
+	end
+	LairubPlayerDatas[playerID].crossPlaced = LairubCross
+	LairubPlayerDatas[playerID].crossPlacedOnce = true
+	ReleaseAbility(player, "soul_cross")
+end
+
+LairubAbilityDatas.teleport_to_devil_room = LairubAbilityData()
+LairubAbilityDatas.teleport_to_devil_room.name = "teleport_to_devil_room"
+LairubAbilityDatas.teleport_to_devil_room.startingInterval = function (player) if IsLairubButtonPressed(player,"teleport_to_devil_room") then ClaimAbility(player, "teleport_to_devil_room") end end
+LairubAbilityDatas.teleport_to_devil_room.onEnable = function (player)
+	--player.Velocity = Vector(0, 0)
+	SetLairubOverlay(player, "TeleportToDevilRoom")
+end
+LairubAbilityDatas.teleport_to_devil_room.onDisable = function (player)
+	ClearLairubOverlay(player, "TeleportToDevilRoom")
+end
+LairubAbilityDatas.teleport_to_devil_room.endingInterval = function (player)
+	if LairubPlayerDatas[GetPlayerID(player)].enabledAbilityTime > 360 then
+		player:UseCard(Card.CARD_JOKER, UseFlag.USE_NOANIM | UseFlag.USE_NOCOSTUME | UseFlag.USE_NOANNOUNCER)
+		ReleaseAbility(player, "teleport_to_devil_room")
+		return
+	end
+	if not IsLairubButtonPressed(player,"teleport_to_devil_room") then
+		ReleaseAbility(player, "teleport_to_devil_room")
+		return
+	end
+end
+LairubAbilityDatas.teleport_to_devil_room.enabledInterval = function (player)
+	player.ControlsCooldown = math.max(1, player.ControlsCooldown)
+end
+
+LairubAbilityDatas.dialogue = LairubAbilityData()
+LairubAbilityDatas.dialogue.name = "dialogue"
+LairubAbilityDatas.dialogue.onDisable = function (player)
+	ClearLairubOverlay(player, "TalkNormal")
+	ClearLairubOverlay(player, "TalkHappy")
+	ClearLairubOverlay(player, "TalkFear")
+	ClearLairubOverlay(player, "TalkSigh")
+end
+LairubAbilityDatas.dialogue.endingInterval = function (player)
+	if MonitKeyPress(player,"step_dialogue") then
+		LairubDialogueManager.step = LairubDialogueManager.step + 1
+	end
+end
+LairubAbilityDatas.dialogue.enabledInterval = function (player)
+	player.ControlsCooldown = math.max(1, player.ControlsCooldown)
+	local dialogue = LairubDialogueDatas[LairubDialogueManager.onGoingDialogue]
+	if dialogue == nil then
+		return
+	end
+	local step = dialogue.steps[LairubDialogueManager.step]
+	if step == nil then
+		return
+	end
+	SetLairubOverlay(player, "Talk"..step.emote)
+end
+
+--==== Rendering ====--
+
+function DebugMessageRendering()
+	CallForEveryPlayer(function(player)
+		if not IsLairub(player) then
+			return
+		end
+		local screenxy = Game():GetRoom():WorldToScreenPosition(player.Position)
+		local x, y = screenxy.X, screenxy.Y
+		local str1 = "Enabled: "..tostring(LairubPlayerDatas[GetPlayerID(player)].enabledAbility)
+		Explorite.RenderText(str1, x - Explorite.GetTextWidth(str1)/2, y + 6, 255, 255, 255, 255)
+	end)
+end
+
+function StartingTipRendering()
+	if Game():GetFrameCount() < 60 then
+		local player = PlayerTypeFirstOneInGame(playerType_Lairub)
+		if player == nil then
+			return
+		end
+		local screenxy = Game():GetRoom():WorldToScreenPosition(player.Position)
+		local x, y = screenxy.X, screenxy.Y
+		local str1 = LairubLang:_("starting_tip1", LairubButtonName(player, "hide_ui"))
+		local str2 = LairubLang:_("starting_tip2", LairubButtonName(player, "help"))
+		Explorite.RenderText(str1, x - Explorite.GetTextWidth(str1)/2, y + 6, 255, 255, 255, 255)
+		Explorite.RenderText(str2, x - Explorite.GetTextWidth(str2)/2, y + 16, 255, 255, 255, 255)
+	end
+end
+
+function DialogueRendering()
+	local player = PlayerTypeFirstOneInGame(playerType_Lairub)
+	if player == nil then
+		return
+	end
+	local dialogue = LairubDialogueDatas[LairubDialogueManager.onGoingDialogue]
+	if dialogue == nil then
+		return
+	end
+	local step = dialogue.steps[LairubDialogueManager.step]
+	if step == nil then
+		return
+	end
+	local screenxy = Game():GetRoom():WorldToScreenPosition(player.Position)
+	local x, y = screenxy.X, screenxy.Y
+	local lines = {}
+	local steppingStr = LairubLang:_("dialogue_stepping_hint", LairubButtonName(player, "step_dialogue"))
+	local maxWidth = Explorite.GetTextWidth(steppingStr)
+	table.insert(lines, LairubLang:_("dialogue_title"))
+	for i,val in ipairs(step.text) do
+		local str = LairubLang:_(val)
+		maxWidth = math.max(maxWidth, Explorite.GetTextWidth(str))
+		table.insert(lines, str)
+	end
+	for i,val in ipairs(lines) do
+		Explorite.RenderText(val, x - maxWidth/2, y - 74 - 10 * (#lines - i), 255, 255, 255, 255)
+	end
+	Explorite.RenderText(steppingStr, x - Explorite.GetTextWidth(steppingStr)/2, y - 64, 255, 255, 255, 255)
+end
+
+function HelpScreenRending()
+	local player = PlayerFindFirst(function(player) return IsLairub(player) and IsLairubButtonPressed(player,"help") end)
+	if player == nil then
+		return
+	end
+	local string = LairubLang:_("help_screen",
+	LairubButtonName(player, "swap_form"),
+	LairubButtonName(player, "soul_cross"),
+	LairubButtonName(player, "release_souls"),
+	LairubButtonName(player, "teleport_to_devil_room"),
+	string.format("%.2f", math.floor(0.5+player.Damage * 0.5 * 100) / 100),
+	string.format("%.2f", math.floor(0.5+player.Damage * 2.0 * 100) / 100),
+	string.format("%.2f", math.floor(0.5+player.Damage * 1.0 * 100) / 100)
+	)
+	local lineP = 0
+	for line in string.gmatch(string, "([^\n]+)") do
+		Explorite.RenderScaledText(line, 64, 76 + 10 * lineP, 1, 1, 1, 1, 1, 1)
+		lineP = lineP + 1
+	end
+end
+
+function AbilitiesCardRendering(pos, player)
+	if not IsLairub(player) then
+		return
+	end
+	local AttackIcon = LairubPlayerDatas[GetPlayerID(player)].sprites.AttackIcon
+	local CrossIcon = LairubPlayerDatas[GetPlayerID(player)].sprites.CrossIcon
+	local ReleaseIcon = LairubPlayerDatas[GetPlayerID(player)].sprites.ReleaseIcon
+	local TeleportSign = LairubPlayerDatas[GetPlayerID(player)].sprites.TeleportSign
+	--==AttackIcon==--
+	if LairubPlayerDatas[GetPlayerID(player)].form ~= 2 then
+		AttackIcon:SetFrame("Normal", 1)
+	else
+		AttackIcon:SetFrame("Take Soul", 1)
+	end
+	--==CrossIcon==--
+	if LairubPlayerDatas[GetPlayerID(player)].crossPlaced == nil or LairubPlayerDatas[GetPlayerID(player)].crossPlaced:IsDead() then
+		CrossIcon:SetFrame("Ready", 1)
+	else
+		CrossIcon:SetFrame("Locking", 1)
+	end
+	--==ReleaseIcon==--
+	if SoulCount > 0 then
+		ReleaseIcon:SetFrame("Ready", 1)
+	elseif SoulCount <= 0 then
+		ReleaseIcon:SetFrame("Locking", 1)
+	end
+	--==Teleport To Devil Room==--
+	TeleportSign:SetFrame("TeleportSign", 1)
+
+	AttackIcon:Render(pos + Vector(16*0, 16*1), Vector(0,0), Vector(0,0))
+	CrossIcon:Render(pos + Vector(16*1, 16*0), Vector(0,0), Vector(0,0))
+	ReleaseIcon:Render(pos +  Vector(16*2, 16*1), Vector(0,0), Vector(0,0))
+	TeleportSign:Render(pos + Vector(16*1, 16*2), Vector(0,0), Vector(0,0))
+end
+
+function AbilitiesDisplayRendering()
+	if PlayerFindFirst(function(player) return IsLairubButtonPressed(player,"hide_ui") end) ~= nil then
+		return
+	end
+	local baseOffset = Vector(44,40)
+	local offsetMod = Vector(20 * Options.HUDOffset, 12 * Options.HUDOffset)
+
+	local soulDisplayPos = baseOffset + offsetMod + Vector(48, 48)
+	SoulSign:Render(soulDisplayPos, Vector(0,0), Vector(0,0))
+	Explorite.RenderTextB(tostring(SoulCount), soulDisplayPos.X + 8, soulDisplayPos.Y - 7, 1, 1, 1, 1, 0, false)
+
+	local sortNum = 0
+	CallForEveryPlayer(
+		function(player)
+			if IsLairub(player) then
+				local offsetExtra = Vector(0, 0)
+				if sortNum == 1 then
+					offsetExtra = Vector(64, 0)
+				elseif sortNum == 2 then
+					offsetExtra = Vector(0, 64)
+				elseif sortNum == 3 then
+					offsetExtra = Vector(64, 64)
+				end
+				AbilitiesCardRendering(baseOffset + offsetMod + offsetExtra, player)
+				sortNum = sortNum + 1
+			end
+		end
+	)
+end
+
+function lairub:PostRender()
+	if not Game():GetHUD():IsVisible() or not PlayerTypeExistInGame(playerType_Lairub) then
+		return nil
+	end
+	StartingTipRendering()
+	AbilitiesDisplayRendering()
+	HuntedDownRendering()
+	DialogueRendering()
+	HelpScreenRending()
 end
 lairub:AddCallback(ModCallbacks.MC_POST_RENDER, lairub.PostRender)
 
-local LairubAnmChangedToTakeSoul_Type = Isaac.GetEntityTypeByName("LairubAnmChangedToTakeSoul")
-local LairubAnmChangedToTakeSoul_Variant = Isaac.GetEntityVariantByName("LairubAnmChangedToTakeSoul")
-
-local function LairubAnmChangedToTakeSoulUpdate(_, LairubAnmChangedToTakeSoul)
-	local game = Game()
-	local level = game:GetLevel()
-	local player = Isaac.GetPlayer(0)
-	local room = game:GetRoom()
-	if player:GetPlayerType() == playerType_Lairub and not player:IsDead() then
-		LairubAnmChangedToTakeSoul:GetSprite():Play("ChangedToTakeSoul", false)
-		if LairubAnmChangedToTakeSoul:GetSprite():IsEventTriggered("End") then
-			player.Visible = true
-			--player.ControlsEnabled = true
-			AnimationEnd = true
-			LairubAnmChangedToTakeSoul:Remove()
-		end
+function lairub:LairubSoulCrossUpdate(turretEntity)
+	local Data = turretEntity:GetData()
+	local player = Data.cross_owner
+	if player == nil then
+		return
 	end
-end
-lairub:AddCallback(ModCallbacks.MC_FAMILIAR_UPDATE,LairubAnmChangedToTakeSoulUpdate, LairubAnmChangedToTakeSoul_Variant)
-
-local LairubAnmChangedToNormal_Type = Isaac.GetEntityTypeByName("LairubAnmChangedToNormal")
-local LairubAnmChangedToNormal_Variant = Isaac.GetEntityVariantByName("LairubAnmChangedToNormal")
-
-local function LairubAnmChangedToNormalUpdate(_, LairubAnmChangedToNormal)
-	local game = Game()
-	local level = game:GetLevel()
-	local player = Isaac.GetPlayer(0)
-	local room = game:GetRoom()
-	if player:GetPlayerType() == playerType_Lairub and not player:IsDead() then
-		LairubAnmChangedToNormal:GetSprite():Play("ChangedToNormal", false)
-		if LairubAnmChangedToNormal:GetSprite():IsEventTriggered("End") then
-			player.Visible = true
-			--player.ControlsEnabled = true
-			AnimationEnd = true
-			LairubAnmChangedToNormal:Remove()
-		end
-	end
-end
-lairub:AddCallback(ModCallbacks.MC_FAMILIAR_UPDATE,LairubAnmChangedToNormalUpdate, LairubAnmChangedToNormal_Variant)
-
-local LairubAnmReleaseSoul_Type = Isaac.GetEntityTypeByName("LairubAnmReleaseSoul")
-local LairubAnmReleaseSoul_Variant = Isaac.GetEntityVariantByName("LairubAnmReleaseSoul")
-
-local function LairubAnmReleaseSoulUpdate(_, LairubAnmReleaseSoul)
-	local game = Game()
-	local level = game:GetLevel()
-	local player = Isaac.GetPlayer(0)
-	local room = game:GetRoom()
-	if (player:GetPlayerType() == playerType_Lairub or player:GetPlayerType() == playerType_Tainted_Lairub) and not player:IsDead() then
-		LairubAnmReleaseSoul:GetSprite():Play("ReleaseSoul", false)
---		if LairubAnmReleaseSoul:GetSprite():IsEventTriggered("End") then
-			if ReleaseingSoul == false then
-				--player.ControlsEnabled = true
-				player.Visible = true
-				AnimationEnd = true
-				LairubAnmReleaseSoul:Remove()
-			end
---		end
-	end
-end
-lairub:AddCallback(ModCallbacks.MC_FAMILIAR_UPDATE,LairubAnmReleaseSoulUpdate, LairubAnmReleaseSoul_Variant)
-
-local LairubSoulCross_Type = Isaac.GetEntityTypeByName("LairubSoulCross")
-local LairubSoulCross_Variant = Isaac.GetEntityVariantByName("LairubSoulCross")
-
-local function LairubSoulCrossUpdate(_, LairubSoulCross)
-	local game = Game()
-	local level = game:GetLevel()
-	local player = Isaac.GetPlayer(0)
-	local room = game:GetRoom()
-	local roomEntities = Isaac.GetRoomEntities()
-	
---[[	local posX = math.floor(LairubSoulCross.Position.X/40.0)*40
-	local posY = math.floor(LairubSoulCross.Position.Y/40.0)*40
-	LairubSoulCross.Position = Vector(posX, posY)
-	LairubSoulCross.Velocity = Vector(0, 0)]]--
-	--!Spawned position error!--
-	
-	if LairubSoulCross.FireCooldown < 1 then
-		for i,entity in ipairs(roomEntities) do
+	if Data.NPCdis == nil then Data.NPCdis = 0 end
+	if Data.FireCooldown == nil then Data.FireCooldown = 0 end
+	Data.FireCooldown = math.max(0, Data.FireCooldown - 1)
+	if Data.FireCooldown <= 0 then
+		CallForEveryEntity(function(entity)
 			local NPC = entity:ToNPC()
 			if NPC ~= nil and NPC:IsVulnerableEnemy() then
-				if (LairubSoulCross.Position - NPC.Position):Length() < NPCdis then
-					local Laser = player:FireTechLaser(LairubSoulCross.Position, 1, (NPC.Position - LairubSoulCross.Position), false, true)
+				if (turretEntity.Position - NPC.Position):Length() < Data.NPCdis then
+					local Laser = player:FireTechLaser(turretEntity.Position, 1, (NPC.Position - turretEntity.Position), false, true)
+					Laser.TearFlags = player.TearFlags | TearFlags.TEAR_HOMING
 					Laser.CollisionDamage = player.Damage * 0.5
 					local LaserSprite = Laser:GetSprite()
 					LaserSprite:ReplaceSpritesheet(0,"gfx/effects/effect_LairubLaserEffects.png")
 					LaserSprite:LoadGraphics("gfx/effects/effect_LairubLaserEffects.png")
-					NPCdis = 0
-				elseif (LairubSoulCross.Position - NPC.Position):Length() > NPCdis then
-					NPCdis = NPCdis + 96
+					Data.NPCdis = 0
+				elseif (turretEntity.Position - NPC.Position):Length() > Data.NPCdis then
+					Data.NPCdis = Data.NPCdis + 96
 				end
 			end
-		end
-		LairubSoulCross.FireCooldown = math.ceil(player.MaxFireDelay)
-	else
-		LairubSoulCross.FireCooldown = LairubSoulCross.FireCooldown - 1
+		end)
+		Data.FireCooldown = math.ceil(player.MaxFireDelay)
 	end
 end
-lairub:AddCallback(ModCallbacks.MC_FAMILIAR_UPDATE,LairubSoulCrossUpdate, LairubSoulCross_Variant)
+lairub:AddCallback(ModCallbacks.MC_POST_EFFECT_UPDATE, lairub.LairubSoulCrossUpdate, LairubSoulCross_Variant)
 
-local function PreFamiliarCollision(Fam, Collider, Low)
-	if Fam.Variant == LairubSoulCross_Variant then
-		print("respown to collision")
-		return true
-	end
-end
-lairub:AddCallback(ModCallbacks.MC_PRE_FAMILIAR_COLLISION,PreFamiliarCollision)
-
-
-local LairubAnmReadySpawnCross_Type = Isaac.GetEntityTypeByName("LairubAnmReadySpawnCross")
-local LairubAnmReadySpawnCross_Variant = Isaac.GetEntityVariantByName("LairubAnmReadySpawnCross")
-
-local function LairubAnmReadySpawnCrossUpdate(_, LairubAnmReadySpawnCross)
-	local game = Game()
-	local level = game:GetLevel()
-	local player = Isaac.GetPlayer(0)
-	local room = game:GetRoom()
-	local roomEntities = Isaac.GetRoomEntities()
-	
-	
-	if player:GetPlayerType() == playerType_Lairub and not player:IsDead() then
-		LairubAnmReadySpawnCross:GetSprite():Play("ReadySpawnCross", false)
-		if LairubAnmReadySpawnCross:GetSprite():WasEventTriggered("End") then
-			AnimationEnd_ReadySpawnCross = true
+local function TickEventLairub(player)
+	if IsLairub(player) then
+		local playerID = GetPlayerID(player)
+		local level = Game():GetLevel()
+		local room = Game():GetRoom()
+		UpdateMonitKeys(player)
+		if LairubPlayerDatas[playerID].overlaySprite ~= nil then
+			LairubPlayerDatas[playerID].overlayFrame = LairubPlayerDatas[playerID].overlayFrame + 1
 		end
-		if ReadySpawnCross == false or DetermineDirection == true then
-			player.Visible = true
-			--player.ControlsEnabled = true
-			LairubAnmReadySpawnCross:Remove()
-		end
-	end
-end
-lairub:AddCallback(ModCallbacks.MC_FAMILIAR_UPDATE,LairubAnmReadySpawnCrossUpdate, LairubAnmReadySpawnCross_Variant)
-
-local LairubSoulEffect_Type = Isaac.GetEntityTypeByName("LairubSoulEffect")
-local LairubSoulEffect_Variant = Isaac.GetEntityVariantByName("LairubSoulEffect")
-
-local function LairubSoulEffectUpdate(_, LairubSoulEffect)
-	LairubSoulEffect:GetSprite():Play("SoulEffect", false)
-	if LairubSoulEffect:GetSprite():WasEventTriggered("End") then
-		LairubSoulEffect:Remove()
-	end
-end
-lairub:AddCallback(ModCallbacks.MC_FAMILIAR_UPDATE,LairubSoulEffectUpdate, LairubSoulEffect_Variant)
-
-local LairubAnmTalkNormal_Type = Isaac.GetEntityTypeByName("LairubAnmTalkNormal")
-local LairubAnmTalkNormal_Variant = Isaac.GetEntityVariantByName("LairubAnmTalkNormal")
-
-local function LairubAnmTalkNormalUpdate(_, LairubAnmTalkNormal)
-	local player = Isaac.GetPlayer(0)
-	if player:GetPlayerType() == playerType_Lairub and not player:IsDead() then
-		if PressedZOnce == true or Dialogue == 3 then
-			LairubAnmTalkNormal:Remove()
-		end
-	end
-end
-lairub:AddCallback(ModCallbacks.MC_FAMILIAR_UPDATE,LairubAnmTalkNormalUpdate, LairubAnmTalkNormal_Variant)
-
-local LairubAnmTalkHappy_Type = Isaac.GetEntityTypeByName("LairubAnmTalkHappy")
-local LairubAnmTalkHappy_Variant = Isaac.GetEntityVariantByName("LairubAnmTalkHappy")
-
-local function LairubAnmTalkHappyUpdate(_, LairubAnmTalkHappy)
-	local player = Isaac.GetPlayer(0)
-	if player:GetPlayerType() == playerType_Lairub and not player:IsDead() then
-		if PressedZOnce == true then
-			LairubAnmTalkHappy:Remove()
-		end
-	end
-end
-lairub:AddCallback(ModCallbacks.MC_FAMILIAR_UPDATE,LairubAnmTalkHappyUpdate, LairubAnmTalkHappy_Variant)
-
-local LairubAnmTalkFear_Type = Isaac.GetEntityTypeByName("LairubAnmTalkFear")
-local LairubAnmTalkFear_Variant = Isaac.GetEntityVariantByName("LairubAnmTalkFear")
-
-local function LairubAnmTalkFearUpdate(_, LairubAnmTalkFear)
-	local player = Isaac.GetPlayer(0)
-	if player:GetPlayerType() == playerType_Lairub and not player:IsDead() then
-		if PressedZOnce == true or Dialogue_Sheol == 3 then
-			LairubAnmTalkFear:Remove()
-		end
-	end
-end
-lairub:AddCallback(ModCallbacks.MC_FAMILIAR_UPDATE,LairubAnmTalkFearUpdate, LairubAnmTalkFear_Variant)
-
-local LairubAnmTalkSigh_Type = Isaac.GetEntityTypeByName("LairubAnmTalkSigh")
-local LairubAnmTalkSigh_Variant = Isaac.GetEntityVariantByName("LairubAnmTalkSigh")
-
-local function LairubAnmTalkSighUpdate(_, LairubAnmTalkSigh)
-	local player = Isaac.GetPlayer(0)
-	if player:GetPlayerType() == playerType_Lairub and not player:IsDead() then
-		if PressedZOnce == true then
-			LairubAnmTalkSigh:Remove()
-		end
-	end
-end
-lairub:AddCallback(ModCallbacks.MC_FAMILIAR_UPDATE,LairubAnmTalkSighUpdate, LairubAnmTalkSigh_Variant)
-
-local LairubAnmTeleportToDevilRoom_Type = Isaac.GetEntityTypeByName("LairubAnmTeleportToDevilRoom")
-local LairubAnmTeleportToDevilRoom_Variant = Isaac.GetEntityVariantByName("LairubAnmTeleportToDevilRoom")
-
-local function LairubAnmTeleportToDevilRoomUpdate(_, LairubAnmTeleportToDevilRoom)
-	local player = Isaac.GetPlayer(0)
-	if player:GetPlayerType() == playerType_Lairub and not player:IsDead() then
-		LairubTeleportReadyTime = LairubTeleportReadyTime + 1
-		if LairubTeleportReadyTime == 180 then
-			player.Visible = true
-			--player.ControlsEnabled = true
-			player:UseCard(Card.CARD_JOKER, UseFlag.USE_NOANIM | UseFlag.USE_NOCOSTUME | UseFlag.USE_NOANNOUNCER)
-			LairubAnmTeleportToDevilRoom:Remove()
-		end
-		if PressingX == false then
-			player.Visible = true
-			--player.ControlsEnabled = true
-			LairubTeleportReadyTime = 0
-			LairubAnmTeleportToDevilRoom:Remove()
-		end
-	end
-end
-lairub:AddCallback(ModCallbacks.MC_FAMILIAR_UPDATE,LairubAnmTeleportToDevilRoomUpdate, LairubAnmTeleportToDevilRoom_Variant)
-
-function lairub:Functions()
-	local level = Game():GetLevel()
-	local player = Isaac.GetPlayer(0)
-	local room = Game():GetRoom()
-	if player:GetPlayerType() == playerType_Lairub and not player:IsDead() then
+		MaintainOverlay(player)
 		--==== Changed Tears ====--	
 		--== Changed Icon==--
-		if not IsLairubButtonPressed(player,"release_souls") and not ReadySpawnCross == true and not IsLairubButtonPressed(player,"teleport_to_devil_room") then
-			if IsLairubButtonPressed(player,"swap_form") then
-				PressingShift = true
-				player:AddControlsCooldown(2)--player.ControlsEnabled = false
-				if PressedShiftOnce == false then
-					PressedShiftOnce = true
-					if ShiftChanged == 1 and AnimationEnd == true then
-						Isaac.Spawn(EntityType.ENTITY_FAMILIAR, LairubAnmChangedToTakeSoul_Variant, 0, player.Position, Vector(0,0), player)
-						player.Visible = false
-						SFXManager():Play(38, 3, 0, false, 0.5 )
-						ShiftChanged = 2 
-						IsShiftChanged = false
-						AnimationEnd = false
-					elseif ShiftChanged == 2 and AnimationEnd == true then
-						Isaac.Spawn(EntityType.ENTITY_FAMILIAR, LairubAnmChangedToNormal_Variant, 0, player.Position, Vector(0,0), player)
-						player.Visible = false
-						SFXManager():Play(38, 3, 0, false, 0.8 )
-						ShiftChanged = 1
-						IsShiftChanged = false
-						AnimationEnd = false
-					end
-				end
-			else
-				PressingShift = false
-				PressedShiftOnce = false
-			end
-		end
 		--== Function ==--
-		local roomEntities = Isaac.GetRoomEntities()
-		for i,entity in ipairs(roomEntities) do
+		CallForEveryEntity(function(entity)
 			local tear = entity:ToTear()
-			if tear ~= nil then
+			if tear ~= nil and tear.Parent ~= nil then
 				if tear.Parent.Type == EntityType.ENTITY_PLAYER then
-					local tearSprite = tear:GetSprite()
-					if ShiftChanged == 1 then
-						tearSprite:ReplaceSpritesheet(0,"gfx/Lairub_Tears_Normal.png")
-						tearSprite:LoadGraphics("gfx/Lairub_Tears_Normal.png")
-					elseif ShiftChanged == 2 then
-						tearSprite:ReplaceSpritesheet(0,"gfx/Lairub_Tears_TakeSoul.png")
-						tearSprite:LoadGraphics("gfx/Lairub_Tears_TakeSoul.png")
+					local player = tear.Parent:ToPlayer()
+					if IsLairub(player)
+					then
+						local data = tear:GetData()
+						if not data.tearInitedForLairub then
+							data.tearInitedForLairub = true
+							local tearSprite = tear:GetSprite()
+							if LairubPlayerDatas[playerID].form == 2 then
+								tearSprite:ReplaceSpritesheet(0,"gfx/Lairub_Tears_TakeSoul.png")
+							else
+								tearSprite:ReplaceSpritesheet(0,"gfx/Lairub_Tears_Normal.png")
+							end
+							tearSprite:LoadGraphics()
+							tearSprite.Rotation = tear.Velocity:GetAngleDegrees()
+						end
 					end
-					tearSprite.Rotation = entity.Velocity:GetAngleDegrees()
 				end
-			end	
+			end
 			local NPC = entity:ToNPC()
-			if NPC ~= nil and NPC:IsDead() and ShiftChanged == 2then
+			if NPC ~= nil and NPC:IsDead() and LairubPlayerDatas[playerID].form == 2 then
 				if NPC:IsBoss() or IsLairubButtonPressed(player,"release_souls") or level:GetStage() == 13 then
 					--Do nothing
 				else
-					Isaac.Spawn(EntityType.ENTITY_FAMILIAR, LairubSoulEffect_Variant, 0, NPC.Position, Vector(0,0), player)
+					Isaac.Spawn(EntityType.ENTITY_EFFECT, LairubSoulEffect_Variant, 0, NPC.Position, Vector(0,0), player)
 				end
 			end
-		end
-		
-		if not IsShiftChanged then
-			player:AddCollectible(LairubStatUpdateItem)
-			player:RemoveCollectible(LairubStatUpdateItem)
-			UpdateCache(player)
-			if ShiftChanged == 1 then
-				if not player:HasCollectible(CollectibleType.COLLECTIBLE_JUPITER) then
-					player:TryRemoveNullCostume(costume_Lairub_Body)
-					player:AddNullCostume(costume_Lairub_Body)
-				else
-					player:TryRemoveNullCostume(costume_Lairub_Body)
-				end
-				player:TryRemoveNullCostume(costume_Lairub_Head)
-				player:AddNullCostume(costume_Lairub_Head)
-				player:TryRemoveNullCostume(costume_Lairub_Head_TakeSoulBase)
-			elseif ShiftChanged == 2 then
-				if not player:HasCollectible(CollectibleType.COLLECTIBLE_JUPITER) then
-					player:TryRemoveNullCostume(costume_Lairub_Body)
-					player:AddNullCostume(costume_Lairub_Body)
-				else
-					player:TryRemoveNullCostume(costume_Lairub_Body)
-				end
-				player:TryRemoveNullCostume(costume_Lairub_Head_TakeSoul)
-				player:AddNullCostume(costume_Lairub_Head_TakeSoul)
-				player:TryRemoveNullCostume(costume_Lairub_Head_TakeSoulBase)
-				player:AddNullCostume(costume_Lairub_Head_TakeSoulBase)
-			end
-		end
-		--==== Release Soul ====--
-		if IsLairubButtonPressed(player,"release_souls") and not ReadySpawnCross == true then
-			PressingAlt = true
-			if PressedAltOnce == false then
-				PressedAltOnce = true
-				ReleaseingSoul = true
-				Isaac.Spawn(EntityType.ENTITY_FAMILIAR, LairubAnmReleaseSoul_Variant, 0, player.Position, Vector(0,0), player)
-			end
-		else
-			PressingAlt = false
-			PressedAltOnce = false
-			ReleaseingSoul = false
-		end
-		
-		if ReleaseingSoul == true then
-			player:AddControlsCooldown(2)--player.ControlsEnabled = false
-			player.Visible = false
-			if SoulCount > 0 then
-				for i,entity in ipairs(roomEntities) do
-					local NPC = entity:ToNPC()
-					if NPC ~= nil and NPC:IsVulnerableEnemy() and not NPC:HasEntityFlags(EntityFlag.FLAG_FRIENDLY) then
-						if (player.Position - NPC.Position):Length() < 192 or level:GetStage() == 13 then
-							SoulCount = SoulCount - 1
-							NPC:TakeDamage(player.Damage, 0, EntityRef(player), 0)
-							NPC:SetColor(Color(0, 0, 0, 1, 0, 0, 0), 30, 999, true, true)
-							if SoulCount < 0 then
-								SoulCount = 0
-							end
-						end
-					end
-				end
-			end
-		end
-		--====Soul Cross====--
-		--==Ready Spawn==--
-		if not IsLairubButtonPressed(player,"release_souls") and not IsLairubButtonPressed(player,"swap_form") and not IsLairubButtonPressed(player,"teleport_to_devil_room") then
-			if IsLairubButtonPressed(player,"soul_cross") then
-				PressingCtrl = true
-				if PressedCtrlOnce == false then
-					PressedCtrlOnce = true
-					if ReadySpawnCross == false and SpawnedCross == false then
-						player.Visible = false
-						Isaac.Spawn(EntityType.ENTITY_FAMILIAR, LairubAnmReadySpawnCross_Variant, 0, player.Position, Vector(0,0), player)
-						SFXManager():Play(252, 1, 0, false, 1 )
-						ReadySpawnCross = true -- Ready spawn
-					elseif ReadySpawnCross == true or SpawnedCross == true then
-						ReadySpawnCross = false -- Give up
-					end
-				end
-			else
-				PressingCtrl = false
-				PressedCtrlOnce = false
-			end
-		end
-		if not IsLairubButtonPressed(player,"release_souls") and not IsLairubButtonPressed(player,"swap_form") and not IsLairubButtonPressed(player,"teleport_to_devil_room") then
-			if ReadySpawnCross == true then
-				AnimationEnd_ReadySpawnCross = false
-				player:AddControlsCooldown(2)--player.ControlsEnabled = false
-				--== Spawn direction==--
-				-- Left
-				if IsLairubButtonPressed(player,"left") then
-					DetermineDirection = true
-					if SpawnedCross == false then
-						SFXManager():Play(2, 2, 0, false, 0.7 )
-						LairubCross = Isaac.Spawn(EntityType.ENTITY_FAMILIAR, LairubSoulCross_Variant, 0, Vector((player.Position.X - 32), player.Position.Y), Vector(0,0), player)
-						LairubCross:BloodExplode()
-						--player.ControlsEnabled = true
-						ReadySpawnCross = false
-						for i,entity in ipairs(roomEntities) do
-							local NPC = entity:ToNPC()
-							if NPC ~= nil and NPC:IsVulnerableEnemy() then
-								if (player.Position - NPC.Position):Length() < 90 then
-									NPC:TakeDamage((player.Damage * 2), 0, EntityRef(player), 0)
-								end
-							end
-						end
-						SpawnedCross = true
-					end
-				end
-				-- Right
-				if IsLairubButtonPressed(player,"right") then
-					DetermineDirection = true
-					if SpawnedCross == false then
-						SFXManager():Play(2, 2, 0, false, 0.7 )
-						LairubCross = Isaac.Spawn(EntityType.ENTITY_FAMILIAR, LairubSoulCross_Variant, 0, Vector((player.Position.X + 32), player.Position.Y), Vector(0,0), player)
-						LairubCross:BloodExplode()
-						--player.ControlsEnabled = true
-						ReadySpawnCross = false
-						for i,entity in ipairs(roomEntities) do
-							local NPC = entity:ToNPC()
-							if NPC ~= nil and NPC:IsVulnerableEnemy() then
-								if (player.Position - NPC.Position):Length() < 64 then
-									NPC:TakeDamage((player.Damage * 2), 0, EntityRef(player), 0)
-								end
-							end
-						end
-						SpawnedCross = true
-					end
-				end
-				-- Up
-				if IsLairubButtonPressed(player,"up") then
-					DetermineDirection = true
-					if SpawnedCross == false then
-						SFXManager():Play(2, 2, 0, false, 0.7 )
-						LairubCross = Isaac.Spawn(EntityType.ENTITY_FAMILIAR, LairubSoulCross_Variant, 0, Vector(player.Position.X, (player.Position.Y - 32)), Vector(0,0), player)
-						LairubCross:BloodExplode()
-						--player.ControlsEnabled = true
-						ReadySpawnCross = false
-						for i,entity in ipairs(roomEntities) do
-							local NPC = entity:ToNPC()
-							if NPC ~= nil and NPC:IsVulnerableEnemy() then
-								if (player.Position - NPC.Position):Length() < 64 then
-									NPC:TakeDamage((player.Damage * 2), 0, EntityRef(player), 0)
-								end
-							end
-						end
-						SpawnedCross = true
-					end
-				end
-				-- Down
-				if IsLairubButtonPressed(player,"down") then
-					DetermineDirection = true
-					if SpawnedCross == false then
-						SFXManager():Play(2, 2, 0, false, 0.7 )
-						LairubCross = Isaac.Spawn(EntityType.ENTITY_FAMILIAR, LairubSoulCross_Variant, 0, Vector(player.Position.X, (player.Position.Y + 32)), Vector(0,0), player)
-						LairubCross:BloodExplode()
-						--player.ControlsEnabled = true
-						ReadySpawnCross = false
-						for i,entity in ipairs(roomEntities) do
-							local NPC = entity:ToNPC()
-							if NPC ~= nil and NPC:IsVulnerableEnemy() then
-								if (player.Position - NPC.Position):Length() < 64 then
-									NPC:TakeDamage((player.Damage * 2), 0, EntityRef(player), 0)
-								end
-							end
-						end
-						SpawnedCross = true
-					end
-				end
-			elseif ReadySpawnCross == false then
-				--player.ControlsEnabled = true
-			end
-		end
-		--====Talk to player==--
-		if level:GetStage() == 13 then
-			if not LairubFlags:HasFlag("DIALOGUE_OVER") then
-				player:AddControlsCooldown(2)--player.ControlsEnabled = false
-				player.Visible = false
-				if Dialogue == 0 and FinishedTalkAnmPart == 0 then
-					TalkNormal = Isaac.Spawn(EntityType.ENTITY_FAMILIAR, LairubAnmTalkNormal_Variant, 0, player.Position, Vector(0,0), player)
-					TalkNormal:GetSprite():Play("TalkNormal", false)
-					FinishedTalkAnmPart = 1
-				elseif Dialogue == 1 and FinishedTalkAnmPart == 1 then
-					TalkNormal = Isaac.Spawn(EntityType.ENTITY_FAMILIAR, LairubAnmTalkNormal_Variant, 0, player.Position, Vector(0,0), player)
-					TalkNormal:GetSprite():Play("TalkNormal", false)
-					FinishedTalkAnmPart = 2
-				elseif Dialogue == 2 and FinishedTalkAnmPart == 2 then
-					Isaac.Spawn(EntityType.ENTITY_FAMILIAR, LairubAnmTalkNormal_Variant, 0, player.Position, Vector(0,0), player)
-					TalkNormal:GetSprite():Play("TalkNormal", false)
-					FinishedTalkAnmPart = 3
-				elseif Dialogue == 3 and FinishedTalkAnmPart == 3 then
-					TalkHappy = Isaac.Spawn(EntityType.ENTITY_FAMILIAR, LairubAnmTalkHappy_Variant, 0, player.Position, Vector(0,0), player)
-					TalkHappy:GetSprite():Play("TalkHappy", false)
-					FinishedTalkAnmPart = 4
-				elseif Dialogue == 4 and FinishedTalkAnmPart == 4 then
-					Isaac.Spawn(EntityType.ENTITY_FAMILIAR, LairubAnmTalkNormal_Variant, 0, player.Position, Vector(0,0), player)
-					TalkNormal:GetSprite():Play("TalkNormal", false)
-					FinishedTalkAnmPart = 0
-				end
-				if IsLairubButtonPressed(player,"step_dialogue") then
-					PressingZ = true
-					if PressedZOnce == false then
-						PressedZOnce = true
-						Dialogue = Dialogue + 1
-						if Dialogue > 4 then
-							Dialogue = 0
-							LairubFlags:AddFlag("DIALOGUE_OVER")
-							--player.ControlsEnabled = true
-							player.Visible = true
-						end
-					end
-				else
-					PressingZ = false
-					PressedZOnce = false
-				end
-			end
-		end
-		--====Teleport To Devil Room====--
-		local BackdropType = Game():GetRoom():GetBackdropType()
-		if BackdropType ~= 54 and BackdropType ~= 55 and BackdropType ~= 56 and BackdropType ~= 57 then
-			if not IsLairubButtonPressed(player,"release_souls") and not IsLairubButtonPressed(player,"swap_form") then
-				if IsLairubButtonPressed(player,"teleport_to_devil_room") then
-					PressingX = true
-					player:AddControlsCooldown(2)--player.ControlsEnabled = false
-					player.Visible = false
-					if PressedXOnce == false then
-						PressedXOnce = true
-						Isaac.Spawn(EntityType.ENTITY_FAMILIAR, LairubAnmTeleportToDevilRoom_Variant, 0, player.Position, Vector(0,0), player)
-					end
-				else
-					PressingX = false
-					PressedXOnce = false
-				end
-			end
-		end
-		--====Be Hunted Down In Stage10, BackdropType14(Sheol) And Stage11, BackdropType16(DarkRoom)====-
-		HuntedDownInterval()
-		--[[
-		--==Function==--
-		if not room:IsClear() then
-			if (level:GetStage() == 10 and room:GetBackdropType() == 14) or (level:GetStage() == 11 and room:GetBackdropType() == 16) then
-				if room:GetType() == RoomType.ROOM_BOSS then
-					--Do nothing
-				end
-				if room:GetFrameCount() > 1800 then
-					--Damage--
-					DMGCountDown = math.ceil((DMGframeCount * DMGcount + 1800 -room:GetFrameCount()) / 30)
-					if room:GetFrameCount() == DMGframeCount * DMGcount + 1800 then
-						player:TakeDamage(2, DamageFlag.DAMAGE_DEVIL | DamageFlag.DAMAGE_INVINCIBLE , EntityRef(player), 0)
-						DMGcount = DMGcount + 1
-						DMGCountDown = 3
-					end
-				elseif room:GetFrameCount() <= 1800 then
-					--CountDown--
-					CountDown = 60 - math.ceil(room:GetFrameCount() / 30)
-				end
-			end
-		elseif room:IsClear() or room:GetType() == RoomType.ROOM_BOSS then
-			DMGcount = 1
-			CountDown = 60
-			DMGCountDown = 3
-		end
-		]]--
+		end)
 
+		if not player:HasCollectible(CollectibleType.COLLECTIBLE_DUALITY) then
+			Game():GetLevel():AddAngelRoomChance(0)
+		end
+		--==Hearts Limit==--
+		while player:GetMaxHearts() > 0 do
+			player:AddMaxHearts(-2, true)
+			player:AddBoneHearts(1)
+		end
+		if player:GetHearts() > 0 then
+			player:AddHearts(-player:GetHearts(), true)
+		end
+		local soulHearts = player:GetSoulHearts()
+		local blackHearts = player:GetBlackHearts()
+		local totalHearts = math.ceil(player:GetBoneHearts() + (soulHearts*0.5))
+		local boneMisArrangeState = 0
+		for i=0,totalHearts-1,1 do
+			if boneMisArrangeState == 0 and not player:IsBoneHeart(i) then
+				boneMisArrangeState = 1
+			elseif boneMisArrangeState == 1 and player:IsBoneHeart(i) then
+				boneMisArrangeState = 2
+			end
+		end
+		if boneMisArrangeState == 2
+		or blackHearts ~= 2^(math.ceil(soulHearts * 0.5)) - 1
+		then
+			player:AddSoulHearts(-soulHearts)
+			player:AddBlackHearts(soulHearts)
+		end
 
-		--==Dialogue(Sheol)==--
-		if level:GetStage() == 10 and room:GetBackdropType() == 14 then
-			if not LairubFlags:HasFlag("DIALOGUE_OVER_SHEOL") then
-				player:AddControlsCooldown(2)--player.ControlsEnabled = false
-				player.Visible = false
-				if Dialogue_Sheol == 0 and FinishedTalkAnmPart_Sheol == 0 then
-					TalkFear = Isaac.Spawn(EntityType.ENTITY_FAMILIAR, LairubAnmTalkFear_Variant, 0, player.Position, Vector(0,0), player)
-					TalkFear:GetSprite():Play("TalkFear", false)
-					FinishedTalkAnmPart_Sheol = 1
-				elseif Dialogue_Sheol == 1 and FinishedTalkAnmPart_Sheol == 1 then
-					TalkFear = Isaac.Spawn(EntityType.ENTITY_FAMILIAR, LairubAnmTalkFear_Variant, 0, player.Position, Vector(0,0), player)
-					TalkFear:GetSprite():Play("TalkFear", false)
-					FinishedTalkAnmPart_Sheol = 2
-				elseif Dialogue_Sheol == 2 and FinishedTalkAnmPart_Sheol == 2 then
-					TalkFear = Isaac.Spawn(EntityType.ENTITY_FAMILIAR, LairubAnmTalkFear_Variant, 0, player.Position, Vector(0,0), player)
-					TalkFear:GetSprite():Play("TalkFear", false)
-					FinishedTalkAnmPart_Sheol = 3
-				elseif Dialogue_Sheol == 3 and FinishedTalkAnmPart_Sheol == 3 then
-					TalkSigh = Isaac.Spawn(EntityType.ENTITY_FAMILIAR, LairubAnmTalkSigh_Variant, 0, player.Position, Vector(0,0), player)
-					TalkSigh:GetSprite():Play("TalkSigh", false)
-					FinishedTalkAnmPart_Sheol = 4
-				elseif Dialogue_Sheol == 4 and FinishedTalkAnmPart_Sheol == 4 then
-					TalkSigh = Isaac.Spawn(EntityType.ENTITY_FAMILIAR, LairubAnmTalkSigh_Variant, 0, player.Position, Vector(0,0), player)
-					TalkSigh:GetSprite():Play("TalkSigh", false)
-					FinishedTalkAnmPart_Sheol = 0
-				end
-				if IsLairubButtonPressed(player,"step_dialogue") then
-					PressingZ = true
-					if PressedZOnce == false then
-						PressedZOnce = true
-						Dialogue_Sheol = Dialogue_Sheol + 1
-						if Dialogue_Sheol > 4 then
-							Dialogue_Sheol = 0
-							LairubFlags:AddFlag("DIALOGUE_OVER_SHEOL")
-							--player.ControlsEnabled = true
-							player.Visible = true
-						end
-					end
-				else
-					PressingZ = false
-					PressedZOnce = false
-				end
+		for k,dialogue in pairs(LairubDialogueDatas) do
+			if LairubDialogueManager.onGoingDialogue ~= nil then
+				break
+			end
+			if dialogue.shouldFire() and not LairubFlags:HasFlag(dialogue.flag) then
+				LairubDialogueManager.step = 1
+				LairubDialogueManager.onGoingDialogue = k
+				CallForEveryPlayer(function(player) ClaimAbility(player, "dialogue") end)
 			end
 		end
-		--==== Help List ====--
-		if IsLairubButtonPressed(player,"help") then
-			PressingH = true
-			if PressedHOnce == false then
-				PressedHOnce = true
-				ShowHelpList = true
-			end
-		else
-			ShowHelpList = false
-			PressingH = false
-			PressedHOnce = false
+		local enabledAbility
+		enabledAbility = LairubPlayerDatas[playerID].enabledAbility
+		if enabledAbility ~= nil then
+			LairubPlayerDatas[playerID].enabledAbilityTime = LairubPlayerDatas[playerID].enabledAbilityTime + 1
+			LairubAbilityDatas[enabledAbility].endingInterval(player)
 		end
-		if level:GetStage() == 1 and ShowedInitialTips == false then
-			if room:GetFrameCount() > 90 then
-				ShowedInitialTips = true
+
+		if LairubDialogueManager.onGoingDialogue ~= nil then
+			local dialogue = LairubDialogueDatas[LairubDialogueManager.onGoingDialogue]
+			if LairubDialogueManager.step > #dialogue.steps then
+				LairubDialogueManager.step = nil
+				LairubDialogueManager.onGoingDialogue = nil
+				LairubFlags:AddFlag(dialogue.flag)
+				CallForEveryPlayer(function(player) ReleaseAbility(player, "dialogue") end)
 			end
 		end
-		--====Remove Poof (I can't finish this..)====--
---[[	for i,entity in ipairs(roomEntities) do
-			local Effect = entity:ToEffect()
-			if Effect ~= nil and Effect.Variant == EffectVariant.POOF01 then
-				Effect.Remove()
+
+		for x,ability in pairs(LairubAbilityDatas) do
+			if LairubPlayerDatas[playerID].enabledAbility ~= nil then
+				break
 			end
-		end]]--
-	--========--
+			ability.startingInterval(player)
+		end
+
+		enabledAbility = LairubPlayerDatas[playerID].enabledAbility
+		if enabledAbility ~= nil then
+			LairubAbilityDatas[enabledAbility].enabledInterval(player)
+		end
+
+		LairubPlayerDatas[playerID].justDisabledAbility = nil
 	end
+end
+
+function lairub:PostPlayerUpdate(player)
+	TickEventLairub(player)
+end
+lairub:AddCallback(ModCallbacks.MC_POST_PLAYER_UPDATE, lairub.PostPlayerUpdate)
+
+local function LairubRendering(player, pos)
+	if IsLairub(player) then
+		local playerID = GetPlayerID(player)
+		local sprite = LairubPlayerDatas[playerID].overlaySprite
+		local offset = LairubPlayerDatas[playerID].overlayOffset
+		local screenxy = Game():GetRoom():WorldToScreenPosition(player.Position)
+		if sprite ~= nil then
+			sprite:Render(screenxy + offset, Vector(0,0), Vector(0,0))
+			while LairubPlayerDatas[playerID].overlayFrame > 1 do
+				sprite:Update()
+				LairubPlayerDatas[playerID].overlayFrame = LairubPlayerDatas[playerID].overlayFrame - 2
+			end
+			--local str = "OVERLAY "..LairubPlayerDatas[playerID].overlayName.." TESTING"
+			--Explorite.RenderText(str, screenxy.X - Explorite.GetTextWidth(str)/2, screenxy.Y, 255, 255, 255, 255)
+		end
+	end
+end
+
+function lairub:PostPlayerRender(player, pos)
+	LairubRendering(player, pos)
+end
+lairub:AddCallback(ModCallbacks.MC_POST_PLAYER_RENDER, lairub.PostPlayerRender, 0)
+
+function lairub:Functions()
+	HuntedDownInterval()
 end
 lairub:AddCallback( ModCallbacks.MC_POST_UPDATE, lairub.Functions)
 
-function lairub:StopReleaseSoul(tookDamage, damage, damageFlags, damageSourceRef)
-	ReleaseingSoul = false
-	return true
+function lairub:OnDamage(tookDamage, damage, damageFlags, damageSourceRef)
+	local player = tookDamage:ToPlayer()
+	if player ~= nil then
+		ReleaseAbility(player, "teleport_to_devil_room")
+	end
 end
-lairub:AddCallback(ModCallbacks.MC_ENTITY_TAKE_DMG, lairub.StopReleaseSoul, EntityType.ENTITY_PLAYER)
+lairub:AddCallback(ModCallbacks.MC_ENTITY_TAKE_DMG, lairub.OnDamage, EntityType.ENTITY_PLAYER)
 
 --==Tainted==--
 
 --UNFINISHED--
 function lairub:UnfinishedPostRender()
-	local game = Game()
-	local level = game:GetLevel()
-	local player = Isaac.GetPlayer(0)
-	local room = game:GetRoom()
-	local playerPos = room:WorldToScreenPosition(player.Position)
-	if player:GetPlayerType() == playerType_Tainted_Lairub then
-		Isaac.RenderText("Unfinished, please wait for the update.", 78, 70, 1, 0, 0, 255)
+	if PlayerTypeExistInGame(playerType_Tainted_Lairub) then
+		Explorite.RenderText("Unfinished, please wait for the update.", 78, 70, 1, 0, 0, 255)
 	end
 end
 lairub:AddCallback(ModCallbacks.MC_POST_RENDER, lairub.UnfinishedPostRender)
 
-function lairub:UnfinishedUpdate()
-	local game = Game()
-	local level = game:GetLevel()
-	local player = Isaac.GetPlayer(0)
-	local room = game:GetRoom()
-	if player:GetPlayerType() == playerType_Tainted_Lairub then
+function lairub:UnfinishedUpdate(player)
+	if IsLairubTainted(player) then
 		player.ControlsEnabled = false
 		player.Visible = false
 	end
 end
-lairub:AddCallback( ModCallbacks.MC_POST_UPDATE, lairub.UnfinishedUpdate)
+lairub:AddCallback( ModCallbacks.MC_POST_PLAYER_UPDATE, lairub.UnfinishedUpdate)
 
 --[[
 --==Shift(Devour)==--
@@ -1397,14 +1209,14 @@ function lairub:TaintedPostRender()
 	local player = Isaac.GetPlayer(0)
 	local room = game:GetRoom()
 	local playerPos = room:WorldToScreenPosition(player.Position)
-	if player:GetPlayerType() == playerType_Tainted_Lairub then
+	if IsLairubTainted(player) then
 		--==== Can Hide ====--
 		if not IsLairubButtonPressed(player,"hide_ui") then
 			--==SoulSign==--
 			SoulSign:SetOverlayRenderPriority(true)
 			SoulSign:SetFrame("SoulSign", 1)
 			SoulSign:Render(Vector(64,76), Vector(0,0), Vector(0,0))
-			Isaac.RenderText(tostring(SoulCount), 78, 70, 255, 255, 255, 255)
+			Explorite.RenderText(tostring(SoulCount), 78, 70, 255, 255, 255, 255)
 			--==ReleaseIcon==--
 			ReleaseIcon_Blood:SetOverlayRenderPriority(true)
 			if SoulCount > 0 then
@@ -1432,7 +1244,7 @@ function lairub:TaintedUpdate()
 	local player = Isaac.GetPlayer(0)
 	local room = game:GetRoom()
 	
-	if room:GetFrameCount() == 1 and player:GetPlayerType() == playerType_Tainted_Lairub and not player:IsDead() then
+	if room:GetFrameCount() == 1 and IsLairubTainted(player) and not player:IsDead() then
 		if player:HasCollectible(CollectibleType.COLLECTIBLE_GUILLOTINE) or player:HasCollectible(CollectibleType.COLLECTIBLE_TRANSCENDENCE) then
 			player:AddNullCostume(costume_TaintedLairub_Body)
 			player:AddNullCostume(costume_TaintedLairub_Head)
@@ -1447,7 +1259,7 @@ end
 lairub:AddCallback( ModCallbacks.MC_POST_UPDATE, lairub.TaintedUpdate)
 
 function lairub:TaintedPostPlayerInit(player)
-	if player:GetPlayerType() == playerType_Tainted_Lairub then
+	if IsLairubTainted(player) then
 		player:TryRemoveNullCostume(costume_TaintedLairub_Body)
 		player:AddNullCostume(costume_TaintedLairub_Body)
 		player:TryRemoveNullCostume(costume_TaintedLairub_Head)
@@ -1462,7 +1274,7 @@ end
 lairub:AddCallback( ModCallbacks.MC_POST_PLAYER_INIT, lairub.TaintedPostPlayerInit)
 
 function lairub:TaintedEvaluateCache(player, cacheFlag)
-	if player:GetPlayerType() == playerType_Tainted_Lairub then
+	if IsLairubTainted(player) then
 		if cacheFlag == CacheFlag.CACHE_SPEED then
 			player.MoveSpeed = player.MoveSpeed - 0.2
 		elseif cacheFlag == CacheFlag.CACHE_DAMAGE then
@@ -1505,8 +1317,8 @@ lairub:AddCallback( ModCallbacks.MC_EVALUATE_CACHE, lairub.TaintedEvaluateCache 
 function lairub:LockingPostRender()
 	local player = Isaac.GetPlayer(0)
 	local room = Game():GetRoom()
-	if player:GetPlayerType() == playerType_Tainted_Lairub then
-		Isaac.RenderText("I'm trying to update!! TAT", 50, 60, 255, 0, 0, 255)
+	if IsLairubTainted(player) then
+		Explorite.RenderText("I'm trying to update!! TAT", 50, 60, 255, 0, 0, 255)
 	end
 end
 lairub:AddCallback(ModCallbacks.MC_POST_RENDER, lairub.LockingPostRender)
@@ -1529,7 +1341,7 @@ local function TheAttackMarkerUpdate(_, TheAttackMarker)
 	local player = Isaac.GetPlayer(0)
 	local room = Game():GetRoom()
 	local roomEntities = Isaac.GetRoomEntities()
-	if player:GetPlayerType() == playerType_Tainted_Lairub and not player:IsDead() then
+	if IsLairubTainted(player) and not player:IsDead() then
 		TheAttackMarker:GetSprite().Scale = Vector(1.5,1.5)
 		if ReadyAttack == true then
 			--Move
@@ -1638,7 +1450,7 @@ function lairub:TaintedFunctions()
 	local player = Isaac.GetPlayer(0)
 	local room = Game():GetRoom()
 	local roomEntities = Isaac.GetRoomEntities()
-	if player:GetPlayerType() == playerType_Tainted_Lairub and not player:IsDead() then
+	if IsLairubTainted(player) and not player:IsDead() then
 		--==== Eating Children(?Not)... Devour ====--
 		if IsLairubButtonPressed(player,"swap_form") then
 			PressingShift = true
@@ -1729,7 +1541,7 @@ function lairub:SoulStonePostRender()
 				SoulSign:SetOverlayRenderPriority(true)
 				SoulSign:SetFrame("SoulSign", 1)
 				SoulSign:Render(Vector(playerPos.X - 5, playerPos.Y - 44), Vector(0,0), Vector(0,0))
-				Isaac.RenderText(tostring(SoulCount), playerPos.X + 5, playerPos.Y - 46, 255, 255, 255, 255)
+				Explorite.RenderText(tostring(SoulCount), playerPos.X + 5, playerPos.Y - 46, 255, 255, 255, 255)
 			end
 		end
 	end
@@ -1747,23 +1559,23 @@ function lairub:LairubSoulStoneFunction()
 			TriggeredCount = TriggeredCount + 1
 			Isaac.Spawn(EntityType.ENTITY_EFFECT, 111, 0, Vector(player.Position.X, player.Position.Y - 25), Vector(math.random(-8, 8), math.random(-8, 8)), player)
 		end
-		for i, Effect in pairs(roomEntities) do
-			if Effect.Type == EntityType.ENTITY_EFFECT and Effect.Variant == 111 then
-				Effect:SetColor(Color(1, 1, 1, 1, 1, 1, 1), 0, 999, true, true)
+		CallForEveryEntity(function(entity)
+			if entity.Type == EntityType.ENTITY_EFFECT and entity.Variant == 111 then
+				entity:SetColor(Color(1, 1, 1, 1, 1, 1, 1), 0, 999, true, true)
 			end
-		end
+		end)
 		--==Function==--
 		--DMG To Every NPC
 		if DMGtoEveryNPC == false then
-			for i, entity in pairs(roomEntities) do
+			CallForEveryEntity(function(entity)
 				local NPC = entity:ToNPC()
 				if NPC ~= nil and NPC:IsVulnerableEnemy() and not NPC:IsBoss() then
 					NPC:TakeDamage(9999, 0, EntityRef(player), 0)
 					if NPC:IsDead() then
-						Isaac.Spawn(EntityType.ENTITY_FAMILIAR, LairubSoulEffect_Variant, 0, NPC.Position, Vector(0,0), player)
+						Isaac.Spawn(EntityType.ENTITY_EFFECT, LairubSoulEffect_Variant, 0, NPC.Position, Vector(0,0), player)
 					end
 				end
-			end
+			end)
 			if room:IsClear() then
 				DMGtoEveryNPC = true
 			end
@@ -1779,7 +1591,7 @@ function lairub:LairubSoulStoneFunction()
 				SoulCount = 0
 			end
 		elseif TotalRoomFrame < 600 then
-			for i,entity in ipairs(roomEntities) do
+			CallForEveryEntity(function(entity)
 				local NPC = entity:ToNPC()
 				if SoulCount > 0 then
 					if NPC ~= nil and NPC:IsVulnerableEnemy() and not NPC:HasEntityFlags(EntityFlag.FLAG_FRIENDLY) then
@@ -1794,9 +1606,9 @@ function lairub:LairubSoulStoneFunction()
 					end
 				end
 				if NPC ~= nil and NPC:IsDead() and not NPC:IsBoss() then
-					Isaac.Spawn(EntityType.ENTITY_FAMILIAR, LairubSoulEffect_Variant, 0, NPC.Position, Vector(0,0), player)
+					Isaac.Spawn(EntityType.ENTITY_EFFECT, LairubSoulEffect_Variant, 0, NPC.Position, Vector(0,0), player)
 				end
-			end
+			end)
 		end
 		--====--
 	end
@@ -1805,45 +1617,9 @@ lairub:AddCallback(ModCallbacks.MC_POST_UPDATE, lairub.LairubSoulStoneFunction)
 
 --==Universal==--
 
-function lairub:UniversalUpdate()
-	local player = Isaac.GetPlayer(0)
-	if player:GetPlayerType() == playerType_Lairub or player:GetPlayerType() == playerType_Tainted_Lairub then
-		if not player:HasCollectible(CollectibleType.COLLECTIBLE_DUALITY) then
-			Game():GetLevel():AddAngelRoomChance(0)
-		end
-		--==Hearts Limit==--
-		while player:GetMaxHearts() > 0 do
-			player:AddMaxHearts(-2, true)
-			player:AddBoneHearts(1)
-		end
-		if player:GetHearts() > 0 then
-			player:AddHearts(-player:GetHearts(), true)
-		end
-		local soulHearts = player:GetSoulHearts()
-		local blackHearts = player:GetBlackHearts()
-		local totalHearts = math.ceil(player:GetBoneHearts() + (soulHearts*0.5))
-		local boneMisArrangeState = 0
-		for i=0,totalHearts-1,1 do
-			if boneMisArrangeState == 0 and not player:IsBoneHeart(i) then
-				boneMisArrangeState = 1
-			elseif boneMisArrangeState == 1 and player:IsBoneHeart(i) then
-				boneMisArrangeState = 2
-			end
-		end
-		if boneMisArrangeState == 2
-		or blackHearts ~= 2^(math.ceil(soulHearts * 0.5)) - 1
-		then
-			player:AddSoulHearts(-soulHearts)
-			player:AddBlackHearts(soulHearts)
-		end
-		--====--
-	end
-end
-lairub:AddCallback( ModCallbacks.MC_POST_UPDATE, lairub.UniversalUpdate)
-
 function lairub:PostNPCDeath()
 	local player = Isaac.GetPlayer(0)
-	if player:GetPlayerType() == playerType_Lairub and ShiftChanged == 2 and not IsLairubButtonPressed(player,"release_souls") then
+	if IsLairub(player) and LairubPlayerDatas[GetPlayerID(player)].form == 2 and not IsLairubButtonPressed(player,"release_souls") then
 		SoulCount = SoulCount + 1
 	end
 	if UsedLairubSoulStone == true then
@@ -1854,7 +1630,7 @@ lairub:AddCallback(ModCallbacks.MC_POST_NPC_DEATH, lairub.PostNPCDeath)
 
 function lairub:PrePickupCollision(pickup, collider, low)
 	local player = collider:ToPlayer()
-	if player ~= nil and (player:GetPlayerType() == playerType_Lairub or player:GetPlayerType() == playerType_Tainted_Lairub) then
+	if player ~= nil and (IsLairub(player) or IsLairubTainted(player)) then
 		if pickup.Variant == PickupVariant.PICKUP_HEART then
 			if pickup.SubType == HeartSubType.HEART_FULL
 			or pickup.SubType == HeartSubType.HEART_HALF
@@ -1900,16 +1676,11 @@ lairub:AddCallback(ModCallbacks.MC_PRE_PICKUP_COLLISION, lairub.PrePickupCollisi
 
 function lairub:PostNewLevel()
 	SoulCount = 0
-	NPCdis = 0
 	UsedLairubSoulStone = false
-	TriggeredCount = 0
-	BaseFrameCount = 0
 	DMGtoEveryNPC = false
 	BaseGameFrameCount = 0
 	LevelKillCount = 0
-	RoomKillCount = 0
 	LevelDevourOnce = false
-	BoneCount = 0
 	local level = Game():GetLevel()
 	local player = Isaac.GetPlayer(0)
 	local room = Game():GetRoom()
@@ -1922,7 +1693,7 @@ function lairub:PostNewLevel()
 		LairubFlags:RemoveFlag("HUNTED_DOWN")
 	end
 	
-	if player:GetPlayerType() == playerType_Lairub and not player:IsDead() then
+	if IsLairub(player) and not player:IsDead() then
 		level:AddAngelRoomChance(-20000)
 		if level:GetStage() == 13 then
 			player:AddBlackHearts(6)
@@ -1937,39 +1708,32 @@ lairub:AddCallback( ModCallbacks.MC_POST_NEW_LEVEL, lairub.PostNewLevel)
 
 function lairub:PostNewRoom()
 	local game = Game()
-	local level = game:GetLevel()
-	local player = Isaac.GetPlayer(0)
-	local room = game:GetRoom()
-	local roomEntities = Isaac.GetRoomEntities()
 	
-	NPCdis = 0
-	LairubTeleportReadyTime = 0
 	TriggeredCount = 0
 	BaseFrameCount = 0
-	
-	ReadySpawnCross = false
-	DetermineDirection = false
-	SpawnedCross = false
-	
 	RoomKillCount = 0
 	BoneCount = 0
-	
-	for i, entity in pairs(roomEntities) do
-		if entity.Type == EntityType.ENTITY_FAMILIAR then
-			if entity.Variant == LairubSoulCross_Variant then
-				entity:Remove()
-			end
-			if entity.Variant == LairubTheBone_Variant then
-				entity:Remove()
-			end
-		end
+
+	for i=1,4 do
+		LairubPlayerDatas[1].crossPlaced = nil
+		LairubPlayerDatas[1].crossPlacedOnce = false
 	end
-	
+
 	if gameInited then
 		SaveLairubModData()
 	end
 end
 lairub:AddCallback( ModCallbacks.MC_POST_NEW_ROOM, lairub.PostNewRoom)
+
+-- 时间回溯
+function lairub:UseGlowingHourGlass(itemId, itemRng, player, useFlags, activeSlot, customVarData)
+	if itemId == CollectibleType.COLLECTIBLE_GLOWING_HOUR_GLASS
+	--and IsHexanow(player)
+	then
+		RewindLastRoomVar()
+	end
+end
+lairub:AddCallback(ModCallbacks.MC_USE_ITEM, lairub.UseGlowingHourGlass)
 
 function lairub:ExecuteCmd(cmd, params)
 	if cmd == "soulcount" then

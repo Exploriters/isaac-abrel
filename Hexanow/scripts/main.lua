@@ -32,6 +32,14 @@ APIOverride.OverrideClassFunction(EntityPlayer, "HasCollectible", function(inter
 	end
 	return result
 end)
+local baseEntityPlayerQueueItem = APIOverride.GetCurrentClassFunction(EntityPlayer, "QueueItem")
+APIOverride.OverrideClassFunction(EntityPlayer, "QueueItem", function(interval, Item, Charge, Touched, Golden, VarData)
+    local result = baseEntityPlayerQueueItem(interval, Item, Charge, Touched, Golden, VarData)
+	if IsHexanow(interval) then
+		print("QUEUE!")
+	end
+	return result
+end)
 ]]--
 
 --require("hexanowObjectives")
@@ -44,6 +52,7 @@ end)
 ----------
 
 --local hexanowItem = Isaac.GetItemIdByName( "Hexanow's Soul" )
+local redMap = Isaac.GetItemIdByName("Red Map")
 local hexanowPortalTool = Isaac.GetItemIdByName("Eternal Portal")
 local hexanowStatTriggerItem = Isaac.GetItemIdByName( "Hexanow overall stat trigger" )
 local hexanowHairCostume = Isaac.GetCostumeIdByPath("gfx/characters/HexanowHair.anm2")
@@ -54,9 +63,6 @@ local hexanowBodyFlightCostume = Isaac.GetCostumeIdByPath("gfx/characters/Hexano
 local entityVariantHexanowLaser = Isaac.GetEntityVariantByName("Laser (Hexanow)")
 local entityVariantHexanowPortalDoor = Isaac.GetEntityVariantByName("Hexanow Portal Door")
 --local entityTypeHexanowPortal = Isaac.GetEntityTypeByName("Hexanow Blue Portal")
-
-local EternalChargeSprite = Sprite()
-EternalChargeSprite:Load("gfx/ui/EternalCharge.anm2", true)
 
 local portalColor = {}
 portalColor[1] = {}
@@ -89,9 +95,21 @@ local EternalChargeForFree = true
 local roomClearBounsEnabled = false
 
 local EternalCharges = 0
-local EternalChargesLastRoom = 0
 
 local queuedNextRoomGrid = nil
+
+local EternalChargeSprite = Sprite()
+EternalChargeSprite:Load("gfx/ui/EternalCharge.anm2", true)
+
+Explorite.RegistSideBar("EternalCharge", function()
+	if not PlayerTypeExistInGame(playerTypeHexanow) then return nil end
+	if EternalChargeForFree then
+		EternalChargeSprite:SetFrame("Gold", 0)
+	else
+		EternalChargeSprite:SetFrame("Base", 0)
+	end
+	return EternalChargeSprite, Parse00(EternalCharges)
+end)
 
 local hexanowPlayerData = {
 }
@@ -187,8 +205,7 @@ local function HexanowPlayerData()
 	cted.CreatedPortals[2][2] = nil
 
 	cted:UpdateLastRoomVar()
-
-	cted.attackCharge = 0
+	
 	cted.InRoomCreatedPortals = {}
 	cted.InRoomCreatedPortals[1] = nil
 	cted.InRoomCreatedPortals[2] = nil
@@ -206,15 +223,26 @@ HexanowPlayerDatas[2] = HexanowPlayerData()
 HexanowPlayerDatas[3] = HexanowPlayerData()
 HexanowPlayerDatas[4] = HexanowPlayerData()
 
+local LastRoom = {}
+
 ------------------------------------------------------------
 ---------- 变量处理
 ----------
 
 local function UpdateLastRoomVar()
-	EternalChargesLastRoom = EternalCharges
+	LastRoom = {}
+	LastRoom.EternalCharges = EternalCharges
 	for playerID=1,4 do
 		HexanowPlayerDatas[playerID]:UpdateLastRoomVar()
 	end
+end
+
+local function RewindLastRoomVar()
+	EternalCharges = LastRoom.EternalCharges
+	for playerID=1,4 do
+		HexanowPlayerDatas[playerID]:RewindLastRoomVar()
+	end
+	UpdateLastRoomVar()
 end
 
 -- 抹除临时变量
@@ -235,14 +263,6 @@ local function WipeTempVar()
 	HexanowPlayerDatas[2] = HexanowPlayerData()
 	HexanowPlayerDatas[3] = HexanowPlayerData()
 	HexanowPlayerDatas[4] = HexanowPlayerData()
-end
-
-local function RewindLastRoomVar()
-	EternalCharges = EternalChargesLastRoom
-	for playerID=1,4 do
-		HexanowPlayerDatas[playerID]:RewindLastRoomVar()
-	end
-	UpdateLastRoomVar()
 end
 
 function HexanowObjectives:Apply()
@@ -505,14 +525,23 @@ local function RearrangeHearts(player)
 end
 
 -- 物品谓词
+local function HexanowOwnedCollectibleNum(player, ID, IgnoreModifiers)
+	local num = player:GetCollectibleNum(ID, IgnoreModifiers)
+	if ID ~= 0 and HexanowPlayerDatas[GetPlayerID(player)].upcomingItem == ID then
+		num = num + 1
+	end
+	return num
+end
+
+-- 物品谓词
 local function HexanowBlackCollectiblePredicate(ID)
-	local item = Isaac.GetItemConfig():GetCollectible(ID)
-	if ID ~= 0 and (item == nil or
+	--local item = Isaac.GetItemConfig():GetCollectible(ID)
+	if ID ~= 0 and (
 		(
-		item.ID == CollectibleType.COLLECTIBLE_MEGA_MUSH
-		or item.ID == CollectibleType.COLLECTIBLE_ANKH
-		or item.ID == CollectibleType.COLLECTIBLE_JUDAS_SHADOW
-		--or item.ID == CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR
+		ID == CollectibleType.COLLECTIBLE_MEGA_MUSH
+		or ID == CollectibleType.COLLECTIBLE_ANKH
+		or ID == CollectibleType.COLLECTIBLE_JUDAS_SHADOW
+		--or ID == CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR
 		))
 	then
 		return true
@@ -524,30 +553,29 @@ end
 -- 物品谓词
 local function HexanowWhiteCollectiblePredicate(ID, ignoreEnsured)
 	local item = Isaac.GetItemConfig():GetCollectible(ID)
-	if item ~= nil and
-		(	item:HasTags(ItemConfig.TAG_QUEST)
-		or	item.ID == CollectibleType.COLLECTIBLE_POLAROID
-		or	item.ID == CollectibleType.COLLECTIBLE_NEGATIVE
-		or	item.ID == CollectibleType.COLLECTIBLE_BROKEN_SHOVEL
-		or	item.ID == CollectibleType.COLLECTIBLE_BROKEN_SHOVEL_2
-		or	item.ID == CollectibleType.COLLECTIBLE_MOMS_SHOVEL
-		or	item.ID == CollectibleType.COLLECTIBLE_KEY_PIECE_1
-		or	item.ID == CollectibleType.COLLECTIBLE_KEY_PIECE_2
-		or	item.ID == CollectibleType.COLLECTIBLE_KNIFE_PIECE_1
-		or	item.ID == CollectibleType.COLLECTIBLE_KNIFE_PIECE_2
-		or	item.ID == CollectibleType.COLLECTIBLE_DADS_NOTE
-		or	item.ID == CollectibleType.COLLECTIBLE_DOGMA
-		or	item.ID == hexanowPortalTool
-		--or	item.ID == CollectibleType.COLLECTIBLE_RED_KEY
+	if  (	(item ~= nil and item:HasTags(ItemConfig.TAG_QUEST))
+		or	ID == CollectibleType.COLLECTIBLE_POLAROID
+		or	ID == CollectibleType.COLLECTIBLE_NEGATIVE
+		or	ID == CollectibleType.COLLECTIBLE_BROKEN_SHOVEL
+		or	ID == CollectibleType.COLLECTIBLE_BROKEN_SHOVEL_2
+		or	ID == CollectibleType.COLLECTIBLE_MOMS_SHOVEL
+		or	ID == CollectibleType.COLLECTIBLE_KEY_PIECE_1
+		or	ID == CollectibleType.COLLECTIBLE_KEY_PIECE_2
+		or	ID == CollectibleType.COLLECTIBLE_KNIFE_PIECE_1
+		or	ID == CollectibleType.COLLECTIBLE_KNIFE_PIECE_2
+		or	ID == CollectibleType.COLLECTIBLE_DADS_NOTE
+		or	ID == CollectibleType.COLLECTIBLE_DOGMA
+		or	ID == hexanowPortalTool
+		--or	ID == CollectibleType.COLLECTIBLE_RED_KEY
 		--[[
 		or (not ignoreEnsured == true and (
-			item.ID == CollectibleType.COLLECTIBLE_ANALOG_STICK
-		or	item.ID == CollectibleType.COLLECTIBLE_URANUS
-		or	item.ID == CollectibleType.COLLECTIBLE_NEPTUNUS
-		--or	item.ID == CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR
+			ID == CollectibleType.COLLECTIBLE_ANALOG_STICK
+		or	ID == CollectibleType.COLLECTIBLE_URANUS
+		or	ID == CollectibleType.COLLECTIBLE_NEPTUNUS
+		--or	ID == CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR
 		))
 		]]
-		--or	item.ID == CollectibleType.COLLECTIBLE_BIRTHRIGHT
+		--or	ID == CollectibleType.COLLECTIBLE_BIRTHRIGHT
 
 		--or	(item.Quality >= 4 and item.ItemType ~= ItemType.ITEM_FAMILIAR)
 
@@ -616,7 +644,7 @@ local function SetWhiteHexanowCollectible(player, ID, slot)
 			return nil
 		end
 
-		if HexanowCollectibleMaxAllowed(player, ID) - player:GetCollectibleNum(ID, true) > 0 then
+		if HexanowCollectibleMaxAllowed(player, ID) - HexanowOwnedCollectibleNum(player, ID, true) > 0 then
 			return nil
 		end
 	end
@@ -643,7 +671,7 @@ local function PickupWhiteHexanowCollectible(player, ID, slot)
 		return nil
 	end
 
-	if HexanowCollectibleMaxAllowed(player, ID) - player:GetCollectibleNum(ID, true) > 0 then
+	if HexanowCollectibleMaxAllowed(player, ID) - HexanowOwnedCollectibleNum(player, ID, true) > 0 then
 		return nil
 	end
 
@@ -692,7 +720,7 @@ local function PickupWhiteHexanowCollectible(player, ID, slot)
 			end
 		end
 	end
-
+	
 	SetWhiteHexanowCollectible(player, ID, slot)
 end
 
@@ -801,7 +829,7 @@ local function MaintainPortal(skipCreationAnim)
 			if entity.SubType < 1 or entity.SubType > 8 then
 				entity:Remove()
 			else
-				roomPortals[entity.SubType][#roomPortals[entity.SubType]+1] = entity
+				table.insert(roomPortals[entity.SubType], entity)
 			end
 		end
 	end
@@ -1027,7 +1055,7 @@ local function CastHexanowLaser(player, position, degrees, colorType, fromOtherB
 					]]
 					Game():BombExplosionEffects(
 						intersection,
-						0,--player.Damage,
+						player.Damage,
 						player.TearFlags | TearFlags.TEAR_ICE,
 						Color(color.R,color.G,color.B,0),
 						player,
@@ -1089,8 +1117,12 @@ local function TaintedHexanowRoomOverride()
 			local pickup = entity:ToPickup()
 			if pickup ~= nil then
 				if pickup.Variant == PickupVariant.PICKUP_COLLECTIBLE and pickup.SubType ~= 0 then
-					if not HexanowFlags:HasFlag("TEFFECT_REDKEY_GEN") and room:GetBackdropType() == 51 and pickup.SubType ~= CollectibleType.COLLECTIBLE_RED_KEY then
-						pickup:Morph(pickup.Type, pickup.Variant, CollectibleType.COLLECTIBLE_RED_KEY, true)
+					local redKey = CollectibleType.COLLECTIBLE_RED_KEY
+					if redMap ~= nil then
+						redKey = redMap
+					end
+					if not HexanowFlags:HasFlag("TEFFECT_REDKEY_GEN") and room:GetBackdropType() == 51 and pickup.SubType ~= redKey then
+						pickup:Morph(pickup.Type, pickup.Variant, redKey, true)
 						HexanowFlags:AddFlag("TEFFECT_REDKEY_GEN")
 					end
 
@@ -1372,8 +1404,48 @@ local function TickEventHexanow(player)
 		local item2Missing = item2 == 0
 		local item3Missing = item3 == 0
 
-		if not player:IsHoldingItem() then
-
+		--if not player:IsHoldingItem() then
+		if true then
+			--[[
+			local queuedItem = player.QueuedItem.Item
+			if queuedItem ~= nil then
+				print("1!")
+				if (not HexanowPlayerDatas[playerID].onceHoldingItem) or HexanowPlayerDatas[playerID].upcomingItem ~= queuedItem.ID or HexanowPlayerDatas[playerID].upcomingType ~= queuedItem.Type then
+					print("11!")
+					HexanowPlayerDatas[playerID].onceHoldingItem = true
+					HexanowPlayerDatas[playerID].upcomingItem = queuedItem.ID
+					HexanowPlayerDatas[playerID].upcomingType = queuedItem.Type
+					if queuedItem.Type == ItemType.ITEM_PASSIVE or queuedItem.Type == ItemType.ITEM_ACTIVE then
+						print("SET!")
+						PickupWhiteHexanowCollectible(player, queuedItem.ID, HexanowPlayerDatas[playerID].SelectedWhiteItem)
+					end
+					AddEternalHearts(queuedItem.AddSoulHearts)
+					AddEternalHearts(queuedItem.AddBlackHearts)
+					for i=1,math.ceil(queuedItem.AddBlackHearts/2) do
+						player:UseActiveItem(CollectibleType.COLLECTIBLE_NECRONOMICON, UseFlag.USE_NOANIM | UseFlag.USE_NOCOSTUME | UseFlag.USE_NOANNOUNCER)
+					end
+					queuedItem.AddBlackHearts = 0
+					queuedItem.AddSoulHearts = 0
+					player:AddCoins(queuedItem.AddCoins)
+					queuedItem.AddCoins = 0
+					player:AddBombs(queuedItem.AddBombs)
+					queuedItem.AddBombs = 0
+					player:AddKeys(queuedItem.AddKeys)
+					queuedItem.AddKeys = 0
+					player:AddMaxHearts(queuedItem.AddMaxHearts)
+					queuedItem.AddMaxHearts = 0
+					player:AddHearts(queuedItem.AddHearts)
+					queuedItem.AddHearts = 0
+				end
+			else
+				if HexanowPlayerDatas[playerID].onceHoldingItem then
+					HexanowPlayerDatas[playerID].onceHoldingItem = false
+					HexanowPlayerDatas[playerID].upcomingItem = nil
+					HexanowPlayerDatas[playerID].upcomingType = nil
+					UpdateCostumes(player)
+				end
+			end
+			]]
 			local item1dem = 1
 			local item2dem = 1
 			local item3dem = 1
@@ -1389,17 +1461,17 @@ local function TickEventHexanow(player)
 				item3dem = item3dem + 1
 			end
 
-			if not item1Missing and player:GetCollectibleNum(item1, true) < item1dem then
+			if not item1Missing and HexanowOwnedCollectibleNum(player, item1, true) < item1dem then
 				item1Missing = true
 				SetWhiteHexanowCollectible(player, 0, 1)
 			end
 
-			if not item2Missing and  player:GetCollectibleNum(item2, true) < item2dem then
+			if not item2Missing and  HexanowOwnedCollectibleNum(player, item2, true) < item2dem then
 				item2Missing = true
 				SetWhiteHexanowCollectible(player, 0, 2)
 			end
 
-			if not item3Missing and  player:GetCollectibleNum(item3, true) < item3dem then
+			if not item3Missing and  HexanowOwnedCollectibleNum(player, item3, true) < item3dem then
 				item3Missing = true
 				SetWhiteHexanowCollectible(player, 0, 3)
 			end
@@ -1430,10 +1502,15 @@ local function TickEventHexanow(player)
 		local removedSomething = true
 		while removedSomething do
 			removedSomething = false
-			for ID = CollectibleType.NUM_COLLECTIBLES - 1, 1, -1 do
-
+			--for ID = CollectibleType.NUM_COLLECTIBLES - 1, 1, -1 do
+			local ID = 0
+			while true do
+				ID = ID + 1
 				local item = Isaac.GetItemConfig():GetCollectible(ID)
-				local ownNum = player:GetCollectibleNum(ID, true)
+				if ID >= CollectibleType.NUM_COLLECTIBLES and item == nil then
+					break
+				end
+				local ownNum = HexanowOwnedCollectibleNum(player, ID, true)
 				local maxNum = HexanowCollectibleMaxAllowed(player, ID)
 				local exceededNum = math.max(0, ownNum - maxNum)
 
@@ -1478,68 +1555,15 @@ end
 -- 玩家攻击，每一帧执行
 local function TryCastFireHexanow(player)
 	if IsHexanow(player) then
-		local game = Game()
-		local level = game:GetLevel()
-		local room = game:GetRoom()
-		local roomEntities = Isaac.GetRoomEntities()
 		local playerID = GetPlayerID(player)
+		local aimDirection = player:GetAimDirection()
 
-		if game == nil
-		or level == nil
-		or room == nil
-		or roomEntities == nil
-		then
-			--return nil
-		end
-		local aimDirection = player:GetAimDirection();
-
-		HexanowPlayerDatas[playerID].attackCharge = HexanowPlayerDatas[playerID].attackCharge + 1
-		if HexanowPlayerDatas[playerID].attackCharge >= player.MaxFireDelay
+		if player.FireDelay <= 0
 		and not (aimDirection.X == 0 and aimDirection.Y == 0)
 		then
-			HexanowPlayerDatas[playerID].attackCharge = 0
+			player.HeadFrameDelay = math.floor(player.MaxFireDelay)
+			player.FireDelay = math.floor(player.MaxFireDelay)
 			CastHexanowLaser(player, player.Position, aimDirection:GetAngleDegrees(), HexanowPlayerDatas[playerID].portalToolColor)
-		end
-	end
-end
-
--- 初始化人物
-local function InitPlayerHexanowTainted(player)
-	--print("CALLED!")
-	--print("PType", player:GetPlayerType())
-	--print("TType", playerTypeHexanowTainted)
-	if IsHexanowTainted(player) then
-		--print("CALLED ACCEPT!")
-		player:ChangePlayerType(playerTypeHexanow)
-
-		local level = Game():GetLevel()
-
-		if not HexanowFlags:HasFlag("TAINTED") then
-			HexanowFlags:AddFlag("TAINTED")
-			--player:AddCard(Card.CARD_CRACKED_KEY)
-			--player:AddCollectible(CollectibleType.COLLECTIBLE_DEATH_CERTIFICATE, 0, false)
-			player:AddCoins(99)
-			player:AddBombs(99)
-			player:AddKeys(99)
-			--player:AddEternalHearts(24)
-			EternalCharges = EternalCharges + 99
-
-			local stageType = level:GetStageType()
-
-			-- stageType == StageType.STAGETYPE_GREEDMODE
-				--level:SetStage(LevelStage.STAGE7_GREED, stageType)
-				--level:SetNextStage()
-				--level:SetStage(13, stageType)
-				--level:SetNextStage()
-
-			if Game().Difficulty == Difficulty.DIFFICULTY_GREED
-			or Game().Difficulty == Difficulty.DIFFICULTY_GREEDIER
-			then
-				Isaac.ExecuteCommand("stage 6")
-			else
-				Isaac.ExecuteCommand("stage 13")
-			end
-			TaintedHexanowRoomOverride()
 		end
 	end
 end
@@ -1554,15 +1578,15 @@ local function InitPlayerHexanow(player)
 		player:AddMaxHearts(12)
 		player:AddHearts(11)
 
-		player:AddGoldenKey()
-		player:AddGoldenBomb()
+		--player:AddGoldenKey()
+		--player:AddGoldenBomb()
 		-- player:AddGoldenHearts(0)
 		ApplyEternalHearts(player)
 
 		--player:AddHearts(-1)
 		--player:AddCard(Card.CARD_JUSTICE)
 		--player:AddCard(Card.CARD_CRACKED_KEY)
-		if HexanowFlags:HasFlag("TAINTED") then
+		if player:GetData().InitedAsTaintedHexanow == true then
 			player:AddMaxHearts(12)
 			player:AddHearts(13)
 			player:AddTrinket(TrinketType.TRINKET_PERFECTION | 32768)
@@ -1593,6 +1617,18 @@ local function InitPlayerHexanow(player)
 
 		TickEventHexanow(player)
 		UpdateCostumes(player)
+	end
+end
+
+-- 初始化人物
+local function InitPlayerHexanowTainted(player)
+	--print("CALLED!")
+	--print("PType", player:GetPlayerType())
+	--print("TType", playerTypeHexanowTainted)
+	if IsHexanowTainted(player) then
+		--print("CALLED ACCEPT!")
+		player:ChangePlayerType(playerTypeHexanow)
+		player:GetData().InitedAsTaintedHexanow = true
 	end
 end
 
@@ -1710,7 +1746,7 @@ local function SelManageRander(pos, playerID, sortNum)
 		end
 	end
 
-	arraw:Render(pos + Vector(0,(HexanowPlayerDatas[playerID].SelectedWhiteItem-1)*15), Vector(0,0), Vector(0,0))
+	arraw:Render(pos + Vector(0,(HexanowPlayerDatas[playerID].SelectedWhiteItem-1)*16), Vector(0,0), Vector(0,0))
 	portalSelected:Render(pos + Vector(0,0), Vector(0,0), Vector(0,0))
 
 end
@@ -1728,6 +1764,36 @@ function HexanowMod:PostGameStarted(loadedFromSaves)
 		--CallForEveryPlayer(InitPlayerHexanowTainted)
 		--CallForEveryPlayer(InitPlayerHexanow)
 		SaveHexanowModData()
+
+		local player = PlayerFindFirst(function(player) return player:GetData().InitedAsTaintedHexanow == true end)
+		if not HexanowFlags:HasFlag("TAINTED") and player ~= nil then
+			HexanowFlags:AddFlag("TAINTED")
+			player:GetData().InitedAsTaintedHexanow = nil
+			--player:AddCard(Card.CARD_CRACKED_KEY)
+			--player:AddCollectible(CollectibleType.COLLECTIBLE_DEATH_CERTIFICATE, 0, false)
+			player:AddCoins(99)
+			player:AddBombs(99)
+			player:AddKeys(99)
+			--player:AddEternalHearts(24)
+			EternalCharges = EternalCharges + 99
+
+			--local stageType = Game():GetLevel():GetStageType()
+
+			-- stageType == StageType.STAGETYPE_GREEDMODE
+				--level:SetStage(LevelStage.STAGE7_GREED, stageType)
+				--level:SetNextStage()
+				--level:SetStage(13, stageType)
+				--level:SetNextStage()
+
+			if Game().Difficulty == Difficulty.DIFFICULTY_GREED
+			or Game().Difficulty == Difficulty.DIFFICULTY_GREEDIER
+			then
+				Isaac.ExecuteCommand("stage 6")
+			else
+				Isaac.ExecuteCommand("stage 13")
+			end
+			TaintedHexanowRoomOverride()
+		end
 	end
 	gameInited = true
 end
@@ -1933,7 +1999,7 @@ function HexanowMod:ExecuteCmd(cmd, params)
 		elseif subcmd == "test" then
 			print(HexanowFlags:HasFlag(subcmd_arg))
 		else
-			Isaac.ConsoleOutput("Invalid args\nRequires either \"report\", \"add\", \"remove\" or \"test\".")
+			Isaac.ConsoleOutput('Invalid args\nRequires either "report", "add", "remove" or "test".')
 		end
 
 	end
@@ -1942,9 +2008,8 @@ HexanowMod:AddCallback(ModCallbacks.MC_EXECUTE_CMD, HexanowMod.ExecuteCmd);
 
 -- 在玩家被加载后运行
 function HexanowMod:PostPlayerInit(player)
-	InitPlayerHexanow(player)
 	InitPlayerHexanowTainted(player)
-	UpdateCostumes(player)
+	InitPlayerHexanow(player)
 	--SaveHexanowModData()
 end
 HexanowMod:AddCallback(ModCallbacks.MC_POST_PLAYER_INIT, HexanowMod.PostPlayerInit)
@@ -2012,6 +2077,7 @@ HexanowMod:AddCallback(ModCallbacks.MC_POST_NEW_LEVEL, HexanowMod.PostNewLevel)
 
 -- 在玩家进入新房间后运行
 function HexanowMod:PostNewRoom()
+	local level = Game():GetLevel()
 	local room = Game():GetRoom()
 	for playerID=1,4 do
 		HexanowPlayerDatas[playerID].InRoomCreatedPortals[1] = nil
@@ -2041,8 +2107,15 @@ function HexanowMod:PostNewRoom()
 	if room:IsMirrorWorld() and not HexanowFlags:HasFlag("MIRROR_WORLD_PORTALS_GENERATED") then
 		HexanowFlags:AddFlag("MIRROR_WORLD_PORTALS_GENERATED")
 		for playerID=1,4 do
-			HexanowPlayerDatas[playerID].CreatedPortals[1][1] = HexanowPlayerDatas[playerID].CreatedPortals[0][1]
-			HexanowPlayerDatas[playerID].CreatedPortals[1][2] = HexanowPlayerDatas[playerID].CreatedPortals[0][2]
+			for i=1,2 do
+				if HexanowPlayerDatas[playerID].CreatedPortals[0][i] ~= nil then
+					local gridIndex = level:GetRooms():Get(HexanowPlayerDatas[playerID].CreatedPortals[0][i].RoomInLevelListIndex).SafeGridIndex
+					if gridIndex >= 0 then
+						local listIndex = level:GetRoomByIdx(gridIndex, 1).ListIndex
+						HexanowPlayerDatas[playerID].CreatedPortals[1][i] = LevelPosition(listIndex, HexanowPlayerDatas[playerID].CreatedPortals[0][i].InRoomGridIndex)
+					end
+				end
+			end
 		end
 	end
 
@@ -2324,10 +2397,11 @@ function HexanowMod:PrePickupCollision(pickup, collider, low)
 			end
 		end
 
+		
 		if pickup.SubType ~= 0
 		and player:CanPickupItem()
 		and not player:IsHoldingItem()
-		and (pickup:IsShopItem() or player:GetNumCoins() >= pickup.Price) then
+		and (not pickup:IsShopItem() or player:GetNumCoins() >= pickup.Price) then
 			if pickup.Variant == PickupVariant.PICKUP_COLLECTIBLE then
 				PickupWhiteHexanowCollectible(player, pickup.SubType)
 				return nil
@@ -2527,6 +2601,7 @@ function HexanowMod:PostUpdate()
 		print("Suppressed!")
 	end
 	]]
+	--[[
 	CallForEveryPlayer(
 		function(player)
 			if IsHexanow(player) then
@@ -2535,6 +2610,7 @@ function HexanowMod:PostUpdate()
 			end
 		end
 	)
+	]]
 
 	if PlayerTypeExistInGame(playerTypeHexanow) then
 		if (level:GetCurses() & (LevelCurse.CURSE_OF_DARKNESS | LevelCurse.CURSE_OF_MAZE | LevelCurse.CURSE_OF_THE_UNKNOWN | LevelCurse.CURSE_OF_BLIND | LevelCurse.CURSE_OF_THE_LOST)) ~= 0 then
@@ -2957,6 +3033,16 @@ function HexanowMod:PostUpdate()
 end
 HexanowMod:AddCallback(ModCallbacks.MC_POST_UPDATE, HexanowMod.PostUpdate)
 
+function HexanowMod:PostUpdate()
+end
+HexanowMod:AddCallback(ModCallbacks.MC_POST_UPDATE, HexanowMod.PostUpdate)
+
+function HexanowMod:PostPlayerUpdate(player)
+	TickEventHexanow(player)
+	TryCastFireHexanow(player)
+end
+HexanowMod:AddCallback(ModCallbacks.MC_POST_PLAYER_UPDATE, HexanowMod.PostPlayerUpdate)
+
 -- 渲染器，每一帧执行
 function HexanowMod:PostRender()
 	if not Game():GetHUD():IsVisible() then
@@ -2965,36 +3051,29 @@ function HexanowMod:PostRender()
 
 	local baseOffset = Vector(3,71)
 	local offsetModSel = Vector(20 * Options.HUDOffset, 12 * Options.HUDOffset)
-	local offsetModStat = Vector(20 * Options.HUDOffset, 12 * Options.HUDOffset)
 
 	if PlayerTypeExistInGame(playerTypeHexanow) then
 
-		local linePlus = 0
-		if PlayerTypeExistInGame(PlayerType.PLAYER_BETHANY) then linePlus = linePlus + 1 end
-		if PlayerTypeExistInGame(PlayerType.PLAYER_BETHANY_B) then linePlus = linePlus + 1 end
-		if PlayerTypeExistInGame(PlayerType.PLAYER_BLUEBABY_B) then linePlus = linePlus + 1 end
-
-		if linePlus > 0 then
-			offsetModStat = offsetModStat + Vector(0, linePlus * 11 - 3)
-		end
-
 		if PlayerTypeExistInGame(Isaac.GetPlayerTypeByName("Lairub")) then
-			offsetModSel = offsetModStat + Vector(0, 40)
+			offsetModSel = offsetModSel + Vector(0, 40)
 		end
 		if PlayerTypeExistInGame(PlayerType.PLAYER_ISAAC_B)
 		or PlayerTypeExistInGame(PlayerType.PLAYER_BLUEBABY_B)
 		then
-			offsetModSel = offsetModStat + Vector(0, 24)
+			offsetModSel = offsetModSel + Vector(0, 24)
 		end
 
+		--[[
 		if EternalChargeForFree then
 			EternalChargeSprite:SetFrame("Gold", 0)
 		else
 			EternalChargeSprite:SetFrame("Base", 0)
 		end
 		--EternalChargeSprite:SetOverlayRenderPriority(true)
-		EternalChargeSprite:Render(baseOffset + offsetModStat, Vector(0,0), Vector(0,0))
-		DrawSimNumbers(EternalCharges, baseOffset + Vector(12, 1) + offsetModStat)
+		--Explorite.RenderResourceBox(EternalChargeSprite, Parse00(EternalCharges), baseOffset + offsetModStat)
+		--EternalChargeSprite:Render(baseOffset + offsetModStat, Vector(0,0), Vector(0,0))
+		--DrawSimNumbers(EternalCharges, baseOffset + Vector(12, 1) + offsetModStat)
+		]]
 
 		local sortNum = 0
 		CallForEveryPlayer(
