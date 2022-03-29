@@ -30,11 +30,11 @@ end
 LairubFlags = Explorite.NewExploriteFlags()
 LairubObjectives = Explorite.NewExploriteObjectives()
 
-require("scripts/lang")
-require("scripts/datas")
-require("scripts/main")
-require("scripts/tainted")
-require("scripts/soulstone")
+require("scripts_lairub/lang")
+require("scripts_lairub/datas")
+require("scripts_lairub/main")
+require("scripts_lairub/tainted")
+require("scripts_lairub/soulstone")
 
 LairubMod.Core = {}
 
@@ -52,15 +52,15 @@ local function RewindLastRoomVar()
 	LairubMod.Main.RewindLastRoomVar()
 	LairubMod.Tainted.RewindLastRoomVar()
 	LairubMod.SoulStone.RewindLastRoomVar()
-
 	UpdateLastRoomVar()
 end
 
 local function WipeTempVar()
+	LairubFlags:Wipe()
+	gameInited = false
 	LairubMod.Main.WipeTempVar()
 	LairubMod.Tainted.WipeTempVar()
 	LairubMod.SoulStone.WipeTempVar()
-
 	UpdateLastRoomVar()
 end
 
@@ -95,24 +95,6 @@ function SaveLairubModData()
 	local str = LairubObjectives:ToString()
 	Isaac.SaveModData(LairubMod, str)
 end
---==Post game started==--
-function LairubMod.Core:PostGameStarted(loadedFromSaves)
-	WipeTempVar()
-	LoadLairubModData()
-	if not loadedFromSaves then -- Only new games
-		WipeTempVar()
-		SaveLairubModData()
-	end
-	gameInited = true
-end
-LairubMod:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, LairubMod.Core.PostGameStarted)
-
---==Pre game exit==--
-function LairubMod.Core:PreGameExit(shouldSave)
-	SaveLairubModData()
-	gameInited = false
-end
-LairubMod:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, LairubMod.Core.PreGameExit)
 
 --==Post game started==--
 function LairubMod.Core:PostGameStarted(loadedFromSaves)
