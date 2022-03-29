@@ -957,11 +957,11 @@ local function TickEventLairub(player)
 								end
 							else
 								if tear.Variant == TearVariant.BLUE or tear.Variant == TearVariant.BLOOD then
-									tearSprite:ReplaceSpritesheet(0,"gfx/Tears/Lairub_Tears_Normal.png")
-									tearSprite:LoadGraphics("gfx/Tears/Lairub_Tears_Normal.png")
+									tearSprite:ReplaceSpritesheet(0,"gfx/Tears/Lairub_Tears_TakeSoul.png")
+									tearSprite:LoadGraphics("gfx/Tears/Lairub_Tears_TakeSoul.png")
 								elseif tear.Variant == TearVariant.EYE or tear.Variant == TearVariant.EYE_BLOOD then
-									tearSprite:ReplaceSpritesheet(0,"gfx/Tears/Lairub_Tears_Pop_Normal.png")
-									tearSprite:LoadGraphics("gfx/Tears/Lairub_Tears_Pop_Normal.png")
+									tearSprite:ReplaceSpritesheet(0,"gfx/Tears/Lairub_Tears_Pop_TakeSoul.png")
+									tearSprite:LoadGraphics("gfx/Tears/Lairub_Tears_Pop_TakeSoul.png")
 								elseif tear.Variant == TearVariant.NAIL or tear.Variant == TearVariant.NAIL_BLOOD then
 									tearSprite:ReplaceSpritesheet(0,"gfx/Tears/Lairub_8inchnails_tears.png")
 									tearSprite:LoadGraphics("gfx/Tears/Lairub_8inchnails_tears.png")
