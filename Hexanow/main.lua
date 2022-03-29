@@ -28,7 +28,7 @@ end
 HexanowFlags = Explorite.NewExploriteFlags()
 HexanowObjectives = Explorite.NewExploriteObjectives()
 
-require("scripts/room_wall")
-require("scripts/lang")
-require("scripts/apioverride")
-require("scripts/main")
+require("scripts_hexanow/room_wall")
+require("scripts_hexanow/lang")
+require("scripts_hexanow/apioverride")
+require("scripts_hexanow/main")
