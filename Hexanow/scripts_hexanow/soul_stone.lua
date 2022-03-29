@@ -30,6 +30,8 @@ function HexanowMod.SoulStone:UseHexanowSoulStone(cardId, player, useFlags)
 	SFXManager():Play(548, 1, 0, false, 1 )
 	SFXManager():Play(187, 1, 0, false, 1 )
 
+	--Temporary
+	player:AddEternalHearts(100)
 	--player:AddBrokenHearts(100)
 	HexanowFlags:AddFlag("HEXANOW_SOULSTONE_P"..tostring(GetPlayerID(player)).."_ACTIVED")
 end

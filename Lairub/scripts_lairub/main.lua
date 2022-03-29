@@ -184,6 +184,10 @@ function LairubMod.Main.WipeTempVar()
 	SoulCount = 0
 end
 
+function LairubMod.Main.AddSoulCount(num)
+	SoulCount = SoulCount + num
+end
+
 --================================--
 
 --==Be Hunted Down In Stage10, BackdropType14(Sheol) And Stage11, BackdropType16(DarkRoom)==--

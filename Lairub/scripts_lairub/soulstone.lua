@@ -1,10 +1,27 @@
 
+local playerType_Lairub = Isaac.GetPlayerTypeByName("Lairub")
+local playerType_Tainted_Lairub = Isaac.GetPlayerTypeByName("Tainted Lairub", true)
+
+local function IsLairub(player)
+	return player ~= nil and player:GetPlayerType() == playerType_Lairub
+end
+
+local function IsLairubTainted(player)
+	return player ~= nil and player:GetPlayerType() == playerType_Tainted_Lairub
+end
+
 --== Soul Stone ==--
 
 LairubMod.SoulStone = {}
 
+local SoulSign = Sprite()
+SoulSign:Load("gfx/Lairub_SoulSign.anm2", true)
+SoulSign:SetOverlayRenderPriority(true)
+SoulSign:SetFrame("SoulSign", 1)
+
+
 local lairubSoulStoneID = Isaac.GetCardIdByName("Soul of Lairub")
-local UsedLairubSoulStone = false
+local LairubSoulEffect_Variant = Isaac.GetEntityVariantByName("LairubSoulEffect")
 local TriggerDelay = 1
 local TriggeredCount = 0
 local BaseFrameCount = 0
@@ -34,7 +51,8 @@ function LairubMod.SoulStone.RewindLastRoomVar()
 end
 
 function LairubMod.SoulStone.WipeTempVar()
-	UsedLairubSoulStone = false
+	SoulCount = 0
+
 	TriggeredCount = 0
 	BaseFrameCount = 0
 	DMGtoEveryNPC = false
@@ -42,7 +60,9 @@ function LairubMod.SoulStone.WipeTempVar()
 end
 
 function LairubMod.SoulStone:PostNewLevel()
-	UsedLairubSoulStone = false
+	for i=1,4 do
+		LairubFlags:RemoveFlag("LAIRUB_SOULSTONE_P"..tostring(i).."_ACTIVED")
+	end
 	DMGtoEveryNPC = false
 	BaseGameFrameCount = 0
 end
@@ -59,42 +79,52 @@ function LairubMod.SoulStone:UseLairubSoulStone(cardId, player, useFlags)
 	local room = Game():GetRoom()
 	BaseFrameCount = room:GetFrameCount()
 	BaseGameFrameCount = Game():GetFrameCount()
-	UsedLairubSoulStone = true
+	LairubFlags:AddFlag("LAIRUB_SOULSTONE_P"..tostring(GetPlayerID(player)).."_ACTIVED")
 end
 LairubMod:AddCallback(ModCallbacks.MC_USE_CARD, LairubMod.SoulStone.UseLairubSoulStone, lairubSoulStoneID)
 
 function LairubMod.SoulStone:PostNPCDeath()
-	if UsedLairubSoulStone == true then
-		SoulCount = SoulCount + 1
+	for i=1,4 do
+		if LairubFlags:HasFlag("LAIRUB_SOULSTONE_P"..tostring(i).."_ACTIVED") then
+			local player = Game():GetPlayer(i-1)
+			if IsLairub(player) or IsLairubTainted(player) then
+				LairubMod.Main.AddSoulCount(1)
+			else
+				SoulCount = SoulCount + 1
+			end
+		end
 	end
 end
 LairubMod:AddCallback(ModCallbacks.MC_POST_NPC_DEATH, LairubMod.SoulStone.PostNPCDeath)
 
 function LairubMod.SoulStone:SoulStonePostRender()
-	local game = Game()
-	local level = game:GetLevel()
-	local player = Isaac.GetPlayer(0)
-	local room = game:GetRoom()
-	local playerPos = room:WorldToScreenPosition(player.Position)
-	if UsedLairubSoulStone == true then
-		if player:GetPlayerType() ~= playerType_Lairub and player:GetPlayerType() ~= playerType_Tainted_Lairub then
-			if true or not IsLairubButtonPressed(player,"hide_ui") then
-				SoulSign:SetOverlayRenderPriority(true)
-				SoulSign:SetFrame("SoulSign", 1)
-				SoulSign:Render(Vector(playerPos.X - 5, playerPos.Y - 44), Vector(0,0), Vector(0,0))
-				Explorite.RenderText(tostring(SoulCount), playerPos.X + 5, playerPos.Y - 46, 255, 255, 255, 255)
-			end
-		end
+	if not Game():GetHUD():IsVisible() then
+		return nil
 	end
+	
+	local room = Game():GetRoom()
+
+	CallForEveryPlayer(function (player)
+		if not LairubFlags:HasFlag("LAIRUB_SOULSTONE_P"..tostring(GetPlayerID(player)).."_ACTIVED") then
+			return
+		end
+		if IsLairub(player) or IsLairubTainted(player) then
+			return
+		end
+		local soulDisplayPos = room:WorldToScreenPosition(player.Position) + Vector(0, -44)
+		SoulSign:Render(soulDisplayPos + Vector(-4, 0), Vector(0,0), Vector(0,0))
+		Explorite.RenderTextB(tostring(SoulCount), soulDisplayPos.X + 4, soulDisplayPos.Y - 7, 1, 1, 1, 1, 0, false)
+	end)
 end
 LairubMod:AddCallback(ModCallbacks.MC_POST_RENDER, LairubMod.SoulStone.SoulStonePostRender)
 
 function LairubMod.SoulStone:LairubSoulStonePostUpdate()
 	local level = Game():GetLevel()
-	local player = Isaac.GetPlayer(0)
 	local room = Game():GetRoom()
-	local roomEntities = Isaac.GetRoomEntities()
-	if UsedLairubSoulStone == true then
+	CallForEveryPlayer(function (player)
+		if not LairubFlags:HasFlag("LAIRUB_SOULSTONE_P"..tostring(GetPlayerID(player)).."_ACTIVED") then
+			return
+		end
 		--==Spawn==--
 		if (room:GetFrameCount() - BaseFrameCount) % TriggerDelay == 0 then
 			TriggeredCount = TriggeredCount + 1
@@ -124,11 +154,11 @@ function LairubMod.SoulStone:LairubSoulStonePostUpdate()
 		--
 		TotalRoomFrame = Game():GetFrameCount() - BaseGameFrameCount
 		if TotalRoomFrame >= 600 then
-			UsedLairubSoulStone = false
+			LairubFlags:RemoveFlag("LAIRUB_SOULSTONE_P"..tostring(GetPlayerID(player)).."_ACTIVED")
 			DMGtoEveryNPC = false
 			TotalRoomFrame = 0
 			BaseGameFrameCount = 0
-			if player:GetPlayerType() ~= playerType_Lairub and player:GetPlayerType() ~= playerType_Tainted_Lairub then
+			if not IsLairub(player) and not IsLairubTainted(player) then
 				SoulCount = 0
 			end
 		elseif TotalRoomFrame < 600 then
@@ -151,7 +181,6 @@ function LairubMod.SoulStone:LairubSoulStonePostUpdate()
 				end
 			end)
 		end
-		--====--
-	end
+	end)
 end
 LairubMod:AddCallback(ModCallbacks.MC_POST_UPDATE, LairubMod.SoulStone.LairubSoulStonePostUpdate)

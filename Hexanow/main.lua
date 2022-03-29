@@ -32,6 +32,7 @@ require("scripts_hexanow/room_wall")
 require("scripts_hexanow/lang")
 require("scripts_hexanow/apioverride")
 require("scripts_hexanow/main")
+require("scripts_hexanow/soul_stone")
 
 HexanowMod.Core = {}
 

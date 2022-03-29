@@ -2220,7 +2220,7 @@ HexanowMod:AddCallback(ModCallbacks.MC_POST_CURSE_EVAL , HexanowMod.Main.PostCur
 -- 改变玩家碰撞行为
 function HexanowMod.Main:PrePlayerCollision(player, collider, low)
 	if IsHexanow(player) then
-		if collider.Type == 306 then
+		if collider.Type == EntityType.ENTITY_PORTAL then
 			return true
 		end
 	end
@@ -2233,7 +2233,7 @@ function HexanowMod.Main:PreTearCollision(tear, collider, low)
 		local player = tear.Parent:ToPlayer()
 		if player ~= nil
 		and IsHexanow(player)
-		and collider.Type == 963
+		and collider.Type == EntityType.ENTITY_FROZEN_ENEMY
 		then
 			return true
 		end
