@@ -64,6 +64,7 @@ local hexanowBodyFlightCostume = Isaac.GetCostumeIdByPath("gfx/characters/Hexano
 
 --local entityVariantHeartsBlender = Isaac.GetEntityVariantByName("Hearts Blender")
 local entityVariantHexanowLaser = Isaac.GetEntityVariantByName("Laser (Hexanow)")
+local entityVariantHexanowPortalCreation = Isaac.GetEntityVariantByName("Hexanow Portal Creation")
 local entityVariantHexanowPortalDoor = Isaac.GetEntityVariantByName("Hexanow Portal Door")
 --local entityTypeHexanowPortal = Isaac.GetEntityTypeByName("Hexanow Blue Portal")
 
@@ -686,6 +687,36 @@ local function PickupWhiteHexanowCollectible(player, ID, slot)
 	SetWhiteHexanowCollectible(player, ID, slot)
 end
 
+function HexanowMod.Main:PortalCreationEffectUpdate(entity)
+	entity:GetSprite():Play("Default", false)
+	if entity:GetSprite():WasEventTriggered("End") then
+		entity:Remove()
+	end
+end
+HexanowMod:AddCallback(ModCallbacks.MC_POST_EFFECT_UPDATE, HexanowMod.Main.PortalCreationEffectUpdate, entityVariantHexanowPortalCreation)
+
+function HexanowMod.Main:PortalDoorUpdate(entity)
+	if entity.SubType < 1 or entity.SubType > 8 then
+		entity:Remove()
+	end
+end
+HexanowMod:AddCallback(ModCallbacks.MC_POST_EFFECT_UPDATE, HexanowMod.Main.PortalDoorUpdate, entityVariantHexanowPortalDoor)
+
+function HexanowMod.Main:PortalDoorRender(entity)
+	local sprite = entity:GetSprite()
+	local overlay = entity:GetData().OverlaySprite
+	if overlay == nil then
+		overlay = Sprite()
+		overlay:Load(sprite:GetFilename(), true)
+		overlay.Color = GetHexanowPortalColor(Game():GetPlayer(math.ceil(entity.SubType/2)), (entity.SubType+1)%2+1)
+		entity:GetData().OverlaySprite = overlay
+	end
+	overlay.Rotation = sprite.Rotation
+	overlay:SetFrame("Glow", sprite:GetFrame())
+	overlay:Render(Game():GetRoom():WorldToScreenPosition(entity.Position), Vector(0,0), Vector(0,0))
+end
+HexanowMod:AddCallback(ModCallbacks.MC_POST_EFFECT_RENDER, HexanowMod.Main.PortalDoorRender, entityVariantHexanowPortalDoor)
+
 local function fromDirectionString(str)
 	if str == "left" then
 		return Direction.LEFT
@@ -837,15 +868,24 @@ local function MaintainPortal(skipCreationAnim)
 					if HexanowPlayerDatas[playerID].InRoomCreatedPortals[portaltype] == portal then
 						HexanowPlayerDatas[playerID].InRoomCreatedPortals[portaltype] = nil
 					end
+					if not skipCreationAnim then
+						local newPortalDestroyEffect = Isaac.Spawn(EntityType.ENTITY_EFFECT, entityVariantHexanowPortalCreation, 0, portal.Position, Vector(0,0), nil)
+						newPortalDestroyEffect.SpriteRotation = portal.SpriteRotation
+						newPortalDestroyEffect.DepthOffset = portal.DepthOffset - 20
+					end
 					portal:Remove()
 				end
 			end
 			if isInRoom and not foundMatchedPortal then --gen missing portal
-				local newPortal = Isaac.Spawn(EntityType.ENTITY_EFFECT, entityVariantHexanowPortalDoor, portalCode, pos, Vector(0,0), player)
+				local newPortal = Isaac.Spawn(EntityType.ENTITY_EFFECT, entityVariantHexanowPortalDoor, portalCode, pos, Vector(0,0), nil)
 				newPortal.SpriteRotation = ((direction - 1) * 90) % 360
+				newPortal.DepthOffset = -100
+				if not skipCreationAnim then
+					local newPortalCreateEffect = Isaac.Spawn(EntityType.ENTITY_EFFECT, entityVariantHexanowPortalCreation, 0, pos, Vector(0,0), nil)
+					newPortalCreateEffect.SpriteRotation = newPortal.SpriteRotation
+					newPortalCreateEffect.DepthOffset = newPortal.DepthOffset + 20
+				end
 				--newPortal:AddEntityFlags(EntityFlag.FLAG_PERSISTENT)
-				local sprite = newPortal:GetSprite()
-				sprite.Color = GetHexanowPortalColor(Game():GetPlayer(playerID-1), portaltype)
 				HexanowPlayerDatas[playerID].InRoomCreatedPortals[portaltype] = newPortal
 			end
 		end
@@ -930,7 +970,6 @@ local function SetPortal(player, typeNum, room, roomDesc, pos)
 	HexanowPlayerDatas[playerID].CreatedPortals[dimension][typeNum] = nil
 	if room:GetType() ~= RoomType.ROOM_DUNGEON and inInRoomGridIndex ~= -1 then
 		HexanowPlayerDatas[playerID].CreatedPortals[dimension][typeNum] = LevelPosition(roomDesc.ListIndex, inInRoomGridIndex)
-		return true
 	end
 	MaintainPortal(false)
 	return true
@@ -1014,7 +1053,6 @@ local function CastHexanowLaser(player, position, degrees, colorType, fromOtherB
 							end
 						end
 					)
-					]]
 					Game():BombExplosionEffects(
 						intersection,
 						player.Damage,
@@ -1026,6 +1064,7 @@ local function CastHexanowLaser(player, position, degrees, colorType, fromOtherB
 						false,
 						DamageFlag.DAMAGE_LASER
 					)
+					]]
 					--[[
 					CallForEveryEntity(
 						function(entity)
@@ -1035,7 +1074,6 @@ local function CastHexanowLaser(player, position, degrees, colorType, fromOtherB
 						end
 					)
 					]]
-					--[[
 					Game():BombDamage(
 						intersection,
 						player.Damage,
@@ -1046,6 +1084,7 @@ local function CastHexanowLaser(player, position, degrees, colorType, fromOtherB
 						DamageFlag.DAMAGE_LASER,
 						false
 					)
+					--[[
 					Game():BombTearflagEffects(
 						intersection,
 						40,
@@ -2038,6 +2077,13 @@ function HexanowMod.Main:PostNewRoom()
 			function(player)
 				player:AnimateTeleport()
 				player.Position = pos
+			end
+		)
+		CallForEveryEntity(
+			function(enitiy)
+				if enitiy:ToFamiliar() ~= nil then
+					enitiy.Position = pos
+				end
 			end
 		)
 		queuedNextRoomGrid = nil

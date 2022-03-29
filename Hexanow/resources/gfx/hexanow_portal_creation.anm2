@@ -1,0 +1,34 @@
+<AnimatedActor>
+	<Info CreatedBy="siiftun1857" CreatedOn="2022/3/29 20:44:02" Version="16" Fps="30"/>
+	<Content>
+		<Spritesheets>
+			<Spritesheet Path="effects/hexanow_portal_door.png" Id="0"/>
+		</Spritesheets>
+		<Layers>
+			<Layer Name="Door" Id="0" SpritesheetId="0"/>
+		</Layers>
+		<Nulls/>
+		<Events>
+			<Event Name="Stat" Id="0"/>
+			<Event Name="End" Id="1"/>
+		</Events>
+	</Content>
+	<Animations DefaultAnimation="Default">
+		<Animation Name="Default" FrameNum="31" Loop="false">
+			<RootAnimation>
+				<Frame XPosition="0" YPosition="0" XScale="100" YScale="100" Delay="31" Visible="true" RedTint="255" GreenTint="255" BlueTint="255" AlphaTint="255" RedOffset="0" GreenOffset="0" BlueOffset="0" Rotation="0" Interpolated="false"/>
+			</RootAnimation>
+			<LayerAnimations>
+				<LayerAnimation LayerId="0" Visible="true">
+					<Frame XPosition="0" YPosition="15" XPivot="32" YPivot="42" XCrop="64" YCrop="0" Width="64" Height="48" XScale="100" YScale="100" Delay="30" Visible="true" RedTint="255" GreenTint="255" BlueTint="255" AlphaTint="255" RedOffset="0" GreenOffset="0" BlueOffset="0" Rotation="0" Interpolated="true"/>
+					<Frame XPosition="0" YPosition="15" XPivot="32" YPivot="42" XCrop="64" YCrop="0" Width="64" Height="48" XScale="100" YScale="100" Delay="1" Visible="true" RedTint="255" GreenTint="255" BlueTint="255" AlphaTint="0" RedOffset="0" GreenOffset="0" BlueOffset="0" Rotation="0" Interpolated="false"/>
+				</LayerAnimation>
+			</LayerAnimations>
+			<NullAnimations/>
+			<Triggers>
+				<Trigger EventId="0" AtFrame="0"/>
+				<Trigger EventId="1" AtFrame="30"/>
+			</Triggers>
+		</Animation>
+	</Animations>
+</AnimatedActor>
