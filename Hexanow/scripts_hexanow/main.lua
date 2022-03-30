@@ -3138,7 +3138,7 @@ function HexanowMod.Main:PostRender()
 	if PlayerTypeExistInGame(playerTypeHexanow) then
 
 		if PlayerTypeExistInGame(Isaac.GetPlayerTypeByName("Lairub")) then
-			offsetModSel = offsetModSel + Vector(0, 40)
+			offsetModSel = offsetModSel + Vector(0, 48)
 		end
 		if PlayerTypeExistInGame(PlayerType.PLAYER_ISAAC_B)
 		or PlayerTypeExistInGame(PlayerType.PLAYER_BLUEBABY_B)

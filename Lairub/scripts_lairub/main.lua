@@ -120,10 +120,12 @@ local HuntedDownReadoutNumber = 0
 local SoulCount = 0
 local HuntedDownFrame = -1
 
+--[[
 Explorite.RegistSideBar("LairubSouls", function()
 	if not PlayerTypeExistInGame(playerType_Lairub) then return nil end
 	return SoulSign, Parse00(SoulCount)
 end)
+]]
 
 local LairubDialogueManager = {}
 LairubDialogueManager.onGoingDialogue = nil
@@ -640,6 +642,7 @@ LairubAbilityDatas.soul_cross.endingInterval = function (player)
 	
 	if dirKeys ~= 1 then
 		player.ControlsCooldown = math.max(1, player.ControlsCooldown)
+		player.FireDelay = math.floor(player.MaxFireDelay)
 		return
 	end
 	
@@ -832,8 +835,8 @@ function AbilitiesCardRendering(pos, player)
 	--==Teleport To Devil Room==--
 	TeleportSign:SetFrame("TeleportSign", 1)
 
-	AttackIcon:Render(pos + Vector(16*0, 16*1), Vector(0,0), Vector(0,0))
-	CrossIcon:Render(pos + Vector(16*1, 16*0), Vector(0,0), Vector(0,0))
+	AttackIcon:Render(pos + Vector(16*1, 16*0), Vector(0,0), Vector(0,0))
+	CrossIcon:Render(pos + Vector(16*0, 16*1), Vector(0,0), Vector(0,0))
 	ReleaseIcon:Render(pos +  Vector(16*2, 16*1), Vector(0,0), Vector(0,0))
 	TeleportSign:Render(pos + Vector(16*1, 16*2), Vector(0,0), Vector(0,0))
 end
@@ -844,11 +847,11 @@ function AbilitiesDisplayRendering()
 	end
 	local baseOffset = Vector(44,40)
 	local offsetMod = Vector(20 * Options.HUDOffset, 12 * Options.HUDOffset)
-
-	local soulDisplayPos = baseOffset + offsetMod + Vector(48, 48)
-	SoulSign:Render(soulDisplayPos, Vector(0,0), Vector(0,0))
-	Explorite.RenderTextB(tostring(SoulCount), soulDisplayPos.X + 8, soulDisplayPos.Y - 7, 1, 1, 1, 1, 0, false)
-
+	if PlayerTypeExistInGame(PlayerType.PLAYER_ISAAC_B)
+	or PlayerTypeExistInGame(PlayerType.PLAYER_BLUEBABY_B)
+	then
+		offsetMod = offsetMod + Vector(0, 24)
+	end
 	local sortNum = 0
 	CallForEveryPlayer(
 		function(player)
@@ -866,6 +869,11 @@ function AbilitiesDisplayRendering()
 			end
 		end
 	)
+	--local soulDisplayPos = baseOffset + offsetMod + Vector(48, 48)
+	local soulDisplayPos = baseOffset + offsetMod + Vector(16*1, 16*2)
+	SoulSign:Render(soulDisplayPos, Vector(0,0), Vector(0,0))
+	Explorite.RenderTextB(tostring(SoulCount), soulDisplayPos.X + 8, soulDisplayPos.Y - 7, 1, 1, 1, 1, 0, false)
+
 end
 
 local function HuntedDownRendering()
