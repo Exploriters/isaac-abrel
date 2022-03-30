@@ -227,6 +227,8 @@ HexanowPlayerDatas[2] = HexanowPlayerData()
 HexanowPlayerDatas[3] = HexanowPlayerData()
 HexanowPlayerDatas[4] = HexanowPlayerData()
 
+local portalOverlaySprites = {}
+
 local LastRoom = {}
 
 ------------------------------------------------------------
@@ -256,6 +258,7 @@ function HexanowMod.Main.WipeTempVar()
 	EternalChargeForFree = true
 	SuperPower = false
 	queuedNextRoomGrid = nil
+	portalOverlaySprites = {}
 
 	HexanowPlayerDatas = {}
 	HexanowPlayerDatas[1] = HexanowPlayerData()
@@ -917,12 +920,13 @@ HexanowMod:AddCallback(ModCallbacks.MC_POST_EFFECT_UPDATE, HexanowMod.Main.Porta
 
 function HexanowMod.Main:PortalDoorRender(entity)
 	local sprite = entity:GetSprite()
-	local overlay = entity:GetData().OverlaySprite
+	local overlay = portalOverlaySprites[entity.SubType]
+	--entity:GetData().OverlaySprite
 	if overlay == nil then
 		overlay = Sprite()
 		overlay:Load(sprite:GetFilename(), true)
 		overlay.Color = GetHexanowPortalColor(Game():GetPlayer(math.ceil(entity.SubType/2)), (entity.SubType+1)%2+1)
-		entity:GetData().OverlaySprite = overlay
+		portalOverlaySprites[entity.SubType] = overlay
 	end
 	overlay.Rotation = sprite.Rotation
 	overlay:SetFrame("Glow", sprite:GetFrame())
@@ -2128,6 +2132,7 @@ function HexanowMod.Main:PostNewRoom()
 		HexanowPlayerDatas[playerID].InRoomCreatedPortals[1] = nil
 		HexanowPlayerDatas[playerID].InRoomCreatedPortals[2] = nil
 	end
+	portalOverlaySprites = {}
 	if queuedNextRoomGrid ~= nil then
 		local inInRoomGridIndex, direction = ValidHexanowPortalWall(room:GetRoomShape(), queuedNextRoomGrid)
 		direction = fromDirectionString(direction)
