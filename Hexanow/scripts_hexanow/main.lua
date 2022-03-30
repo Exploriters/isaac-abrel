@@ -64,8 +64,9 @@ local hexanowBodyFlightCostume = Isaac.GetCostumeIdByPath("gfx/characters/Hexano
 
 --local entityVariantHeartsBlender = Isaac.GetEntityVariantByName("Hearts Blender")
 local entityVariantHexanowLaser = Isaac.GetEntityVariantByName("Laser (Hexanow)")
-local entityVariantHexanowPortalCreation = Isaac.GetEntityVariantByName("Hexanow Portal Creation")
 local entityVariantHexanowPortalDoor = Isaac.GetEntityVariantByName("Hexanow Portal Door")
+local entityVariantHexanowPortalCreation = Isaac.GetEntityVariantByName("Hexanow Portal Creation")
+local entityVariantHexanowLaserEndpoint = Isaac.GetEntityVariantByName("Hexanow Portal Endpoint")
 --local entityTypeHexanowPortal = Isaac.GetEntityTypeByName("Hexanow Blue Portal")
 
 local portalColor = {}
@@ -687,36 +688,6 @@ local function PickupWhiteHexanowCollectible(player, ID, slot)
 	SetWhiteHexanowCollectible(player, ID, slot)
 end
 
-function HexanowMod.Main:PortalCreationEffectUpdate(entity)
-	entity:GetSprite():Play("Default", false)
-	if entity:GetSprite():WasEventTriggered("End") then
-		entity:Remove()
-	end
-end
-HexanowMod:AddCallback(ModCallbacks.MC_POST_EFFECT_UPDATE, HexanowMod.Main.PortalCreationEffectUpdate, entityVariantHexanowPortalCreation)
-
-function HexanowMod.Main:PortalDoorUpdate(entity)
-	if entity.SubType < 1 or entity.SubType > 8 then
-		entity:Remove()
-	end
-end
-HexanowMod:AddCallback(ModCallbacks.MC_POST_EFFECT_UPDATE, HexanowMod.Main.PortalDoorUpdate, entityVariantHexanowPortalDoor)
-
-function HexanowMod.Main:PortalDoorRender(entity)
-	local sprite = entity:GetSprite()
-	local overlay = entity:GetData().OverlaySprite
-	if overlay == nil then
-		overlay = Sprite()
-		overlay:Load(sprite:GetFilename(), true)
-		overlay.Color = GetHexanowPortalColor(Game():GetPlayer(math.ceil(entity.SubType/2)), (entity.SubType+1)%2+1)
-		entity:GetData().OverlaySprite = overlay
-	end
-	overlay.Rotation = sprite.Rotation
-	overlay:SetFrame("Glow", sprite:GetFrame())
-	overlay:Render(Game():GetRoom():WorldToScreenPosition(entity.Position), Vector(0,0), Vector(0,0))
-end
-HexanowMod:AddCallback(ModCallbacks.MC_POST_EFFECT_RENDER, HexanowMod.Main.PortalDoorRender, entityVariantHexanowPortalDoor)
-
 local function fromDirectionString(str)
 	if str == "left" then
 		return Direction.LEFT
@@ -770,6 +741,11 @@ local function TeleportToPortalLocation(entity, portalOwnerPlayerID, portalColor
 				local rot = (outFacingDeg - originalDegree - 180) % 360
 				entity.Position = pos + (dir * 40)
 				entity.Velocity = entity.Velocity:Rotated(rot)
+				local player = entity:ToPlayer()
+				if player ~= nil then
+					SFXManager():Play(SoundEffect.SOUND_HELL_PORTAL1, 1, 0, false, 1 )
+					SFXManager():Play(SoundEffect.SOUND_HELL_PORTAL2, 1, 0, false, 1 )
+				end
 				--entity:AddVelocity(dir * 40)
 				--entity:AddControlsCooldown(2)
 			end
@@ -845,7 +821,7 @@ local function MaintainPortal(skipCreationAnim)
 					inInRoomGridIndex, direction = ValidHexanowPortalWall(room:GetRoomShape(), levelPosition.InRoomGridIndex)
 					pos = room:GetGridPosition(inInRoomGridIndex)
 					direction = fromDirectionString(direction)
-					if inInRoomGridIndex == nil or direction == Direction.NO_DIRECTION or pos == nil or room:GetType() == RoomType.ROOM_DUNGEON then
+					if inInRoomGridIndex == nil or direction == Direction.NO_DIRECTION or pos == nil then
 						isInRoom = false
 						pos = nil
 						direction = nil
@@ -890,33 +866,74 @@ local function MaintainPortal(skipCreationAnim)
 			end
 		end
 	end
+end
 
-	if skipCreationAnim then
-		for i=1, 8 do
-			local ownerId = math.ceil(i/2)
-			local otherType = i%2+1
-			local portals = roomPortals[i]
-			for j=1,#portals do
-				local portal = portals[j]
-				if not portal:IsDead() then
-					CallForEveryEntity(
-						function(entity)
-							if entity:ToPlayer() ~= nil
-							or entity:ToTear() ~= nil
-							--or entity.Type == EntityType.ENTITY_FROZEN_ENEMY
-							then
-								local dist = entity.Position:Distance(portal.Position)
-								if dist < 40 then--28.284271247461900976033774484194 then
-									TeleportToPortalLocation(entity, ownerId, otherType, (portal.SpriteRotation + 90) % 360)
-								end
-							end
-						end
-					)
-				end
-			end
-		end
+function HexanowMod.Main:PortalCreationEffectUpdate(entity)
+	entity:GetSprite():Play("Default", false)
+	if entity:GetSprite():WasEventTriggered("End") then
+		entity:Remove()
 	end
 end
+HexanowMod:AddCallback(ModCallbacks.MC_POST_EFFECT_UPDATE, HexanowMod.Main.PortalCreationEffectUpdate, entityVariantHexanowPortalCreation)
+
+function HexanowMod.Main:PortalDoorUpdate(portal)
+	if portal.SubType < 1 or portal.SubType > 8 then
+		portal:Remove()
+		return
+	end
+	if not portal:IsDead() then
+		local ownerId = math.ceil(portal.SubType/2)
+		local otherType = portal.SubType%2+1
+		CallForEveryEntity(
+			function(entity)
+				if entity:ToPlayer() ~= nil
+				or entity:ToTear() ~= nil
+				--or entity.Type == EntityType.ENTITY_FROZEN_ENEMY
+				then
+					local dist = entity.Position:Distance(portal.Position)
+					local player = entity:ToPlayer()
+					if dist < 40 --28.284271247461900976033774484194
+					and (player == nil or (
+						player:GetMovementDirection() ~= Direction.NO_DIRECTION
+						and math.abs((player:GetMovementDirection()*90 - 90 - portal.SpriteRotation)%360) <= 30
+					))
+					then
+						TeleportToPortalLocation(entity, ownerId, otherType, (portal.SpriteRotation + 90) % 360)
+					end
+				end
+			end
+		)
+	end
+end
+HexanowMod:AddCallback(ModCallbacks.MC_POST_EFFECT_UPDATE, HexanowMod.Main.PortalDoorUpdate, entityVariantHexanowPortalDoor)
+
+function HexanowMod.Main:PortalDoorRender(entity)
+	local sprite = entity:GetSprite()
+	local overlay = entity:GetData().OverlaySprite
+	if overlay == nil then
+		overlay = Sprite()
+		overlay:Load(sprite:GetFilename(), true)
+		overlay.Color = GetHexanowPortalColor(Game():GetPlayer(math.ceil(entity.SubType/2)), (entity.SubType+1)%2+1)
+		entity:GetData().OverlaySprite = overlay
+	end
+	overlay.Rotation = sprite.Rotation
+	overlay:SetFrame("Glow", sprite:GetFrame())
+	overlay:Render(Game():GetRoom():WorldToScreenPosition(entity.Position), Vector(0,0), Vector(0,0))
+end
+HexanowMod:AddCallback(ModCallbacks.MC_POST_EFFECT_RENDER, HexanowMod.Main.PortalDoorRender, entityVariantHexanowPortalDoor)
+
+function HexanowMod.Main:PortalLaserUpdate(laser)
+	if true then
+		laser.CollisionDamage = 0
+		laser.TearFlags = TearFlags.TEAR_NORMAL
+	end
+	if not laser:IsDead() then
+		--entityVariantHexanowLaserEndpoint
+		--local endpointeffect = Isaac.Spawn(EntityType.ENTITY_EFFECT, entityVariantHexanowPortalCreation, 0, laser.EndPoint, Vector(0,0), nil)
+		--endpointeffect.DepthOffset = laser.DepthOffset + 5
+	end
+end
+HexanowMod:AddCallback(ModCallbacks.MC_POST_LASER_UPDATE, HexanowMod.Main.PortalLaserUpdate, entityVariantHexanowLaser)
 
 local function SetPortal(player, typeNum, room, roomDesc, pos)
 	pos.X = math.floor((pos.X + 20)/40.0)*40
@@ -1013,20 +1030,21 @@ end
 local function CastHexanowLaser(player, position, degrees, colorType, fromOtherBeam)
 	local offset = Vector(0, 0)
 	if not fromOtherBeam then
-		offset = Vector(0, -26)
+		--offset = Vector(0, -26)
 	end
-	local laser = EntityLaser.ShootAngle(entityVariantHexanowLaser, position, degrees, 10, offset, player)
+	local laser = EntityLaser.ShootAngle(entityVariantHexanowLaser, position, degrees, 0, offset, player)
 	local sprite = laser:GetSprite()
 	local color = GetHexanowPortalColor(player, colorType)
 	sprite.Color = color
 	laser.CollisionDamage = player.Damage
 	laser.DepthOffset = -10 --3000
-	laser.Shrink = false
+	laser.Shrink = true
 	laser.DisableFollowParent = true
 	laser.OneHit = true
 	laser.GridHit = true
 	laser.TearFlags = player.TearFlags | TearFlags.TEAR_ICE
 	if not fromOtherBeam then
+		SFXManager():Play(SoundEffect.SOUND_FREEZE, 1, 0, false, 1 )
 		local endpoint = EntityLaser.CalculateEndPoint(position + offset, Vector.FromAngle(degrees), Vector(0,0), player, 20)
 		local settedPortal = SetPortal(player, colorType, Game():GetRoom(), Game():GetLevel():GetCurrentRoomDesc(), endpoint)
 		if settedPortal then
@@ -1036,6 +1054,7 @@ local function CastHexanowLaser(player, position, degrees, colorType, fromOtherB
 				local newEndpoint = EntityLaser.CalculateEndPoint(newPosition, Vector.FromAngle(newDegrees), Vector(0,0), player, 20)
 				local intersection = ComputeIntersection(position, endpoint, newPosition, newEndpoint)
 				if (degrees - newDegrees) % 180 ~= 0 and intersection ~= nil then
+					SFXManager():Play(SoundEffect.SOUND_FREEZE_SHATTER, 1, 0, false, 1 )
 					--[[
 					local bomb = player:FireBomb(intersection, Vector(0, 0), player)
 					bomb.Visible = false
@@ -1074,6 +1093,12 @@ local function CastHexanowLaser(player, position, degrees, colorType, fromOtherB
 						end
 					)
 					]]
+					local entitiesTempNoKnockback = {}
+					CallForEveryEntity(
+						function(entity)
+							entitiesTempNoKnockback[entity.Index] = Vector(entity.Velocity.X, entity.Velocity.Y)
+						end
+					)
 					Game():BombDamage(
 						intersection,
 						player.Damage,
@@ -1083,6 +1108,13 @@ local function CastHexanowLaser(player, position, degrees, colorType, fromOtherB
 						player.TearFlags | TearFlags.TEAR_ICE,
 						DamageFlag.DAMAGE_LASER,
 						false
+					)
+					CallForEveryEntity(
+						function(entity)
+							if entitiesTempNoKnockback[entity.Index] ~= nil then
+								entity.Velocity = entitiesTempNoKnockback[entity.Index]
+							end
+						end
 					)
 					--[[
 					Game():BombTearflagEffects(
@@ -2086,6 +2118,7 @@ function HexanowMod.Main:PostNewRoom()
 				end
 			end
 		)
+		SFXManager():Play(SoundEffect.SOUND_HELL_PORTAL1, 1, 0, false, 1 )
 		queuedNextRoomGrid = nil
 	end
 	TaintedHexanowRoomOverride()
@@ -2194,8 +2227,16 @@ function HexanowMod.Main:PreSpawnCleanAward(Rng, SpawnPos)
 end
 HexanowMod:AddCallback(ModCallbacks.MC_PRE_SPAWN_CLEAN_AWARD, HexanowMod.Main.PreSpawnCleanAward)
 
--- 在玩家受伤时运行
-function HexanowMod.Main:EntityTakeDmg(TookDamage, DamageAmount, DamageFlag, DamageSource, DamageCountdownFrames)
+-- 在生物受伤时运行
+function HexanowMod.Main:EntityTakeDmg(TookDamage, DamageAmount, DamageFlags, DamageSource, DamageCountdownFrames)
+	--[[
+	if DamageFlags & DamageFlag.DAMAGE_LASER ~= 0 and DamageFlags & DamageFlag.DAMAGE_EXPLOSION ~= 0 then
+		print("LASERBOMB!")
+		TookDamage:TakeDamage(DamageAmount, DamageFlags ~ DamageFlag.DAMAGE_EXPLOSION, DamageSource, DamageCountdownFrames)
+		return false
+	end
+	]]
+	--[[
 	if TookDamage.Type == EntityType.ENTITY_PLAYER then
 		local player = TookDamage:ToPlayer()
 		local room = Game():GetRoom()
@@ -2209,7 +2250,20 @@ function HexanowMod.Main:EntityTakeDmg(TookDamage, DamageAmount, DamageFlag, Dam
 			if room:GetAliveEnemiesCount() <= 0 and room:IsClear() then
 				ApplyEternalHearts(player)
 			end
-			]]
+			] ]
+		end
+	end
+	]]
+	local player = TookDamage:ToPlayer()
+	if player ~= nil and IsHexanow(player) then
+		local room = Game():GetRoom()
+		if (DamageFlags & DamageFlag.DAMAGE_SPIKES ~= 0 and room:GetType() ~= RoomType.ROOM_SACRIFICE and room:GetType() ~= RoomType.ROOM_DEVIL)
+		--or (DamageSource.Entity ~= nil and DamageSource.Entity.Parent ~= nil and player == DamageSource.Entity.Parent:ToPlayer())
+		or DamageFlags & DamageFlag.DAMAGE_CURSED_DOOR ~= 0
+		or DamageFlags & DamageFlag.DAMAGE_POOP ~= 0
+		or DamageFlags & DamageFlag.DAMAGE_CHEST ~= 0
+		then
+			return false
 		end
 	end
 end

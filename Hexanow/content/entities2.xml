@@ -23,7 +23,10 @@
     <entity anm2path="hexanow_portal_creation.anm2" baseHP="0" boss="0" champion="0" collisionDamage="0" collisionMass="0" collisionRadius="0" friction="1" id="1000" name="Hexanow Portal Creation" numGridCollisionPoints="1" shadowSize="0" stageHP="0" variant="144320">
         <gibs amount="0" blood="0" bone="0" eye="0" gut="0" large="0"/>
     </entity>
-    <entity anm2path="hexanow_portal_wisps.anm2" baseHP="0" boss="0" champion="0" collisionDamage="0" collisionMass="8" collisionRadius="14" friction="1" id="1000" name="Hexanow Portal Effect" numGridCollisionPoints="0" shadowSize="0" stageHP="0" variant="142858">
+    <entity anm2path="hexanow_portal_wisps.anm2" baseHP="0" boss="0" champion="0" collisionDamage="0" collisionMass="8" collisionRadius="14" friction="1" id="1000" name="Hexanow Portal Wisp" numGridCollisionPoints="0" shadowSize="0" stageHP="0" variant="142858">
+        <gibs amount="0" blood="0" bone="0" eye="0" gut="0" large="0"/>
+    </entity>
+    <entity anm2path="hexanow_beam_endpoint.anm2" baseHP="0" boss="0" champion="0" collisionDamage="0" collisionMass="0" collisionRadius="0" friction="1" id="1000" name="Hexanow Portal Endpoint" numGridCollisionPoints="0" shadowSize="0" stageHP="0" variant="142859">
         <gibs amount="0" blood="0" bone="0" eye="0" gut="0" large="0"/>
     </entity>
 	

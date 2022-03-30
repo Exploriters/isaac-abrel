@@ -394,19 +394,24 @@ local function IsLairubButtonPressed(player, name)
 	elseif player:IsDead() then
 		return false
 	elseif name == "hide_ui" then
-		return Input.IsButtonPressed(Keyboard.KEY_TAB, player.ControllerIndex)
+		--return Input.IsButtonPressed(Keyboard.KEY_TAB, player.ControllerIndex)
+		return Input.IsActionPressed(ButtonAction.ACTION_MAP, player.ControllerIndex)
 	elseif name == "step_dialogue" then
 		return Input.IsButtonPressed(Keyboard.KEY_Z, player.ControllerIndex)
 	elseif name == "help" then
 		return Input.IsButtonPressed(Keyboard.KEY_H, player.ControllerIndex)
 	elseif name == "up" then
-		return Input.IsButtonPressed(Keyboard.KEY_UP, player.ControllerIndex)
+		--return Input.IsButtonPressed(Keyboard.KEY_UP, player.ControllerIndex)
+		return Input.IsActionPressed(ButtonAction.ACTION_SHOOTUP, player.ControllerIndex)
 	elseif name == "down" then
-		return Input.IsButtonPressed(Keyboard.KEY_DOWN, player.ControllerIndex)
+		--return Input.IsButtonPressed(Keyboard.KEY_DOWN, player.ControllerIndex)
+		return Input.IsActionPressed(ButtonAction.ACTION_SHOOTDOWN, player.ControllerIndex)
 	elseif name == "left" then
-		return Input.IsButtonPressed(Keyboard.KEY_LEFT, player.ControllerIndex)
+		--return Input.IsButtonPressed(Keyboard.KEY_LEFT, player.ControllerIndex)
+		return Input.IsActionPressed(ButtonAction.ACTION_SHOOTLEFT, player.ControllerIndex)
 	elseif name == "right" then
-		return Input.IsButtonPressed(Keyboard.KEY_RIGHT, player.ControllerIndex)
+		--return Input.IsButtonPressed(Keyboard.KEY_RIGHT, player.ControllerIndex)
+		return Input.IsActionPressed(ButtonAction.ACTION_SHOOTRIGHT, player.ControllerIndex)
 	elseif name == "swap_form" and CanEnableAbility(player, "swap_form") then
 		return Input.IsButtonPressed(Keyboard.KEY_LEFT_SHIFT, player.ControllerIndex)
 	elseif name == "soul_cross" and CanEnableAbility(player, "soul_cross") then
