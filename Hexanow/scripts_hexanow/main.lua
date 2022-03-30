@@ -56,7 +56,7 @@ end)
 
 --local hexanowItem = Isaac.GetItemIdByName( "Hexanow's Soul" )
 local redMap = Isaac.GetItemIdByName("Red Map")
-local hexanowPortalTool = Isaac.GetItemIdByName("Eternal Portal")
+--local hexanowPortalTool = Isaac.GetItemIdByName("Eternal Portal")
 local hexanowStatTriggerItem = Isaac.GetItemIdByName( "Hexanow overall stat trigger" )
 local hexanowHairCostume = Isaac.GetCostumeIdByPath("gfx/characters/HexanowHair.anm2")
 local hexanowBodyCostume = Isaac.GetCostumeIdByPath("gfx/characters/HexanowBody.anm2")
@@ -215,7 +215,8 @@ local function HexanowPlayerData()
 	cted.InRoomCreatedPortals[2] = nil
 	cted.onceHoldingItem = false
 	cted.lastCanFly = nil
-	cted.WhiteItemSelectPressed = 0
+	cted.WhiteItemSelectPressed = -1
+	cted.WhiteItemSelectTriggered = true
 
 	cted:GenSpriteCaches()
 	return cted
@@ -539,7 +540,7 @@ local function HexanowWhiteCollectiblePredicate(ID, ignoreEnsured)
 		or	ID == CollectibleType.COLLECTIBLE_KNIFE_PIECE_2
 		or	ID == CollectibleType.COLLECTIBLE_DADS_NOTE
 		or	ID == CollectibleType.COLLECTIBLE_DOGMA
-		or	ID == hexanowPortalTool
+		--or	ID == hexanowPortalTool
 		--or	ID == CollectibleType.COLLECTIBLE_RED_KEY
 		--[[
 		or (not ignoreEnsured == true and (
@@ -719,6 +720,10 @@ local function FreezeGridEntity(pos)
 					rock:SetType(GridEntityType.GRID_ROCK)
 					rock:Destroy(true)
 				end
+			end
+			local TNT = gridEntity:ToTNT()
+			if TNT ~= nil then
+				TNT:Hurt(1000)
 			end
 		end
 	end
@@ -1124,7 +1129,6 @@ local function CastHexanowLaser(player, position, degrees, colorType, fromOtherB
 				local intersection = ComputeIntersection(position, endpoint, newPosition, newEndpoint)
 				if (degrees - newDegrees) % 180 ~= 0 and intersection ~= nil then
 					SFXManager():Play(SoundEffect.SOUND_FREEZE_SHATTER, 1, 0, false, 1 )
-					FreezeGridEntity(intersection)
 					--[[
 					local bomb = player:FireBomb(intersection, Vector(0, 0), player)
 					bomb.Visible = false
@@ -1206,6 +1210,7 @@ local function CastHexanowLaser(player, position, degrees, colorType, fromOtherB
 							end
 						end
 					)
+					FreezeGridEntity(intersection)
 				end
 			end
 		end
@@ -1493,6 +1498,7 @@ local function TickEventHexanow(player)
 				HexanowPlayerDatas[playerID].WhiteItemSelectPressed = 0
 			end
 			if HexanowPlayerDatas[playerID].WhiteItemSelectPressed == 0 then
+				HexanowPlayerDatas[playerID].WhiteItemSelectTriggered = true
 				local slot = HexanowPlayerDatas[playerID].SelectedWhiteItem
 
 				if slot == 1
@@ -1506,9 +1512,22 @@ local function TickEventHexanow(player)
 
 				HexanowPlayerDatas[playerID].SelectedWhiteItem = slot
 			end
+			if HexanowPlayerDatas[playerID].WhiteItemSelectPressed == -1 then
+				HexanowPlayerDatas[playerID].WhiteItemSelectTriggered = false
+				HexanowPlayerDatas[playerID].WhiteItemSelectPressed = 0
+			end
 			HexanowPlayerDatas[playerID].WhiteItemSelectPressed = HexanowPlayerDatas[playerID].WhiteItemSelectPressed + 1
 		else
-			HexanowPlayerDatas[playerID].WhiteItemSelectPressed = 0
+			if HexanowPlayerDatas[playerID].WhiteItemSelectTriggered == false then
+				if HexanowPlayerDatas[playerID].portalToolColor == 1 then
+					HexanowPlayerDatas[playerID].portalToolColor = 2
+				else
+					HexanowPlayerDatas[playerID].portalToolColor = 1
+				end
+				HexanowPlayerDatas[playerID].WhiteItemSelectPressed = 0
+			end
+			HexanowPlayerDatas[playerID].WhiteItemSelectTriggered = true
+			HexanowPlayerDatas[playerID].WhiteItemSelectPressed = -1
 		end
 
 		--local tracedItems = player:GetCollectibleCount()
@@ -1713,7 +1732,7 @@ local function InitPlayerHexanow(player)
 			player:AddHearts(13)
 			player:AddTrinket(TrinketType.TRINKET_PERFECTION | 32768)
 		else
-			player:AddTrinket(TrinketType.TRINKET_NO | 32768)
+			--player:AddTrinket(TrinketType.TRINKET_NO | 32768)
 		end
 		-- player:AddCard(Card.CARD_SUN)
 		-- player:AddTrinket(TrinketType.TRINKET_BIBLE_TRACT)
@@ -1731,11 +1750,13 @@ local function InitPlayerHexanow(player)
 			itemPool:IdentifyPill(i)
 		end
 
+		--[[
 		if player:GetActiveItem(ActiveSlot.SLOT_POCKET) ~= hexanowPortalTool -- CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR
 		then
 			--player:SetPocketActiveItem(CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR, ActiveSlot.SLOT_POCKET, false)
 			player:SetPocketActiveItem(hexanowPortalTool, ActiveSlot.SLOT_POCKET, false)
 		end
+		]]
 
 		TickEventHexanow(player)
 		UpdateCostumes(player)
@@ -2128,6 +2149,7 @@ function HexanowMod.Main:PostGameStarted(loadedFromSaves)
 end
 HexanowMod:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, HexanowMod.Main.PostGameStarted)
 
+--[[
 -- 使用传送门工具的效果
 function HexanowMod.Main:UsePortalTool(itemId, itemRng, player, useFlags, activeSlot, customVarData)
 	local result = {
@@ -2146,6 +2168,7 @@ function HexanowMod.Main:UsePortalTool(itemId, itemRng, player, useFlags, active
 	return result
 end
 HexanowMod:AddCallback(ModCallbacks.MC_USE_ITEM, HexanowMod.Main.UsePortalTool, hexanowPortalTool)
+]]
 
 -- 在玩家进入新楼层后运行
 function HexanowMod.Main:PostNewLevel()
