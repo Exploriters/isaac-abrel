@@ -291,7 +291,6 @@ function HexanowMod.Main.ApplyVar(objective)
 end
 
 function HexanowMod.Main.RecieveVar(objective)
-	objective:Write("Flags", HexanowFlags:ToString())
 	objective:Write("EternalCharges", tostring(EternalCharges))
 	for playerID=1,4 do
 		objective:Write("Player"..playerID.."-SelectedWhiteItem", tostring(HexanowPlayerDatas[playerID].SelectedWhiteItem))
@@ -699,6 +698,32 @@ local function PickupWhiteHexanowCollectible(player, ID, slot)
 	SetWhiteHexanowCollectible(player, ID, slot)
 end
 
+local function FreezeGridEntity(pos)
+	local room = Game():GetRoom()
+	local gridIndex
+	if type(pos) == "number" then
+		gridIndex = pos
+	else
+		gridIndex = room:GetGridIndex(pos)
+	end
+	if gridIndex > -1 then
+		local gridEntity = room:GetGridEntity(gridIndex)
+		if gridEntity ~= nil then
+			local pit = gridEntity:ToPit()
+			if pit ~= nil then
+				pit:MakeBridge(nil)
+			end
+			local rock = gridEntity:ToRock()
+			if rock ~= nil then
+				if not rock:Destroy(true) then
+					rock:SetType(GridEntityType.GRID_ROCK)
+					rock:Destroy(true)
+				end
+			end
+		end
+	end
+end
+
 local function fromDirectionString(str)
 	if str == "left" then
 		return Direction.LEFT
@@ -750,10 +775,12 @@ local function TeleportToPortalLocation(entity, portalOwnerPlayerID, portalColor
 				local outFacingDeg = ((direction) * 90) % 360
 				local dir = Vector.FromAngle(outFacingDeg)
 				local rot = (outFacingDeg - originalDegree - 180) % 360
-				entity.Position = pos + (dir * 40)
+				local targetPos = pos + (dir * 40)
+				entity.Position = targetPos
 				entity.Velocity = entity.Velocity:Rotated(rot)
 				local player = entity:ToPlayer()
 				if player ~= nil then
+					FreezeGridEntity(targetPos)
 					SFXManager():Play(SoundEffect.SOUND_HELL_PORTAL1, 1, 0, false, 1 )
 					SFXManager():Play(SoundEffect.SOUND_HELL_PORTAL2, 1, 0, false, 1 )
 				end
@@ -925,7 +952,7 @@ function HexanowMod.Main:PortalDoorRender(entity)
 	if overlay == nil then
 		overlay = Sprite()
 		overlay:Load(sprite:GetFilename(), true)
-		overlay.Color = GetHexanowPortalColor(Game():GetPlayer(math.ceil(entity.SubType/2)), (entity.SubType+1)%2+1)
+		overlay.Color = GetHexanowPortalColor(Game():GetPlayer(math.ceil(entity.SubType/2) - 1), (entity.SubType+1)%2+1)
 		portalOverlaySprites[entity.SubType] = overlay
 	end
 	overlay.Rotation = sprite.Rotation
@@ -934,7 +961,7 @@ function HexanowMod.Main:PortalDoorRender(entity)
 end
 HexanowMod:AddCallback(ModCallbacks.MC_POST_EFFECT_RENDER, HexanowMod.Main.PortalDoorRender, entityVariantHexanowPortalDoor)
 
-function PortalLaserInterval(laser)
+local function PortalLaserInterval(laser)
 	if true then
 		laser.CollisionDamage = 0
 		laser.TearFlags = TearFlags.TEAR_NORMAL
@@ -1056,9 +1083,16 @@ end
 
 local function CastHexanowLaser(player, position, degrees, colorType, fromOtherBeam)
 	local offset = Vector(0, 0)
+	local entitiesTempNoLaserKnockback = {}
 	if not fromOtherBeam then
 		--offset = Vector(0, -26)
+		CallForEveryEntity(
+			function(entity)
+				entitiesTempNoLaserKnockback[entity.Index] = Vector(entity.Velocity.X, entity.Velocity.Y)
+			end
+		)
 	end
+	local room = Game():GetRoom()
 	local laser = EntityLaser.ShootAngle(entityVariantHexanowLaser, position, degrees, 0, offset, player)
 	local sprite = laser:GetSprite()
 	local color = GetHexanowPortalColor(player, colorType)
@@ -1073,8 +1107,15 @@ local function CastHexanowLaser(player, position, degrees, colorType, fromOtherB
 	PortalLaserInterval(laser)
 	if not fromOtherBeam then
 		SFXManager():Play(SoundEffect.SOUND_FREEZE, 1, 0, false, 1 )
+		CallForEveryEntity(
+			function(entity)
+				if entitiesTempNoLaserKnockback[entity.Index] ~= nil then
+					entity.Velocity = entitiesTempNoLaserKnockback[entity.Index]
+				end
+			end
+		)
 		local endpoint = EntityLaser.CalculateEndPoint(position + offset, Vector.FromAngle(degrees), Vector(0,0), player, 20)
-		local settedPortal = SetPortal(player, colorType, Game():GetRoom(), Game():GetLevel():GetCurrentRoomDesc(), endpoint)
+		local settedPortal = SetPortal(player, colorType, room, Game():GetLevel():GetCurrentRoomDesc(), endpoint)
 		if settedPortal then
 			local newPosition, newDegrees = HexanowLaserOverPortalLocation(player, degrees, colorType)
 			if newPosition ~= nil and newDegrees ~= nil then
@@ -1083,14 +1124,13 @@ local function CastHexanowLaser(player, position, degrees, colorType, fromOtherB
 				local intersection = ComputeIntersection(position, endpoint, newPosition, newEndpoint)
 				if (degrees - newDegrees) % 180 ~= 0 and intersection ~= nil then
 					SFXManager():Play(SoundEffect.SOUND_FREEZE_SHATTER, 1, 0, false, 1 )
+					FreezeGridEntity(intersection)
 					--[[
 					local bomb = player:FireBomb(intersection, Vector(0, 0), player)
 					bomb.Visible = false
 					bomb:AddTearFlags(TearFlags.TEAR_ICE)
 					bomb.ExplosionDamage = 0
 					bomb:SetExplosionCountdown(0)
-					]]
-					--[[
 					local entitiesTempNoKnockback = {}
 					CallForEveryEntity(
 						function(entity)
@@ -1111,8 +1151,6 @@ local function CastHexanowLaser(player, position, degrees, colorType, fromOtherB
 						false,
 						DamageFlag.DAMAGE_LASER
 					)
-					]]
-					--[[
 					CallForEveryEntity(
 						function(entity)
 							if entitiesTempNoKnockback[entity.Index] then
@@ -1120,11 +1158,18 @@ local function CastHexanowLaser(player, position, degrees, colorType, fromOtherB
 							end
 						end
 					)
+					Game():BombTearflagEffects(
+						intersection,
+						40,
+						player.TearFlags | TearFlags.TEAR_ICE,
+						player,
+						1
+					)
 					]]
-					local entitiesTempNoKnockback = {}
+					local entitiesTempNoBombKnockback = {}
 					CallForEveryEntity(
 						function(entity)
-							entitiesTempNoKnockback[entity.Index] = Vector(entity.Velocity.X, entity.Velocity.Y)
+							entitiesTempNoBombKnockback[entity.Index] = Vector(entity.Velocity.X, entity.Velocity.Y)
 						end
 					)
 					Game():BombDamage(
@@ -1139,20 +1184,28 @@ local function CastHexanowLaser(player, position, degrees, colorType, fromOtherB
 					)
 					CallForEveryEntity(
 						function(entity)
-							if entitiesTempNoKnockback[entity.Index] ~= nil then
-								entity.Velocity = entitiesTempNoKnockback[entity.Index]
+							if entitiesTempNoBombKnockback[entity.Index] ~= nil then
+								local v1 = entitiesTempNoBombKnockback[entity.Index]
+								local v2 = entity.Velocity
+								if v1.X ~= v2.X or v1.Y ~= v2.Y then
+									entity.Velocity = v1
+									local pickup = entity:ToPickup()
+									if pickup ~= nil
+									and entity.Type == EntityType.ENTITY_PICKUP
+									and entity.Variant == PickupVariant.PICKUP_BOMBCHEST
+									then
+										pickup:TryOpenChest(player)
+									end
+									local NPC = entity:ToNPC()
+									if NPC ~= nil
+									and NPC.Type == EntityType.ENTITY_FIREPLACE
+									then
+										NPC:TakeDamage(player.Damage, DamageFlag.DAMAGE_EXPLOSION, EntityRef(player), 0)
+									end
+								end
 							end
 						end
 					)
-					--[[
-					Game():BombTearflagEffects(
-						intersection,
-						40,
-						player.TearFlags | TearFlags.TEAR_ICE,
-						player,
-						1
-					)
-					]]
 				end
 			end
 		end
@@ -2058,10 +2111,22 @@ HexanowMod:AddCallback(ModCallbacks.MC_EXECUTE_CMD, HexanowMod.Main.ExecuteCmd);
 
 -- 在玩家被加载后运行
 function HexanowMod.Main:PostPlayerInit(player)
-	InitPlayerHexanowTainted(player)
-	InitPlayerHexanow(player)
+	if HexanowMod.gameInited then
+		InitPlayerHexanowTainted(player)
+		InitPlayerHexanow(player)
+	end
 end
 HexanowMod:AddCallback(ModCallbacks.MC_POST_PLAYER_INIT, HexanowMod.Main.PostPlayerInit)
+
+-- 在游戏被初始化后运行
+function HexanowMod.Main:PostGameStarted(loadedFromSaves)
+	if not loadedFromSaves then -- 仅限新游戏
+		HexanowMod.Main.WipeTempVar()
+		CallForEveryPlayer(InitPlayerHexanowTainted)
+		CallForEveryPlayer(InitPlayerHexanow)
+	end
+end
+HexanowMod:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, HexanowMod.Main.PostGameStarted)
 
 -- 使用传送门工具的效果
 function HexanowMod.Main:UsePortalTool(itemId, itemRng, player, useFlags, activeSlot, customVarData)
@@ -2081,16 +2146,6 @@ function HexanowMod.Main:UsePortalTool(itemId, itemRng, player, useFlags, active
 	return result
 end
 HexanowMod:AddCallback(ModCallbacks.MC_USE_ITEM, HexanowMod.Main.UsePortalTool, hexanowPortalTool)
-
--- 时间回溯
-function HexanowMod.Main:UseGlowingHourGlass(itemId, itemRng, player, useFlags, activeSlot, customVarData)
-	if itemId == CollectibleType.COLLECTIBLE_GLOWING_HOUR_GLASS
-	--and IsHexanow(player)
-	then
-		RewindLastRoomVar()
-	end
-end
-HexanowMod:AddCallback(ModCallbacks.MC_USE_ITEM, HexanowMod.Main.UseGlowingHourGlass)
 
 -- 在玩家进入新楼层后运行
 function HexanowMod.Main:PostNewLevel()
@@ -2189,18 +2244,22 @@ function HexanowMod.Main:PostNewRoom()
 		function(player)
 			UpdateCostumes(player)
 			if IsHexanow(player) then
-				player:RemoveCollectible(hexanowStatTriggerItem)
 				ApplyEternalHearts(player)
-				if not Game():GetRoom():IsClear() then
-					roomClearBounsEnabled = false
-					player:RemoveCollectible(hexanowStatTriggerItem)
-				end
+				roomClearBounsEnabled = not Game():GetRoom():IsClear()
+				player:RemoveCollectible(hexanowStatTriggerItem)
 			end
 		end
 	)
 
 	if PlayerTypeExistInGame(playerTypeHexanow) then
-		local level = Game():GetLevel()
+		--[[
+		for i = 0, DoorSlot.NUM_DOOR_SLOTS - 1 do
+			local door = room:GetDoor(i)
+			if door ~= nil and door:IsRoomType(RoomType.ROOM_PLANETARIUM) then
+				door:TryUnlock(nil, true)
+			end
+		end
+		]]
 		--[[
 		level:ApplyBlueMapEffect()
 		level:ApplyCompassEffect()
@@ -2659,7 +2718,7 @@ function HexanowMod.Main:EvaluateCache(player, cacheFlag, tear)
 				player.CanFly = false
 			end]]
 			if roomClearBounsEnabled then
-				player.CanFly = true
+				--player.CanFly = true
 			end
 			-- UpdateCostumes(player)
 		elseif cacheFlag == CacheFlag.CACHE_FAMILIARS then
@@ -2744,28 +2803,8 @@ function HexanowMod.Main:PostUpdate()
 		end
 		]]
 
-		CallForEveryEntity(
-			function(entity)
-
-				local tear = entity:ToTear()
-				if tear ~= nil and tear.Parent ~= nil then
-					if tear.Parent.Type == EntityType.ENTITY_PLAYER then
-						local player = tear.Parent:ToPlayer()
-						if IsHexanow(player)
-						then
-							if tear.Variant ~= TearVariant.ICE then
-								tear:AddTearFlags(TearFlags.TEAR_ICE)
-								tear:ChangeVariant(TearVariant.ICE)
-
-								local tearSprite = tear:GetSprite()
-								--tearSprite:ReplaceSpritesheet(0,"gfx/Hexanow_tears.png")
-								tearSprite:ReplaceSpritesheet(0,"gfx/ice_tears.png")
-								tearSprite:LoadGraphics()
-								tearSprite.Rotation = tear.Velocity:GetAngleDegrees()
-							end
-						end
-					end
-				end
+		--CallForEveryEntity(
+		--	function(entity)
 				--[[
 				if entity.Type == EntityType.ENTITY_EFFECT
 				and entity.Variant == EffectVariant.WOMB_TELEPORT
@@ -2823,8 +2862,8 @@ function HexanowMod.Main:PostUpdate()
 					entity.Visible = false
 				end
 				]]
-			end
-		)
+		--	end
+		--)
 	end
 
 	--[[
@@ -3138,10 +3177,6 @@ function HexanowMod.Main:PostUpdate()
 end
 HexanowMod:AddCallback(ModCallbacks.MC_POST_UPDATE, HexanowMod.Main.PostUpdate)
 
-function HexanowMod.Main:PostUpdate()
-end
-HexanowMod:AddCallback(ModCallbacks.MC_POST_UPDATE, HexanowMod.Main.PostUpdate)
-
 function HexanowMod.Main:PostPlayerUpdate(player)
 	TickEventHexanow(player)
 	TryCastFireHexanow(player)
@@ -3267,5 +3302,36 @@ HexanowMod:AddCallback(ModCallbacks.MC_FAMILIAR_UPDATE, HexanowMod.Main.Familiar
 ]]
 -- 更新眼泪行为，在每一帧后执行
 function HexanowMod.Main:PostTearUpdate(tear)
+	if tear ~= nil and tear.Parent ~= nil then
+		if tear.Parent.Type == EntityType.ENTITY_PLAYER then
+			local player = tear.Parent:ToPlayer()
+			if IsHexanow(player)
+			then
+				local data = tear:GetData()
+				if not data.tearInitedForHexanow then
+					data.tearInitedForHexanow = true
+					--tear:AddTearFlags(TearFlags.TEAR_ICE)
+					tear.TearFlags = player.TearFlags | TearFlags.TEAR_ICE | TearFlags.TEAR_HOMING | TearFlags.TEAR_PERSISTENT | TearFlags.TEAR_SPECTRAL | TearFlags.TEAR_ICE
+					tear:ChangeVariant(TearVariant.ICE)
+
+					local tearSprite = tear:GetSprite()
+					--tearSprite:ReplaceSpritesheet(0,"gfx/Hexanow_tears.png")
+					tearSprite:ReplaceSpritesheet(0,"gfx/ice_tears.png")
+					tearSprite:LoadGraphics()
+					tearSprite.Rotation = tear.Velocity:GetAngleDegrees()
+				end
+			end
+		end
+	end
 end
 HexanowMod:AddCallback(ModCallbacks.MC_POST_TEAR_UPDATE , HexanowMod.Main.PostTearUpdate)
+
+--[[
+-- 在游戏被初始化后运行
+function HexanowMod.Main:PostGameStarted(loadedFromSaves)
+	if loadedFromSaves then -- 仅限新游戏
+		MaintainPortal(true)
+	end
+end
+HexanowMod:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, HexanowMod.Main.PostGameStarted)
+]]

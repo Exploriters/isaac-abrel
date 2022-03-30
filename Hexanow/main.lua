@@ -36,7 +36,7 @@ require("scripts_hexanow/soul_stone")
 
 HexanowMod.Core = {}
 
-local gameInited = true
+HexanowMod.gameInited = false
 
 ------------------------------------------------------------
 ---------- 数据存档
@@ -56,9 +56,10 @@ end
 -- 抹除临时变量
 local function WipeTempVar()
 	HexanowFlags:Wipe()
-	gameInited = false
+	HexanowMod.gameInited = false
 	HexanowMod.Main.WipeTempVar()
 	HexanowMod.SoulStone.WipeTempVar()
+	UpdateLastRoomVar()
 end
 
 function HexanowObjectives:Apply()
@@ -66,7 +67,6 @@ function HexanowObjectives:Apply()
 	HexanowFlags:LoadFromString(self:Read("Flags", ""))
 	HexanowMod.Main.ApplyVar(self)
 	HexanowMod.SoulStone.ApplyVar(self)
-	UpdateLastRoomVar()
 end
 
 function HexanowObjectives:Recieve()
@@ -84,6 +84,7 @@ local function LoadHexanowModData()
 	HexanowObjectives:Wipe()
 	HexanowObjectives:LoadFromString(str)
 	HexanowObjectives:Apply()
+	UpdateLastRoomVar()
 end
 
 -- 存储mod数据
@@ -101,7 +102,7 @@ function HexanowMod.Core:PostGameStarted(loadedFromSaves)
 		WipeTempVar()
 		SaveHexanowModData()
 	end
-	gameInited = true
+	HexanowMod.gameInited = true
 end
 HexanowMod:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, HexanowMod.Core.PostGameStarted)
 
@@ -112,13 +113,13 @@ function HexanowMod.Core:PreGameExit(shouldSave)
 	end
 	SaveHexanowModData()
 	WipeTempVar()
-	gameInited = false
+	HexanowMod.gameInited = false
 end
 HexanowMod:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, HexanowMod.Core.PreGameExit)
 
 -- 在玩家进入新楼层后运行
 function HexanowMod.Core:PostNewLevel()
-	if gameInited then
+	if HexanowMod.gameInited then
 		SaveHexanowModData()
 	end
 end
@@ -126,7 +127,7 @@ HexanowMod:AddCallback(ModCallbacks.MC_POST_NEW_LEVEL, HexanowMod.Core.PostNewLe
 
 -- 在玩家进入新房间后运行
 function HexanowMod.Core:PostNewRoom()
-	if gameInited then
+	if HexanowMod.gameInited then
 		SaveHexanowModData()
 	end
 end
