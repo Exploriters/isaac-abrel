@@ -372,7 +372,7 @@ end
 
 -- 给予永恒充能
 local function ApplyEternalCharge(player)
-	if player:GetEternalHearts() <= 0 and EternalCharges > 0 then
+	if player:GetEternalHearts() <= 0 and (EternalCharges > 0 or player:GetHeartLimit() <= 0)then
 		player:AddEternalHearts(1)
 		EternalCharges = EternalCharges - 1
 	end
@@ -402,6 +402,9 @@ end
 
 -- 移除红心外的所有心
 local function RearrangeHearts(player)
+	if not IsHexanow(player) then
+		return
+	end
 	local maxHearts = player:GetMaxHearts()
 	local soulHearts = player:GetSoulHearts()
 	local blackHeartsByte = player:GetBlackHearts()
@@ -415,7 +418,7 @@ local function RearrangeHearts(player)
 	local countBroken = player:GetBrokenHearts()
 	local countGold = math.min(player:GetGoldenHearts(), math.ceil(player:GetHearts()*0.5))
 	player:AddGoldenHearts(-countGold)
-	player:AddBrokenHearts(-countBroken)
+	--player:AddBrokenHearts(-countBroken)
 	player:AddRottenHearts(-countRott*2)
 	player:AddHearts(countRott*2)
 
@@ -442,13 +445,18 @@ local function RearrangeHearts(player)
 	player:AddGoldenHearts(countGold)
 
 	if (countSoul > 0 or countBone > 0) and player:GetHearts() <=0 then
-		if player:GetMaxHearts() <=0 then
-			EternalCharges = EternalCharges - 1
-			player:AddMaxHearts(1)
-		end
-		EternalCharges = EternalCharges - 1
+		player:AddMaxHearts(math.max(0, 12 - maxHearts))
 		player:AddHearts(1)
+		EternalCharges = EternalCharges - 1
 	end
+
+	--local brokenRemove = math.max(0, math.min(EternalCharges, math.max(0, countBroken - 6)))
+	--local brokenRemove = math.max(0, math.min(math.floor((EternalCharges - 1) / 3), countBroken))
+	local brokenRemove = math.max(0, math.min(EternalCharges, countBroken % 6))
+	player:AddBrokenHearts(-brokenRemove)
+	EternalCharges = EternalCharges - brokenRemove
+	player:AddMaxHearts(math.max(0, 12 - maxHearts))
+
 
 	return nil ----------------------------------------------------------------
 -- 弃用
@@ -1214,6 +1222,14 @@ local function TickEventHexanow(player)
 		then
 			--return nil
 		end
+
+		--[[
+		if player:IsDead() and player:GetHeartLimit() > 0 then
+			player:Revive()
+			local damage = math.max(0, 1 + player:GetHearts() - player:GetRottenHearts() + player:GetSoulHearts() + player:GetEternalHearts())
+			player:TakeDamage(damage, DamageFlag.DAMAGE_INVINCIBLE, EntityRef(player), 0)
+		end
+		]]
 
 		player:FlushQueueItem()
 
@@ -2265,6 +2281,37 @@ function HexanowMod.Main:EntityTakeDmg(TookDamage, DamageAmount, DamageFlags, Da
 		then
 			return false
 		end
+		--[[
+		if DamageFlags & DamageFlag.DAMAGE_RED_HEARTS ~= 0 and DamageFlags & DamageFlag.DAMAGE_IV_BAG == 0 then
+			TookDamage:TakeDamage(DamageAmount, DamageFlags ~ DamageFlag.DAMAGE_RED_HEARTS, DamageSource, DamageCountdownFrames)
+			return false
+		end
+		]]
+		if DamageAmount >= player:GetHearts() - player:GetRottenHearts() + player:GetSoulHearts() + player:GetEternalHearts()
+		and player:GetHeartLimit() > 0
+		then
+			player:AddMaxHearts(math.max(0, 12 - player:GetMaxHearts()))
+			player:AddHearts(-player:GetHearts())
+			player:AddHearts(11)
+			if player:HasCollectible(CollectibleType.COLLECTIBLE_HEARTBREAK) then
+				player:AddBrokenHearts(3)
+				player:RemoveCollectible(CollectibleType.COLLECTIBLE_HEARTBREAK)
+				EternalCharges = EternalCharges + 4
+			end
+			player:AddBrokenHearts(6)
+			--if player:GetHeartLimit() > 0 then
+			--	player:UseCard(Card.CARD_HOLY, UseFlag.USE_NOANIM | UseFlag.USE_NOCOSTUME | UseFlag.USE_NOANNOUNCER)
+			--end
+			local flags = DamageFlags
+			if DamageFlags & DamageFlag.DAMAGE_RED_HEARTS ~= 0 then
+				flags = flags ~ DamageFlag.DAMAGE_RED_HEARTS
+			end
+			--TookDamage:TakeDamage(0, DamageFlag.DAMAGE_FAKE, nil, 0)
+			SFXManager():Play(SoundEffect.SOUND_FREEZE, 1, 0, false, 1 )
+			SFXManager():Play(SoundEffect.SOUND_FREEZE_SHATTER, 1, 0, false, 1 )
+			TookDamage:TakeDamage(0, flags, DamageSource, DamageCountdownFrames)
+			return false
+		end
 	end
 end
 HexanowMod:AddCallback(ModCallbacks.MC_ENTITY_TAKE_DMG , HexanowMod.Main.EntityTakeDmg)
@@ -2556,9 +2603,10 @@ function HexanowMod.Main:EvaluateCache(player, cacheFlag, tear)
 				player.MoveSpeed = player.MoveSpeed - 0.15
 			end
 		elseif cacheFlag == CacheFlag.CACHE_DAMAGE then
-			player.Damage = player.Damage * 3 -- (1.0 + 2.5 * player:GetMaxHearts() / 24.0 - 0.5)
-			if Game():GetRoom():GetType() == RoomType.ROOM_DUNGEON then
-				player.Damage = player.Damage * 3
+			if Game():GetRoom():GetType() ~= RoomType.ROOM_DUNGEON then
+				player.Damage = player.Damage * 3 -- (1.0 + 2.5 * player:GetMaxHearts() / 24.0 - 0.5)
+			else
+				player.Damage = player.Damage * 10
 			end
 		elseif cacheFlag == CacheFlag.CACHE_LUCK then
 			player.Luck = player.Luck - 3
