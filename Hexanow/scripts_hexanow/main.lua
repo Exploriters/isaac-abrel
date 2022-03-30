@@ -855,7 +855,7 @@ local function MaintainPortal(skipCreationAnim)
 					if not skipCreationAnim then
 						local newPortalDestroyEffect = Isaac.Spawn(EntityType.ENTITY_EFFECT, entityVariantHexanowPortalCreation, 0, portal.Position, Vector(0,0), nil)
 						newPortalDestroyEffect.SpriteRotation = portal.SpriteRotation
-						newPortalDestroyEffect.DepthOffset = portal.DepthOffset - 20
+						newPortalDestroyEffect.DepthOffset = portal.DepthOffset - 100
 					end
 					portal:Remove()
 				end
@@ -863,11 +863,11 @@ local function MaintainPortal(skipCreationAnim)
 			if isInRoom and not foundMatchedPortal then --gen missing portal
 				local newPortal = Isaac.Spawn(EntityType.ENTITY_EFFECT, entityVariantHexanowPortalDoor, portalCode, pos, Vector(0,0), nil)
 				newPortal.SpriteRotation = ((direction - 1) * 90) % 360
-				newPortal.DepthOffset = -100
+				newPortal.DepthOffset = -200
 				if not skipCreationAnim then
 					local newPortalCreateEffect = Isaac.Spawn(EntityType.ENTITY_EFFECT, entityVariantHexanowPortalCreation, 0, pos, Vector(0,0), nil)
 					newPortalCreateEffect.SpriteRotation = newPortal.SpriteRotation
-					newPortalCreateEffect.DepthOffset = newPortal.DepthOffset + 20
+					newPortalCreateEffect.DepthOffset = newPortal.DepthOffset + 100
 				end
 				--newPortal:AddEntityFlags(EntityFlag.FLAG_PERSISTENT)
 				HexanowPlayerDatas[playerID].InRoomCreatedPortals[portaltype] = newPortal
@@ -930,18 +930,33 @@ function HexanowMod.Main:PortalDoorRender(entity)
 end
 HexanowMod:AddCallback(ModCallbacks.MC_POST_EFFECT_RENDER, HexanowMod.Main.PortalDoorRender, entityVariantHexanowPortalDoor)
 
-function HexanowMod.Main:PortalLaserUpdate(laser)
+function PortalLaserInterval(laser)
 	if true then
 		laser.CollisionDamage = 0
 		laser.TearFlags = TearFlags.TEAR_NORMAL
 	end
-	if not laser:IsDead() then
-		--entityVariantHexanowLaserEndpoint
-		--local endpointeffect = Isaac.Spawn(EntityType.ENTITY_EFFECT, entityVariantHexanowPortalCreation, 0, laser.EndPoint, Vector(0,0), nil)
-		--endpointeffect.DepthOffset = laser.DepthOffset + 5
+	if laser.FrameCount >= 20 then
+		laser:Remove()
+	elseif not laser:IsDead() then
+		local endpointeffect = Isaac.Spawn(EntityType.ENTITY_EFFECT, entityVariantHexanowLaserEndpoint, 0, laser.EndPoint, Vector(0,0), nil)
+		endpointeffect.DepthOffset = 3000
+		local laserSprite = laser:GetSprite()
+		local impactSprite = endpointeffect:GetSprite()
+		impactSprite:SetFrame("Loop", laser.FrameCount % 4)
+		impactSprite.Color = Color(laserSprite.Color.R, laserSprite.Color.G, laserSprite.Color.B, 1)
+		laserSprite.Color = Color(laserSprite.Color.R, laserSprite.Color.G, laserSprite.Color.B, 1 - laser.FrameCount / 20)
 	end
 end
+
+function HexanowMod.Main:PortalLaserUpdate(laser)
+	PortalLaserInterval(laser)
+end
 HexanowMod:AddCallback(ModCallbacks.MC_POST_LASER_UPDATE, HexanowMod.Main.PortalLaserUpdate, entityVariantHexanowLaser)
+
+function HexanowMod.Main:LaserEndpointEffectUpdate(entity)
+	entity:Remove()
+end
+HexanowMod:AddCallback(ModCallbacks.MC_POST_EFFECT_UPDATE, HexanowMod.Main.LaserEndpointEffectUpdate, entityVariantHexanowLaserEndpoint)
 
 local function SetPortal(player, typeNum, room, roomDesc, pos)
 	pos.X = math.floor((pos.X + 20)/40.0)*40
@@ -1046,11 +1061,12 @@ local function CastHexanowLaser(player, position, degrees, colorType, fromOtherB
 	sprite.Color = color
 	laser.CollisionDamage = player.Damage
 	laser.DepthOffset = -10 --3000
-	laser.Shrink = true
+	laser.Shrink = false
 	laser.DisableFollowParent = true
 	laser.OneHit = true
-	laser.GridHit = true
 	laser.TearFlags = player.TearFlags | TearFlags.TEAR_ICE
+	laser:Update()
+	PortalLaserInterval(laser)
 	if not fromOtherBeam then
 		SFXManager():Play(SoundEffect.SOUND_FREEZE, 1, 0, false, 1 )
 		local endpoint = EntityLaser.CalculateEndPoint(position + offset, Vector.FromAngle(degrees), Vector(0,0), player, 20)
@@ -2630,7 +2646,7 @@ function HexanowMod.Main:EvaluateCache(player, cacheFlag, tear)
 			--player.TearFallingAcceleration = math.min(player.TearFallingAcceleration, - 0.2 / 3)
 		elseif cacheFlag == CacheFlag.CACHE_TEARFLAG then
 			--player.TearFlags = player.TearFlags | TearFlags.TEAR_HOMING | TearFlags.TEAR_PERSISTENT | TearFlags.TEAR_SPECTRAL | TearFlags.TEAR_ICE
-			player.TearFlags = player.TearFlags
+			player.TearFlags = player.TearFlags | TearFlags.TEAR_ICE
 		elseif cacheFlag == CacheFlag.CACHE_FLYING then
 			--[[if Game():GetRoom():IsClear() then
 				player.CanFly = true
@@ -2733,6 +2749,7 @@ function HexanowMod.Main:PostUpdate()
 						if IsHexanow(player)
 						then
 							if tear.Variant ~= TearVariant.ICE then
+								tear:AddTearFlags(TearFlags.TEAR_ICE)
 								tear:ChangeVariant(TearVariant.ICE)
 
 								local tearSprite = tear:GetSprite()
