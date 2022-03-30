@@ -247,33 +247,6 @@ local function HuntedDownInterval()
 	
 end
 
-local function HuntedDownRendering()
-	if LairubFlags:HasFlag("DIALOGUE_OVER_HUNTDOWN") and HuntedDownReadout ~= "none" and PlayerFindFirst(function(player) return IsLairubButtonPressed(player,"hide_ui") end) == nil then
-		-- safe: white
-		-- BOSS: pink
-		-- Vigilant: pink
-		-- DANGER: red
-		local R, G, B, A = 1, 1, 1, 1
-		if HuntedDownReadout == "BOSS" or HuntedDownReadout == "Vigilant" then
-			R, G, B, A = 1, 0.5, 0.5, 0.8
-		end
-		if HuntedDownReadout == "DANGER" then
-			R, G, B, A = 1, 0, 0, 0.8
-		end
-
-		-- use computed result from game interval function, instead of compute them in render function
-		local displayNumber
-		if HuntedDownReadoutNumber < 10 then
-			displayNumber = "0"..tostring(HuntedDownReadoutNumber)
-		else
-			displayNumber = tostring(HuntedDownReadoutNumber)
-		end
-		
-		Explorite.RenderScaledText(displayNumber, (Isaac.GetScreenWidth() - Explorite.GetTextWidth(displayNumber)*2) / 2, 60, 2, 2, R, G, B, A)
-		Explorite.RenderScaledText(HuntedDownReadout, (Isaac.GetScreenWidth() - Explorite.GetTextWidth(HuntedDownReadout)) / 2, 80, 1, 1, R, G, B, A)
-	end
-end
-
 --==== Overlay claim ====--
 
 local function MaintainOverlay(player)
@@ -335,7 +308,13 @@ LairubMod:AddCallback(ModCallbacks.MC_POST_EFFECT_UPDATE, LairubMod.Main.LairubS
 
 local function CanEnableAbility(player, ability)
 	local playerID = GetPlayerID(player)
-	if LairubAbilityDatas[ability] == nil then
+	if LairubAbilityDatas[ability] == nil or player == nil then
+		return false
+	end
+	if not IsLairub(player) then
+		return false
+	end
+	if player:IsDead() then
 		return false
 	end
 	if ability == "dialogue" then
@@ -411,6 +390,8 @@ local function IsLairubButtonPressed(player, name)
 	if player == nil then
 		return false
 	elseif not player.ControlsEnabled then
+		return false
+	elseif player:IsDead() then
 		return false
 	elseif name == "hide_ui" then
 		return Input.IsButtonPressed(Keyboard.KEY_TAB, player.ControllerIndex)
@@ -705,6 +686,11 @@ end
 
 LairubAbilityDatas.dialogue = LairubAbilityData()
 LairubAbilityDatas.dialogue.name = "dialogue"
+LairubAbilityDatas.dialogue.startingInterval = function (player)
+	if LairubDialogueManager.onGoingDialogue ~= nil then
+		ClaimAbility(player, "dialogue")
+	end
+end
 LairubAbilityDatas.dialogue.onDisable = function (player)
 	ClearLairubOverlay(player, "TalkNormal")
 	ClearLairubOverlay(player, "TalkHappy")
@@ -714,6 +700,9 @@ end
 LairubAbilityDatas.dialogue.endingInterval = function (player)
 	if MonitKeyPress(player,"step_dialogue") then
 		LairubDialogueManager.step = LairubDialogueManager.step + 1
+	end
+	if LairubDialogueManager.onGoingDialogue ~= nil then
+		ReleaseAbility(player, "dialogue")
 	end
 end
 LairubAbilityDatas.dialogue.enabledInterval = function (player)
@@ -759,7 +748,7 @@ function StartingTipRendering()
 end
 
 function DialogueRendering()
-	local player = PlayerTypeFirstOneInGame(playerType_Lairub)
+	local player = PlayerFindFirst(function(player) return IsLairub(player) and IsAbilityEnabled(player,"dialogue") end)
 	if player == nil then
 		return
 	end
@@ -874,6 +863,33 @@ function AbilitiesDisplayRendering()
 	)
 end
 
+local function HuntedDownRendering()
+	if LairubFlags:HasFlag("DIALOGUE_OVER_HUNTDOWN") and HuntedDownReadout ~= "none" and PlayerFindFirst(function(player) return IsLairubButtonPressed(player,"hide_ui") end) == nil then
+		-- safe: white
+		-- BOSS: pink
+		-- Vigilant: pink
+		-- DANGER: red
+		local R, G, B, A = 1, 1, 1, 1
+		if HuntedDownReadout == "BOSS" or HuntedDownReadout == "Vigilant" then
+			R, G, B, A = 1, 0.5, 0.5, 0.8
+		end
+		if HuntedDownReadout == "DANGER" then
+			R, G, B, A = 1, 0, 0, 0.8
+		end
+
+		-- use computed result from game interval function, instead of compute them in render function
+		local displayNumber
+		if HuntedDownReadoutNumber < 10 then
+			displayNumber = "0"..tostring(HuntedDownReadoutNumber)
+		else
+			displayNumber = tostring(HuntedDownReadoutNumber)
+		end
+		
+		Explorite.RenderScaledText(displayNumber, (Isaac.GetScreenWidth() - Explorite.GetTextWidth(displayNumber)*2) / 2, 60, 2, 2, R, G, B, A)
+		Explorite.RenderScaledText(HuntedDownReadout, (Isaac.GetScreenWidth() - Explorite.GetTextWidth(HuntedDownReadout)) / 2, 80, 1, 1, R, G, B, A)
+	end
+end
+
 function LairubMod.Main:PostRender()
 	if not Game():GetHUD():IsVisible() or not PlayerTypeExistInGame(playerType_Lairub) then
 		return nil
@@ -927,6 +943,9 @@ local function TickEventLairub(player)
 			LairubPlayerDatas[playerID].overlayFrame = LairubPlayerDatas[playerID].overlayFrame + 1
 		end
 		MaintainOverlay(player)
+		if player:IsDead() and LairubPlayerDatas[playerID].enabledAbility ~= nil then
+			ReleaseAbility(player, LairubPlayerDatas[playerID].enabledAbility)
+		end
 		--==== Changed Tears ====--	
 		--== Changed Icon==--
 		--== Function ==--
@@ -941,7 +960,7 @@ local function TickEventLairub(player)
 						if not data.tearInitedForLairub then
 							data.tearInitedForLairub = true
 							local tearSprite = tear:GetSprite()
-							if LairubPlayerDatas[playerID].form == 2 then
+							if LairubPlayerDatas[playerID].form ~= 2 then
 								if tear.Variant == TearVariant.BLUE or tear.Variant == TearVariant.BLOOD then
 									tearSprite:ReplaceSpritesheet(0,"gfx/Tears/Lairub_Tears_Normal.png")
 									tearSprite:LoadGraphics("gfx/Tears/Lairub_Tears_Normal.png")
@@ -1015,6 +1034,7 @@ local function TickEventLairub(player)
 			player:AddBlackHearts(soulHearts)
 		end
 
+		--==Abilities and dialogue==--
 		for k,dialogue in pairs(LairubDialogueDatas) do
 			if LairubDialogueManager.onGoingDialogue ~= nil then
 				break

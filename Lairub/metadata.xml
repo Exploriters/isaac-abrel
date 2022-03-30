@@ -3,9 +3,43 @@
     <name>Lairub</name>
     <directory>lairub</directory>
     <id>2779813216</id>
-    <description>Add a new character: Lairub, A sheep-shaped hell messenger who controls the soul.
-Warning: This mod is a semi-finished product, and there may be some vicious bugs or some functions that cannot be used. If you find something like this, please give us your feedback.&lt;3</description>
-    <version>1.11</version>
+    <description>[h1]Welcome to LairubMOD Workshop item page! [/h1]
+This mod add a new player character: Lairub, a goat form female from hell that capable of manipulating souls.
+Parts of this mod are currently working in progress. Upcoming content includes Tainted Lairub, items and achievements.
+[hr][/hr][h1]Stats:[/h1]
+Initially, Lairub has following stats :
+[list]
+[*][b]Hearts: [/b]3 Empty bone hearts, 1 Black heart.
+[*][b]Speed: [/b]0.7, -0.2 when take soul mode enabled
+[*][b]Tears: [/b]2.31, -0.88 when take soul mode enabled
+[*][b]Damage: [/b]3.8, +1.3 when take soul mode enabled
+[*][b]Range: [/b]6.50
+[*][b]Shot speed: [/b]1.50
+[*][b]Luck: [/b]-1.00
+[*][b]Tear flag: [/b]piercing, homing, persistent
+[/list]
+Starting with 13 gold, 1 bomb.
+Lairub can only have empty bone hearts and soul hearts. All received hearts container are converted to empty bone hearts, all soul hearts are converted to black hearts. Lairub cannot pick up red hearts.
+[h1]Activation abilities:[/h1]
+Lairub has some unique abilities that can be enabled by pressing a key:
+[list]
+[*][b]Swap form (Shift): [/b]Swap between normal form and take soul form. When take soul form is enabled, stats will change and killed enemies during this period are converted into soul, that used by release soul ability.
+[*][b]Cross (Ctrl): [/b]After enabled, press fire key will place a cross turret, and dealt damage equals to 200% player damage to enemies in 2.25 tiles radius range. The cross turret, after deployed, will find and engage enemies automatically. The cross attack effect uses player's attack effect, dealt 50% player damage per shot, and fire delay is equals to players tears delay.
+[*][b]Release soul (Alt): [/b]Hold key to keep this mode on. When enabled, Lairub will stop moving, and dealt damage to all enemies in 4.8px radius, dealt player damage and consume 1 soul for each enemies in range, 60 shots per second. If no valid enemies is found, soul will not be consumed. 
+[*][b]Teleport (X): [/b]Hold key for 6 seconds to teleport to deval room, during this progress, the player cannot move or attack.
+[/list]
+The skill set of Lairub is still WIP and can be changed in future development.
+[h1]Exclusive resources:[/h1]
+[list]
+[*][b]Soul: [/b]For every enemies killed by Lairub when she is in take soul form, one soul is gained. Souls are used by release soul ability to dealt heavy spike damage. After enter new floor, soul amount is reset to 0, so use them to fight boss!
+[/list]
+[hr][/hr][h1]Known issues:[/h1]
+[list]
+[*]Key bindings of Lairub's abilities are currently hard coded to keyboard keys, and controllers are not supported yet. We are about to make a active item to solve it.
+[/list]
+LairubMOD is currently not completely finished, glitches and malfunctions can occurred. Feel free to send feedback to us!
+Thanks all supporters and developers of LairubMOD. &lt;3</description>
+    <version>1.12</version>
     <visibility>Public</visibility>
     <tag id="Lua"/>
     <tag id="Player Characters"/>
