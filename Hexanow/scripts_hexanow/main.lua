@@ -704,10 +704,12 @@ local function FreezeGridEntity(pos)
 	local gridIndex
 	if type(pos) == "number" then
 		gridIndex = pos
+		pos = pos
 	else
 		gridIndex = room:GetGridIndex(pos)
 	end
 	if gridIndex > -1 then
+		pos = room:GetGridPosition(gridIndex)
 		local gridEntity = room:GetGridEntity(gridIndex)
 		if gridEntity ~= nil then
 			local pit = gridEntity:ToPit()
@@ -716,16 +718,37 @@ local function FreezeGridEntity(pos)
 			end
 			local rock = gridEntity:ToRock()
 			if rock ~= nil then
-				if not rock:Destroy(true) then
-					rock:SetType(GridEntityType.GRID_ROCK)
-					rock:Destroy(true)
-				end
+				gridEntity:Destroy()
+			end
+			if gridEntity:GetType() == GridEntityType.GRID_ROCKB
+			or gridEntity:GetType() == GridEntityType.GRID_LOCK
+			or gridEntity:GetType() == GridEntityType.GRID_PILLAR
+			then
+				gridEntity:SetType(GridEntityType.GRID_DECORATION)
+				gridEntity:Destroy()
 			end
 			local TNT = gridEntity:ToTNT()
 			if TNT ~= nil then
 				TNT:Hurt(1000)
 			end
 		end
+
+		CallForEveryEntity(
+			function(entity)
+				if entity.Position:Distance(pos) < 20 and
+				 ( entity.Type == EntityType.ENTITY_STONEHEAD
+				or entity.Type == EntityType.ENTITY_STONE_EYE
+				or entity.Type == EntityType.ENTITY_CONSTANT_STONE_SHOOTER
+				or entity.Type == EntityType.ENTITY_BRIMSTONE_HEAD
+				or entity.Type == EntityType.ENTITY_GAPING_MAW
+				or entity.Type == EntityType.ENTITY_BROKEN_GAPING_MAW
+				or entity.Type == EntityType.ENTITY_QUAKE_GRIMACE
+				or entity.Type == EntityType.ENTITY_BOMB_GRIMACE)
+				then
+					entity:Kill()
+				end
+			end
+		)
 	end
 end
 
