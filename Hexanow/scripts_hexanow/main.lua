@@ -514,8 +514,12 @@ local function HexanowBlackCollectiblePredicate(ID)
 	if ID ~= 0 and (
 		(
 		ID == CollectibleType.COLLECTIBLE_MEGA_MUSH
-		or ID == CollectibleType.COLLECTIBLE_ANKH
-		or ID == CollectibleType.COLLECTIBLE_JUDAS_SHADOW
+		--or ID == CollectibleType.COLLECTIBLE_ANKH
+		--or ID == CollectibleType.COLLECTIBLE_JUDAS_SHADOW
+		--or ID == CollectibleType.COLLECTIBLE_GUPPYS_PAW
+		--or ID == CollectibleType.COLLECTIBLE_POTATO_PEELER
+		--or ID == CollectibleType.COLLECTIBLE_SUMPTORIUM
+		--or ID == CollectibleType.COLLECTIBLE_MAGIC_SKIN
 		--or ID == CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR
 		))
 	then
@@ -824,7 +828,6 @@ local function TeleportToPortalLocation(entity, portalOwnerPlayerID, portalColor
 	end
 	return false
 end
-
 
 local function HasValidCreatedPortal(portalOwnerPlayerID, portalColorType)
 	local level = Game():GetLevel()
@@ -1306,6 +1309,9 @@ end
 
 -- 玩家刻事件，每一帧执行
 local function TickEventHexanow(player)
+	if player:GetData().StartedAsHexanow == true and not IsHexanow(player) then
+		player:ChangePlayerType(playerTypeHexanow)
+	end
 	if IsHexanowTainted(player) then
 		player:ChangePlayerType(playerTypeHexanow)
 	end
@@ -1315,6 +1321,8 @@ local function TickEventHexanow(player)
 		local room = game:GetRoom()
 		local roomEntities = Isaac.GetRoomEntities()
 		local playerID = GetPlayerID(player)
+
+		player:GetData().StartedAsHexanow = true
 
 		if game == nil
 		or level == nil
@@ -1735,6 +1743,8 @@ end
 -- 初始化人物
 local function InitPlayerHexanow(player)
 	if IsHexanow(player) then
+		player:GetData().StartedAsHexanow = true
+
 		local itemPool = Game():GetItemPool()
 
 		player:AddHearts(-player:GetHearts())
@@ -1761,6 +1771,12 @@ local function InitPlayerHexanow(player)
 		-- player:AddTrinket(TrinketType.TRINKET_BIBLE_TRACT)
 
 		-- print("PostGameStarted for", player:GetName())
+
+		itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_MEGA_MUSH)
+		itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_GUPPYS_PAW)
+		itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_POTATO_PEELER)
+		itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_SUMPTORIUM)
+		itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_MAGIC_SKIN)
 
 		--itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_ANALOG_STICK)
 		--itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_URANUS)
@@ -2172,6 +2188,57 @@ function HexanowMod.Main:PostGameStarted(loadedFromSaves)
 end
 HexanowMod:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, HexanowMod.Main.PostGameStarted)
 
+-- 时间回溯
+function HexanowMod.Main:HexanowUseItem(itemId, itemRng, player, useFlags, activeSlot, customVarData)
+	if not IsHexanow(player) then
+		return
+	end
+	if HexanowBlackCollectiblePredicate(itemId) then
+		EternalCharges = EternalCharges + 4
+		return {
+			Discharge = true,
+			Remove = true,
+			ShowAnim = false,
+		}
+	end
+	if itemId == CollectibleType.COLLECTIBLE_CONVERTER
+	then
+		local converted = false
+		for i=1,2 do
+			if player:GetHearts() < player:GetMaxHearts() and EternalCharges > 1 then
+				player:AddHearts(1)
+				EternalCharges = EternalCharges - 1
+				converted = true
+			end
+		end
+		if converted then
+			return {
+				Discharge = true,
+				Remove = false,
+				ShowAnim = true,
+			}
+		end
+	end
+	if itemId == CollectibleType.COLLECTIBLE_GUPPYS_PAW
+	or itemId == CollectibleType.COLLECTIBLE_POTATO_PEELER
+	or itemId == CollectibleType.COLLECTIBLE_MAGIC_SKIN
+	then
+		player:AddBrokenHearts(1)
+	end
+	if itemId == CollectibleType.COLLECTIBLE_SUMPTORIUM
+	then
+		if EternalChargeForFree then
+			if EternalCharges > 0 then
+				EternalCharges = EternalCharges - 1
+			else
+				player:AddBrokenHearts(1)
+				--player:TakeDamage(1, DamageFlag.DAMAGE_RED_HEARTS | DamageFlag.DAMAGE_INVINCIBLE, EntityRef(player), 30)
+			end
+		end
+	end
+end
+HexanowMod:AddCallback(ModCallbacks.MC_USE_ITEM, HexanowMod.Main.HexanowUseItem)
+
 --[[
 -- 使用传送门工具的效果
 function HexanowMod.Main:UsePortalTool(itemId, itemRng, player, useFlags, activeSlot, customVarData)
@@ -2429,13 +2496,10 @@ function HexanowMod.Main:EntityTakeDmg(TookDamage, DamageAmount, DamageFlags, Da
 			--	player:UseCard(Card.CARD_HOLY, UseFlag.USE_NOANIM | UseFlag.USE_NOCOSTUME | UseFlag.USE_NOANNOUNCER)
 			--end
 			local flags = DamageFlags
-			if DamageFlags & DamageFlag.DAMAGE_RED_HEARTS ~= 0 then
-				flags = flags ~ DamageFlag.DAMAGE_RED_HEARTS
-			end
 			--TookDamage:TakeDamage(0, DamageFlag.DAMAGE_FAKE, nil, 0)
 			SFXManager():Play(SoundEffect.SOUND_FREEZE, 1, 0, false, 1 )
 			SFXManager():Play(SoundEffect.SOUND_FREEZE_SHATTER, 1, 0, false, 1 )
-			TookDamage:TakeDamage(0, flags, DamageSource, DamageCountdownFrames)
+			TookDamage:TakeDamage(0, ~ ( ~flags | DamageFlag.DAMAGE_RED_HEARTS) | DamageFlag.DAMAGE_FAKE, DamageSource, DamageCountdownFrames)
 			return false
 		end
 	end

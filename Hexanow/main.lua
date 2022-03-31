@@ -135,9 +135,6 @@ HexanowMod:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, HexanowMod.Core.PostNewRoo
 
 -- 时间回溯
 function HexanowMod.Core:UseGlowingHourGlass(itemId, itemRng, player, useFlags, activeSlot, customVarData)
-	if itemId == CollectibleType.COLLECTIBLE_GLOWING_HOUR_GLASS
-	then
-		RewindLastRoomVar()
-	end
+	RewindLastRoomVar()
 end
-HexanowMod:AddCallback(ModCallbacks.MC_USE_ITEM, HexanowMod.Core.UseGlowingHourGlass)
+HexanowMod:AddCallback(ModCallbacks.MC_USE_ITEM, HexanowMod.Core.UseGlowingHourGlass, CollectibleType.COLLECTIBLE_GLOWING_HOUR_GLASS)
