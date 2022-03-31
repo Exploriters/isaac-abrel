@@ -1,4 +1,8 @@
 
+function IsKeyboardInput(controllerIndex)
+	return controllerIndex == 0
+end
+
 function Tears2TearDelay(Tears)
 	if Tears <= 0.77 then
 		return 16 - 6 * Tears

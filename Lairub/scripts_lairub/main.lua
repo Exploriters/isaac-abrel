@@ -322,6 +322,9 @@ local function CanEnableAbility(player, ability)
 	if ability == "dialogue" then
 		return true
 	end
+	if not player.ControlsEnabled then
+		return false
+	end
 	return LairubPlayerDatas[playerID].justDisabledAbility ~= ability and (LairubPlayerDatas[playerID].enabledAbility == nil or LairubPlayerDatas[playerID].enabledAbility == ability)
 end
 
@@ -359,72 +362,115 @@ end
 
 --==== Key process ====--
 local function LairubButtonName(player, name)
-	if player == nil and false then
-		return ""
-	elseif name == "hide_ui" then
-		return "TAB"
-	elseif name == "swap_form" then
-		return "LSHIFT"
-	elseif name == "soul_cross" then
-		return "LCTRL"
-	elseif name == "release_souls" then
-		return "LALT"
-	elseif name == "up" then
-		return "UP"
-	elseif name == "down" then
-		return "DOWN"
-	elseif name == "left" then
-		return "LEFT"
-	elseif name == "right" then
-		return "RIGHT"
-	elseif name == "teleport_to_devil_room" then
-		return "X"
-	elseif name == "step_dialogue" then
-		return "Z"
-	elseif name == "help" then
-		return "H"
-	else
+	if player == nil then
 		return ""
 	end
+	if IsKeyboardInput(player.ControllerIndex) then
+		if name == "hide_ui" then
+			return "TAB"
+		elseif name == "swap_form" then
+			return "LSHIFT"
+		elseif name == "soul_cross" then
+			return "LCTRL"
+		elseif name == "release_souls" then
+			return "LALT"
+		elseif name == "up" then
+			return "UP"
+		elseif name == "down" then
+			return "DOWN"
+		elseif name == "left" then
+			return "LEFT"
+		elseif name == "right" then
+			return "RIGHT"
+		elseif name == "teleport_to_devil_room" then
+			return "X"
+		elseif name == "step_dialogue" then
+			return "Z"
+		elseif name == "help" then
+			return "H"
+		end
+	else
+		if name == "hide_ui" then
+			return "BACK"
+		elseif name == "swap_form" then
+			return "RT + ↑"
+		elseif name == "soul_cross" then
+			return "RT + ←"
+		elseif name == "release_souls" then
+			return "RT + →"
+		elseif name == "up" then
+			return "Y"
+		elseif name == "down" then
+			return "A"
+		elseif name == "left" then
+			return "X"
+		elseif name == "right" then
+			return "B"
+		elseif name == "teleport_to_devil_room" then
+			return "RT + ↓"
+		elseif name == "step_dialogue" then
+			return "RT"
+		elseif name == "help" then
+			return "BACK"
+		end
+	end
+	return ""
 end
 
 local function IsLairubButtonPressed(player, name)
 	if player == nil then
 		return false
-	elseif not player.ControlsEnabled then
-		return false
-	elseif player:IsDead() then
-		return false
-	elseif name == "hide_ui" then
-		--return Input.IsButtonPressed(Keyboard.KEY_TAB, player.ControllerIndex)
-		return Input.IsActionPressed(ButtonAction.ACTION_MAP, player.ControllerIndex)
-	elseif name == "step_dialogue" then
-		return Input.IsButtonPressed(Keyboard.KEY_Z, player.ControllerIndex)
-	elseif name == "help" then
-		return Input.IsButtonPressed(Keyboard.KEY_H, player.ControllerIndex)
-	elseif name == "up" then
-		--return Input.IsButtonPressed(Keyboard.KEY_UP, player.ControllerIndex)
-		return Input.IsActionPressed(ButtonAction.ACTION_SHOOTUP, player.ControllerIndex)
-	elseif name == "down" then
-		--return Input.IsButtonPressed(Keyboard.KEY_DOWN, player.ControllerIndex)
-		return Input.IsActionPressed(ButtonAction.ACTION_SHOOTDOWN, player.ControllerIndex)
-	elseif name == "left" then
-		--return Input.IsButtonPressed(Keyboard.KEY_LEFT, player.ControllerIndex)
-		return Input.IsActionPressed(ButtonAction.ACTION_SHOOTLEFT, player.ControllerIndex)
-	elseif name == "right" then
-		--return Input.IsButtonPressed(Keyboard.KEY_RIGHT, player.ControllerIndex)
-		return Input.IsActionPressed(ButtonAction.ACTION_SHOOTRIGHT, player.ControllerIndex)
-	elseif name == "swap_form" and CanEnableAbility(player, "swap_form") then
-		return Input.IsButtonPressed(Keyboard.KEY_LEFT_SHIFT, player.ControllerIndex)
-	elseif name == "soul_cross" and CanEnableAbility(player, "soul_cross") then
-		return Input.IsButtonPressed(Keyboard.KEY_LEFT_CONTROL, player.ControllerIndex)
-	elseif name == "release_souls" and CanEnableAbility(player, "release_souls") then
-		return Input.IsButtonPressed(Keyboard.KEY_LEFT_ALT, player.ControllerIndex)
-	elseif name == "teleport_to_devil_room" and CanEnableAbility(player, "teleport_to_devil_room") then
-		return Input.IsButtonPressed(Keyboard.KEY_X, player.ControllerIndex)
-	else
-		return false
 	end
+	if IsKeyboardInput(player.ControllerIndex) then
+		if name == "hide_ui" then
+			return Input.IsActionPressed(ButtonAction.ACTION_MAP, player.ControllerIndex)
+		elseif name == "help" then
+			return Input.IsButtonPressed(Keyboard.KEY_H, player.ControllerIndex)
+		elseif name == "step_dialogue" then
+			return Input.IsButtonPressed(Keyboard.KEY_Z, player.ControllerIndex)
+		elseif name == "up" then
+			return Input.IsActionPressed(ButtonAction.ACTION_SHOOTUP, player.ControllerIndex)
+		elseif name == "down" then
+			return Input.IsActionPressed(ButtonAction.ACTION_SHOOTDOWN, player.ControllerIndex)
+		elseif name == "left" then
+			return Input.IsActionPressed(ButtonAction.ACTION_SHOOTLEFT, player.ControllerIndex)
+		elseif name == "right" then
+			return Input.IsActionPressed(ButtonAction.ACTION_SHOOTRIGHT, player.ControllerIndex)
+		elseif name == "swap_form" then
+			return CanEnableAbility(player, "swap_form") and Input.IsButtonPressed(Keyboard.KEY_LEFT_SHIFT, player.ControllerIndex)
+		elseif name == "soul_cross" then
+			return CanEnableAbility(player, "soul_cross") and Input.IsButtonPressed(Keyboard.KEY_LEFT_CONTROL, player.ControllerIndex)
+		elseif name == "release_souls" then
+			return CanEnableAbility(player, "release_souls") and Input.IsButtonPressed(Keyboard.KEY_LEFT_ALT, player.ControllerIndex)
+		elseif name == "teleport_to_devil_room" then
+			return CanEnableAbility(player, "teleport_to_devil_room") and Input.IsButtonPressed(Keyboard.KEY_X, player.ControllerIndex)
+		end
+	else
+		if name == "hide_ui" then
+			return Input.IsActionPressed(ButtonAction.ACTION_MAP, player.ControllerIndex)
+		elseif name == "help" then
+			return Input.IsActionPressed(ButtonAction.ACTION_MAP, player.ControllerIndex)
+		elseif name == "step_dialogue" then
+			return Input.IsActionPressed(ButtonAction.ACTION_DROP, player.ControllerIndex)
+		elseif name == "up" then
+			return Input.IsActionPressed(ButtonAction.ACTION_SHOOTUP, player.ControllerIndex)
+		elseif name == "down" then
+			return Input.IsActionPressed(ButtonAction.ACTION_SHOOTDOWN, player.ControllerIndex)
+		elseif name == "left" then
+			return Input.IsActionPressed(ButtonAction.ACTION_SHOOTLEFT, player.ControllerIndex)
+		elseif name == "right" then
+			return Input.IsActionPressed(ButtonAction.ACTION_SHOOTRIGHT, player.ControllerIndex)
+		elseif name == "swap_form" then
+			return CanEnableAbility(player, "swap_form") and Input.IsActionPressed(ButtonAction.ACTION_DROP, player.ControllerIndex) and Input.IsActionPressed(ButtonAction.ACTION_UP, player.ControllerIndex)
+		elseif name == "soul_cross" then
+			return CanEnableAbility(player, "soul_cross") and Input.IsActionPressed(ButtonAction.ACTION_DROP, player.ControllerIndex) and (IsAbilityEnabled(player,"soul_cross") or Input.IsActionPressed(ButtonAction.ACTION_LEFT, player.ControllerIndex))
+		elseif name == "release_souls" then
+			return CanEnableAbility(player, "release_souls") and (Input.IsActionPressed(ButtonAction.ACTION_DROP, player.ControllerIndex) or IsAbilityEnabled(player,"release_souls")) and Input.IsActionPressed(ButtonAction.ACTION_RIGHT, player.ControllerIndex)
+		elseif name == "teleport_to_devil_room" then
+			return CanEnableAbility(player, "teleport_to_devil_room") and (Input.IsActionPressed(ButtonAction.ACTION_DROP, player.ControllerIndex) or IsAbilityEnabled(player,"teleport_to_devil_room")) and Input.IsActionPressed(ButtonAction.ACTION_DOWN, player.ControllerIndex)
+		end
+	end
+	return false
 end
 
 local function UpdateMonitKey(player, name)

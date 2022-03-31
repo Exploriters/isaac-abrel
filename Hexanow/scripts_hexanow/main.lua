@@ -1539,43 +1539,84 @@ local function TickEventHexanow(player)
 
 		-- EnsureFamiliars(player)
 
-
-		if Input.IsActionPressed(ButtonAction.ACTION_DROP, player.ControllerIndex)
-		then
-			if HexanowPlayerDatas[playerID].WhiteItemSelectPressed >= 20 then
-				HexanowPlayerDatas[playerID].WhiteItemSelectPressed = 0
-			end
-			if HexanowPlayerDatas[playerID].WhiteItemSelectPressed == 0 then
+		if IsKeyboardInput(player.ControllerIndex) then
+			if Input.IsButtonPressed(Keyboard.KEY_LEFT_SHIFT, player.ControllerIndex)
+			then
+				if HexanowPlayerDatas[playerID].WhiteItemSelectTriggered then
+					HexanowPlayerDatas[playerID].WhiteItemSelectTriggered = false
+					if HexanowPlayerDatas[playerID].WhiteItemSelectTriggered == false then
+						if HexanowPlayerDatas[playerID].portalToolColor == 1 then
+							HexanowPlayerDatas[playerID].portalToolColor = 2
+						else
+							HexanowPlayerDatas[playerID].portalToolColor = 1
+						end
+					end
+				end
+			else
 				HexanowPlayerDatas[playerID].WhiteItemSelectTriggered = true
-				local slot = HexanowPlayerDatas[playerID].SelectedWhiteItem
-
-				if slot == 1
-				or slot == 2
-				or slot == 3
+			end
+			if Input.IsButtonPressed(Keyboard.KEY_LEFT_ALT, player.ControllerIndex)
+			then
+				if HexanowPlayerDatas[playerID].WhiteItemSelectPressed >= 20
+				or HexanowPlayerDatas[playerID].WhiteItemSelectPressed <= -1
 				then
-					slot = slot + 1
-				else
-					slot = 1
+					HexanowPlayerDatas[playerID].WhiteItemSelectPressed = 0
 				end
-
-				HexanowPlayerDatas[playerID].SelectedWhiteItem = slot
+				if HexanowPlayerDatas[playerID].WhiteItemSelectPressed == 0 then
+					local slot = HexanowPlayerDatas[playerID].SelectedWhiteItem
+	
+					if slot == 1
+					or slot == 2
+					or slot == 3
+					then
+						slot = slot + 1
+					else
+						slot = 1
+					end
+	
+					HexanowPlayerDatas[playerID].SelectedWhiteItem = slot
+				end
+				HexanowPlayerDatas[playerID].WhiteItemSelectPressed = 1 -- HexanowPlayerDatas[playerID].WhiteItemSelectPressed + 1
+			else
+				HexanowPlayerDatas[playerID].WhiteItemSelectPressed = -1
 			end
-			if HexanowPlayerDatas[playerID].WhiteItemSelectPressed == -1 then
-				HexanowPlayerDatas[playerID].WhiteItemSelectTriggered = false
-				HexanowPlayerDatas[playerID].WhiteItemSelectPressed = 0
-			end
-			HexanowPlayerDatas[playerID].WhiteItemSelectPressed = HexanowPlayerDatas[playerID].WhiteItemSelectPressed + 1
 		else
-			if HexanowPlayerDatas[playerID].WhiteItemSelectTriggered == false then
-				if HexanowPlayerDatas[playerID].portalToolColor == 1 then
-					HexanowPlayerDatas[playerID].portalToolColor = 2
-				else
-					HexanowPlayerDatas[playerID].portalToolColor = 1
+			if Input.IsActionPressed(ButtonAction.ACTION_DROP, player.ControllerIndex)
+			then
+				if HexanowPlayerDatas[playerID].WhiteItemSelectPressed >= 20 then
+					HexanowPlayerDatas[playerID].WhiteItemSelectPressed = 0
 				end
-				HexanowPlayerDatas[playerID].WhiteItemSelectPressed = 0
+				if HexanowPlayerDatas[playerID].WhiteItemSelectPressed == 0 then
+					HexanowPlayerDatas[playerID].WhiteItemSelectTriggered = true
+					local slot = HexanowPlayerDatas[playerID].SelectedWhiteItem
+	
+					if slot == 1
+					or slot == 2
+					or slot == 3
+					then
+						slot = slot + 1
+					else
+						slot = 1
+					end
+	
+					HexanowPlayerDatas[playerID].SelectedWhiteItem = slot
+				end
+				if HexanowPlayerDatas[playerID].WhiteItemSelectPressed <= -1 then
+					HexanowPlayerDatas[playerID].WhiteItemSelectTriggered = false
+					HexanowPlayerDatas[playerID].WhiteItemSelectPressed = 0
+				end
+				HexanowPlayerDatas[playerID].WhiteItemSelectPressed = HexanowPlayerDatas[playerID].WhiteItemSelectPressed + 1
+			else
+				if HexanowPlayerDatas[playerID].WhiteItemSelectTriggered == false then
+					if HexanowPlayerDatas[playerID].portalToolColor == 1 then
+						HexanowPlayerDatas[playerID].portalToolColor = 2
+					else
+						HexanowPlayerDatas[playerID].portalToolColor = 1
+					end
+				end
+				HexanowPlayerDatas[playerID].WhiteItemSelectTriggered = true
+				HexanowPlayerDatas[playerID].WhiteItemSelectPressed = -1
 			end
-			HexanowPlayerDatas[playerID].WhiteItemSelectTriggered = true
-			HexanowPlayerDatas[playerID].WhiteItemSelectPressed = -1
 		end
 
 		--local tracedItems = player:GetCollectibleCount()
