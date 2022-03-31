@@ -499,6 +499,21 @@ local function RearrangeHearts(player)
 
 end
 
+local function HexanowCriticalHit(player)
+	player:AddMaxHearts(math.max(0, 12 - player:GetMaxHearts()))
+	player:AddHearts(-player:GetHearts())
+	player:AddEternalHearts(-player:GetEternalHearts())
+	player:AddHearts(11)
+	player:AddEternalHearts(1)
+	if player:HasCollectible(CollectibleType.COLLECTIBLE_HEARTBREAK) then
+		player:AddBrokenHearts(3)
+		player:RemoveCollectible(CollectibleType.COLLECTIBLE_HEARTBREAK)
+		EternalCharges = EternalCharges + 4
+	end
+	player:AddBrokenHearts(6)
+	SFXManager():Play(SoundEffect.SOUND_FREEZE, 1, 0, false, 1 )
+	SFXManager():Play(SoundEffect.SOUND_FREEZE_SHATTER, 1, 0, false, 1 )
+end
 -- 物品谓词
 local function HexanowOwnedCollectibleNum(player, ID, IgnoreModifiers)
 	local num = player:GetCollectibleNum(ID, IgnoreModifiers)
@@ -2235,6 +2250,13 @@ function HexanowMod.Main:HexanowUseItem(itemId, itemRng, player, useFlags, activ
 				--player:TakeDamage(1, DamageFlag.DAMAGE_RED_HEARTS | DamageFlag.DAMAGE_INVINCIBLE, EntityRef(player), 30)
 			end
 		end
+		--[[
+		if player:GetHearts() - player:GetRottenHearts() + player:GetSoulHearts() <= 0
+		and player:GetHeartLimit() > 0
+		then
+			HexanowCriticalHit(player)
+		end
+		]]
 	end
 end
 HexanowMod:AddCallback(ModCallbacks.MC_USE_ITEM, HexanowMod.Main.HexanowUseItem)
@@ -2483,24 +2505,12 @@ function HexanowMod.Main:EntityTakeDmg(TookDamage, DamageAmount, DamageFlags, Da
 		if DamageAmount >= player:GetHearts() - player:GetRottenHearts() + player:GetSoulHearts() + player:GetEternalHearts()
 		and player:GetHeartLimit() > 0
 		then
-			player:AddMaxHearts(math.max(0, 12 - player:GetMaxHearts()))
-			player:AddHearts(-player:GetHearts())
-			player:AddEternalHearts(-player:GetEternalHearts())
-			player:AddHearts(11)
-			player:AddEternalHearts(1)
-			if player:HasCollectible(CollectibleType.COLLECTIBLE_HEARTBREAK) then
-				player:AddBrokenHearts(3)
-				player:RemoveCollectible(CollectibleType.COLLECTIBLE_HEARTBREAK)
-				EternalCharges = EternalCharges + 4
-			end
-			player:AddBrokenHearts(6)
+			HexanowCriticalHit(player)
 			--if player:GetHeartLimit() > 0 then
 			--	player:UseCard(Card.CARD_HOLY, UseFlag.USE_NOANIM | UseFlag.USE_NOCOSTUME | UseFlag.USE_NOANNOUNCER)
 			--end
 			local flags = DamageFlags
 			--TookDamage:TakeDamage(0, DamageFlag.DAMAGE_FAKE, nil, 0)
-			SFXManager():Play(SoundEffect.SOUND_FREEZE, 1, 0, false, 1 )
-			SFXManager():Play(SoundEffect.SOUND_FREEZE_SHATTER, 1, 0, false, 1 )
 			TookDamage:TakeDamage(0, ~ ( ~flags | DamageFlag.DAMAGE_RED_HEARTS) | DamageFlag.DAMAGE_FAKE, DamageSource, DamageCountdownFrames)
 			return false
 		end
