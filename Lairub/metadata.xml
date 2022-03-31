@@ -23,23 +23,20 @@ Lairub can only have empty bone hearts and soul hearts. All received hearts cont
 [h1]Activation abilities:[/h1]
 Lairub has some unique abilities that can be enabled by pressing a key:
 [list]
-[*][b]Swap form (Shift): [/b]Swap between normal form and take soul form. When take soul form is enabled, stats will change and killed enemies during this period are converted into soul, that used by release soul ability.
-[*][b]Cross (Ctrl): [/b]After enabled, press fire key will place a cross turret, and dealt damage equals to 200% player damage to enemies in 2.25 tiles radius range. The cross turret, after deployed, will find and engage enemies automatically. The cross attack effect uses player's attack effect, dealt 50% player damage per shot, and fire delay is equals to players tears delay.
-[*][b]Release soul (Alt): [/b]Hold key to keep this mode on. When enabled, Lairub will stop moving, and dealt damage to all enemies in 4.8px radius, dealt player damage and consume 1 soul for each enemies in range, 60 shots per second. If no valid enemies is found, soul will not be consumed. 
-[*][b]Teleport (X): [/b]Hold key for 6 seconds to teleport to deval room, during this progress, the player cannot move or attack.
+[*][b]Swap form (Shift/LT+UP): [/b]Swap between normal form and take soul form. When take soul form is enabled, stats will change and killed enemies during this period are converted into soul, that used by release soul ability.
+[*][b]Cross (Ctrl/LT+LEFT): [/b]After enabled, press fire key will place a cross turret, and dealt damage equals to 200% player damage to enemies in 2.25 tiles radius range. The cross turret, after deployed, will find and engage enemies automatically. The cross attack effect uses player's attack effect, dealt 50% player damage per shot, and fire delay is equals to players tears delay.
+[*][b]Release soul (Alt/LT+RIGHT): [/b]Hold key to keep this mode on. When enabled, Lairub will stop moving, and dealt damage to all enemies in 4.8px radius, dealt player damage and consume 1 soul for each enemies in range, 60 shots per second. If no valid enemies is found, soul will not be consumed. 
+[*][b]Teleport (X/LT+DOWN): [/b]Hold key for 6 seconds to teleport to deval room, during this progress, the player cannot move or attack.
 [/list]
 The skill set of Lairub is still WIP and can be changed in future development.
 [h1]Exclusive resources:[/h1]
 [list]
 [*][b]Soul: [/b]For every enemies killed by Lairub when she is in take soul form, one soul is gained. Souls are used by release soul ability to dealt heavy spike damage. After enter new floor, soul amount is reset to 0, so use them to fight boss!
 [/list]
-[hr][/hr][h1]Known issues:[/h1]
-[list]
-[*]Key bindings of Lairub's abilities are currently hard coded to keyboard keys, and controllers are not supported yet. We are about to make a active item to solve it.
-[/list]
+[hr][/hr]
 LairubMOD is currently not completely finished, glitches and malfunctions can occurred. Feel free to send feedback to us!
 Thanks all supporters and developers of LairubMOD. &lt;3</description>
-    <version>1.15</version>
+    <version>1.16</version>
     <visibility>Public</visibility>
     <tag id="Lua"/>
     <tag id="Player Characters"/>
