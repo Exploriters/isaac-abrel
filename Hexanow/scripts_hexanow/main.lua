@@ -83,11 +83,11 @@ portalColor[4] = {}
 portalColor[4][1] = Color(255 / 255, 0 / 255, 0 / 255)
 portalColor[4][2] = Color(0 / 255, 255 / 255, 0 / 255)
 
-local levelPosition = { RoomInLevelListIndex = -1, InRoomGridIndex = -1 }
-levelPosition.__index = levelPosition
+local levelPositionStruct = { RoomInLevelListIndex = -1, InRoomGridIndex = -1 }
+levelPositionStruct.__index = levelPositionStruct
 local function LevelPosition(RoomInLevelListIndex, InRoomGridIndex)
 	local cted = {}
-	setmetatable(cted, levelPosition)
+	setmetatable(cted, levelPositionStruct)
 	cted.RoomInLevelListIndex = RoomInLevelListIndex
 	cted.InRoomGridIndex = InRoomGridIndex
 	return cted
@@ -356,6 +356,7 @@ end
 
 -- 提交缓存更新请求
 local function UpdateCache(player)
+	player:RemoveCollectible(hexanowStatTriggerItem)
 	--[[
 	player:AddCacheFlags(CacheFlag.CACHE_DAMAGE)
 	player:AddCacheFlags(CacheFlag.CACHE_SPEED)
@@ -614,6 +615,7 @@ local function HexanowCollectibleMaxAllowed(player, ID)
 	return num
 end
 
+--[[
 local function IsWhiteHexanowCollectible(player, ID)
 	local playerID = GetPlayerID(player)
 
@@ -627,6 +629,7 @@ local function IsWhiteHexanowCollectible(player, ID)
 	end
 	return false
 end
+]]
 
 local function SetWhiteHexanowCollectible(player, ID, slot)
 	--print("White Collectible",slot,"Now",ID)
@@ -1375,11 +1378,11 @@ local function TickEventHexanow(player)
 		]]
 		if Game():GetRoom():IsClear() and not roomClearBounsEnabled then
 			roomClearBounsEnabled = true
-			player:RemoveCollectible(hexanowStatTriggerItem)
+			UpdateCache(player)
 		end
 
 		if roomClearBounsEnabled and not player:IsFlying() then
-			player:RemoveCollectible(hexanowStatTriggerItem)
+			UpdateCache(player)
 		end
 
 		--[[
@@ -2085,7 +2088,7 @@ function HexanowMod.Main:ExecuteCmd(cmd, params)
 		SuperPower = not SuperPower
 		CallForEveryPlayer(
 			function(player)
-				player:RemoveCollectible(hexanowStatTriggerItem)
+				UpdateCache(player)
 			end
 		)
 	end
@@ -2380,7 +2383,7 @@ function HexanowMod.Main:PostNewRoom()
 			if IsHexanow(player) then
 				ApplyEternalHearts(player)
 				roomClearBounsEnabled = not Game():GetRoom():IsClear()
-				player:RemoveCollectible(hexanowStatTriggerItem)
+				UpdateCache(player)
 			end
 		end
 	)
@@ -2517,29 +2520,31 @@ function HexanowMod.Main:EntityTakeDmg(TookDamage, DamageAmount, DamageFlags, Da
 end
 HexanowMod:AddCallback(ModCallbacks.MC_ENTITY_TAKE_DMG , HexanowMod.Main.EntityTakeDmg)
 
+--[[
 -- 在生物被移除时运行
 function HexanowMod.Main:PostEntityRemove(entity)
 	if entity.Type == 963 then
 		CallForEveryPlayer(
 			function(player)
 				--ApplyEternalHearts(player)
-				--[[
+				--[ [
 				if player:GetEternalHearts() <= 0 then
 					player:AddEternalHearts(1)
 				elseif player:GetMaxHearts() > player:GetHearts() then
 					player:AddHearts(1)
 				end
-				]]
+				] ]
 			end
 		)
 	end
 end
 HexanowMod:AddCallback(ModCallbacks.MC_POST_ENTITY_REMOVE , HexanowMod.Main.PostEntityRemove)
+]]
 
+--[[
 -- 干涉掉落物生成
 function HexanowMod.Main:PostPickupSelection(Pickup, Variant, SubType)
 	if PlayerTypeExistInGame(playerTypeHexanow) then
-		--[[
 		if Variant == PickupVariant.PICKUP_HEART and
 		(
 			SubType == HeartSubType.HEART_FULL or
@@ -2552,10 +2557,10 @@ function HexanowMod.Main:PostPickupSelection(Pickup, Variant, SubType)
 		then
 			return {Variant, HeartSubType.HEART_BLENDED}
 		end
-		]]
 	end
 end
 HexanowMod:AddCallback(ModCallbacks.MC_POST_PICKUP_SELECTION , HexanowMod.Main.PostPickupSelection)
+s]]
 
 -- 干涉诅咒选择
 function HexanowMod.Main:PostCurseEval(curses)
