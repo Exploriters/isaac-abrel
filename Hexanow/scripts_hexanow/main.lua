@@ -746,9 +746,8 @@ local function FreezeGridEntity(pos)
 				gridEntity:SetType(GridEntityType.GRID_DECORATION)
 				gridEntity:Destroy()
 			end
-			local TNT = gridEntity:ToTNT()
-			if TNT ~= nil then
-				TNT:Hurt(1000)
+			if gridEntity:ToTNT() ~= nil or gridEntity:ToPoop() then
+				gridEntity:Hurt(1000)
 			end
 		end
 
