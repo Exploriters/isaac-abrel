@@ -2485,7 +2485,9 @@ function HexanowMod.Main:EntityTakeDmg(TookDamage, DamageAmount, DamageFlags, Da
 		then
 			player:AddMaxHearts(math.max(0, 12 - player:GetMaxHearts()))
 			player:AddHearts(-player:GetHearts())
+			player:AddEternalHearts(-player:GetEternalHearts())
 			player:AddHearts(11)
+			player:AddEternalHearts(1)
 			if player:HasCollectible(CollectibleType.COLLECTIBLE_HEARTBREAK) then
 				player:AddBrokenHearts(3)
 				player:RemoveCollectible(CollectibleType.COLLECTIBLE_HEARTBREAK)
