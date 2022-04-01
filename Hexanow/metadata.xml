@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <metadata>
-    <name>Hexanow</name>
+    <name>hexanow</name>
     <directory>hexanow</directory>
     <id>2494369442</id>
     <description>This mod added a player character, Hexanow, with extremely high surviving ability but can only hold three items.
@@ -62,9 +62,8 @@ Hexanow has some unique abilities that can be enabled by pressing a key:[list]
 Hexanow is fully implemented for multiplayer and supports controller.
 With more than one Hexanow in same game, they share eternal charges, and have different beam colors and portal colors too. 
 [hr][/hr]Hexanow is currently not completely finished, glitches and malfunctions can occurred. Feel free to send feedback to us!
-Thanks to all supporters and developers of Hexanow!
-</description>
-    <version>1.2</version>
+Thanks to all supporters and developers of Hexanow!</description>
+    <version>1.3</version>
     <visibility>Public</visibility>
     <tag id="Lua"/>
     <tag id="Player Characters"/>

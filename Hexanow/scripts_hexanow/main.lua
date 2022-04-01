@@ -2427,6 +2427,7 @@ function HexanowMod.Main:PostNewRoom()
 				ApplyEternalHearts(player)
 				roomClearBounsEnabled = not Game():GetRoom():IsClear()
 				UpdateCache(player)
+				UpdateCostumes(player)
 			end
 		end
 	)

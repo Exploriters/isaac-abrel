@@ -2,7 +2,7 @@
 	<Info CreatedBy="siiftun1857" CreatedOn="" Version="1" Fps="30"/>
 	<Content>
 		<Spritesheets>
-			<Spritesheet Path="SoulOfHexanow.png" Id="0"/>
+			<Spritesheet Path="Items\Pickups\SoulOfHexanow.png" Id="0"/>
 		</Spritesheets>
 		<Layers>
 			<Layer Name="Main" Id="0" SpritesheetId="0"/>
