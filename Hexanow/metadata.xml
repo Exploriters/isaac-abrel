@@ -1,10 +1,68 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <metadata>
-	<name>hexanow</name>
-	<directory>hexanow</directory>
-	<description>Add a player character Hexanow, with extremely high surviving ability but can only hold three items.</description>
-	<version>1.0</version>
-	<visibility>Private</visibility>
-	<tag id="Lua"/>
-	<tag id="Player Characters"/>
+    <name>Hexanow</name>
+    <directory>hexanow</directory>
+    <id>2494369442</id>
+    <description>This mod added a player character, Hexanow, with extremely high surviving ability but can only hold three items.
+Despite lacks of item spaces, she is capable of launching phase-beam that create portals on hit and wipes obstacles on beam crossing.
+Reqiures [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2780875807]Explorite utilities[/url] to work.
+[hr][/hr][h1]Stats:[/h1]
+Initially, Hexanow has the following stats :[list]
+[*][b]Hearts: [/b]12 max hearts, 11 hearts, 1 eternal heart.
+[*][b]Speed: [/b]0.85, +0.3 when room is cleared
+[*][b]Tears: [/b]1.43 (-0.66 Tears down)
+[*][b]Damage: [/b]10.5 (300%)
+[*][b]Range: [/b]19.50 (300%)
+[*][b]Shot speed: [/b]0.85
+[*][b]Luck: [/b]-3.00
+[*][b]Tear flag: [/b]ice[/list]
+Starting with no coin, key or bomb.
+Hexanow can only have red hearts. Any soul hearts, bone hearts and black hearts are converted to eternal charges.
+[hr][/hr][h1]Activation abilities:[/h1]
+Hexanow has some unique abilities that can be enabled by pressing a key:[list]
+[*][b]Recolor portal (Shift/Tap LT): [/b]Change the color you want to use for attack. Both color have same damage effect.
+[*][b]Select inventory slot (Alt/Hold LT): [/b]Change the slot that store incoming item.[/list]
+[hr][/hr][h1]Exclusive mechanics:[/h1][list]
+[*]Hexanow's costume are locked and cannot be changed.
+[*]Hexanow immune to any kind of character type change effect.
+[*]Hexanow's thick hooves can help her stab on spikes or red poops without taking damage.
+[*]Hexanow cannot have her heart containers below 6, unless the space is occupied by broken hearts. Several effects that consume heart container will add broken hearts instead.[/list]
+[b]Phaser: [/b][list]
+[*]A powerful wide beam attack known as phase beam, that hits multiple enemies, and create portal when it hit a wall surface.
+[*]The beam only dealt damage once upon fire. It dealt no damage while dissipating.
+[*]Phase beam will pass through the portal and shoot out from another portal.
+[*]When two phase beam crossing, it creates an explosion, that destroy tiles and fill pits, even metal blocks and grimaces.
+[*]Try to make enemies being hit by both beams and the explosion, will triple her damage.
+[*]Since the fire of phase beam will result the portal with the same color being canceled, Hexanow can place bombs to dealt damage, if necessary.[/list]
+[b]Bindinged inventory: [/b][list]
+[*]As a pony-like creature with only hooves, Hexanow can only hold 3 items, regardless they are active or passive. Hexanow can replace them or discard picked up items to get eternal charges, 4 per deconstructed item.
+[*]Inventory is shown right to resources display. The broken 4th slot is discarding slot that destroy items, you can select it to convert items to eternal charges.
+[*]Quest items, including polaroid, negative, broken shovel, key pieces, knife pieces, dad's note and dogma are not limited.[/list]
+[b]Eternal charges: [/b][list]
+[*]Hexanow cannot have soul, black or bone hearts. Instead, Hexanow collects eternal charges.
+[*]Soul, black and bone hearts, and exceeded items, are converted into eternal charges.
+[*]As long as eternal charges are not depleted to 0, Hexanow gains eternal heart at the cost of one eternal charge, which can absorb 1 damage from each hit.
+[*]If the room is cleared, Hexanow gains eternal hearts for free.
+[*]Eternal charges can clear broken hearts, but cannot reduce it to below 6 if she has 6 or more broken hearts.[/list]
+[b]Eternal portal: [/b][list]
+[*]When phase beam hit a valid wall surface, a portal with matching color is created.
+[*]Players and their tears can pass through portals.
+[*]Players can preform long range travel between rooms with portals in different rooms.
+[*]When phase beam is fired, regardless it hit a valid portal surface or not, the previous portal is canceled.
+[*]Attempting to build a portal on the other portal of Hexanow will overlap and cancel it.
+[*]Surface that occupied by portal of other players are invalid for placing portals.
+[*]Hexanow cannot create portals in crawl space.[/list]
+[b]Fall safe: [/b][list]
+[*]Taking fatal damage result heart break which immediately heal Hexanow to 11 hearts plus an eternal heart, but also add 6 broken hearts.
+[*]If Hexanow have 12 broken hearts, she will die.[/list]
+[hr][/hr][h1]Multiplayer support:[/h1]
+Hexanow is fully implemented for multiplayer and supports controller.
+With more than one Hexanow in same game, they have different beam colors and portal colors too. 
+[hr][/hr]Hexanow is currently not completely finished, glitches and malfunctions can occurred. Feel free to send feedback to us!
+Thanks to all supporters and developers of Hexanow!
+</description>
+    <version>1.2</version>
+    <visibility>Public</visibility>
+    <tag id="Lua"/>
+    <tag id="Player Characters"/>
 </metadata>

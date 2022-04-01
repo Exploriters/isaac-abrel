@@ -405,7 +405,7 @@ end
 ]]
 
 -- 移除红心外的所有心
-local function RearrangeHearts(player)
+local function RearrangeHearts(player, extra)
 	if not IsHexanow(player) then
 		return
 	end
@@ -439,6 +439,13 @@ local function RearrangeHearts(player)
 			countBlack = countBlack + 1
 		end
 		blackHeartsByteTemp = blackHeartsByteTemp >> 1
+	end
+
+	if extra ~= nil then
+		if extra.SoulHearts == nil then extra.SoulHearts = 0 end
+		if extra.BlackHearts == nil then extra.BlackHearts = 0 end
+		countSoul = math.max(countSoul, extra.SoulHearts)
+		countBlack = math.max(countBlack, extra.BlackHearts)
 	end
 
 	local chargesocre = countSoul + countBone * 2
@@ -518,9 +525,11 @@ end
 -- 物品谓词
 local function HexanowOwnedCollectibleNum(player, ID, IgnoreModifiers)
 	local num = player:GetCollectibleNum(ID, IgnoreModifiers)
+	--[[
 	if ID ~= 0 and HexanowPlayerDatas[GetPlayerID(player)].upcomingItem == ID then
 		num = num + 1
 	end
+	]]
 	return num
 end
 
@@ -722,6 +731,9 @@ local function PickupWhiteHexanowCollectible(player, ID, slot)
 end
 
 local function FreezeGridEntity(pos)
+	if pos == nil then
+		return
+	end
 	local room = Game():GetRoom()
 	local gridIndex
 	if type(pos) == "number" then
@@ -905,8 +917,10 @@ local function MaintainPortal(skipCreationAnim)
 				isInRoom = levelPosition.RoomInLevelListIndex == roomDesc.ListIndex
 				if isInRoom then
 					inInRoomGridIndex, direction = ValidHexanowPortalWall(room:GetRoomShape(), levelPosition.InRoomGridIndex)
-					pos = room:GetGridPosition(inInRoomGridIndex)
 					direction = fromDirectionString(direction)
+					if inInRoomGridIndex ~= nil then
+						pos = room:GetGridPosition(inInRoomGridIndex)
+					end
 					if inInRoomGridIndex == nil or direction == Direction.NO_DIRECTION or pos == nil then
 						isInRoom = false
 						pos = nil
@@ -1005,7 +1019,7 @@ function HexanowMod.Main:PortalDoorRender(entity)
 	end
 	overlay.Rotation = sprite.Rotation
 	overlay:SetFrame("Glow", sprite:GetFrame())
-	overlay:Render(Game():GetRoom():WorldToScreenPosition(entity.Position), Vector(0,0), Vector(0,0))
+	overlay:Render(Isaac.WorldToScreen(entity.Position), Vector(0,0), Vector(0,0))
 end
 HexanowMod:AddCallback(ModCallbacks.MC_POST_EFFECT_RENDER, HexanowMod.Main.PortalDoorRender, entityVariantHexanowPortalDoor)
 
@@ -1357,7 +1371,7 @@ local function TickEventHexanow(player)
 		end
 		]]
 
-		player:FlushQueueItem()
+		--player:FlushQueueItem()
 
 		--[[
 		if not player:IsFlying() and Game():GetRoom():IsClear() and not player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_TRANSCENDENCE) then
@@ -1381,9 +1395,11 @@ local function TickEventHexanow(player)
 			UpdateCache(player)
 		end
 
+		--[[
 		if roomClearBounsEnabled and not player:IsFlying() then
 			UpdateCache(player)
 		end
+		]]
 
 		--[[
 		-- player:UseActiveItem(CollectibleType.COLLECTIBLE_SACRIFICIAL_ALTAR,false,true,true,false)
@@ -1636,46 +1652,38 @@ local function TickEventHexanow(player)
 
 		--if not player:IsHoldingItem() then
 		if true then
-			--[[
 			local queuedItem = player.QueuedItem.Item
 			if queuedItem ~= nil then
-				print("1!")
-				if (not HexanowPlayerDatas[playerID].onceHoldingItem) or HexanowPlayerDatas[playerID].upcomingItem ~= queuedItem.ID or HexanowPlayerDatas[playerID].upcomingType ~= queuedItem.Type then
-					print("11!")
-					HexanowPlayerDatas[playerID].onceHoldingItem = true
-					HexanowPlayerDatas[playerID].upcomingItem = queuedItem.ID
-					HexanowPlayerDatas[playerID].upcomingType = queuedItem.Type
-					if queuedItem.Type == ItemType.ITEM_PASSIVE or queuedItem.Type == ItemType.ITEM_ACTIVE then
-						print("SET!")
-						PickupWhiteHexanowCollectible(player, queuedItem.ID, HexanowPlayerDatas[playerID].SelectedWhiteItem)
-					end
-					AddEternalHearts(queuedItem.AddSoulHearts)
-					AddEternalHearts(queuedItem.AddBlackHearts)
-					for i=1,math.ceil(queuedItem.AddBlackHearts/2) do
-						player:UseActiveItem(CollectibleType.COLLECTIBLE_NECRONOMICON, UseFlag.USE_NOANIM | UseFlag.USE_NOCOSTUME | UseFlag.USE_NOANNOUNCER)
-					end
-					queuedItem.AddBlackHearts = 0
-					queuedItem.AddSoulHearts = 0
-					player:AddCoins(queuedItem.AddCoins)
-					queuedItem.AddCoins = 0
-					player:AddBombs(queuedItem.AddBombs)
-					queuedItem.AddBombs = 0
-					player:AddKeys(queuedItem.AddKeys)
-					queuedItem.AddKeys = 0
-					player:AddMaxHearts(queuedItem.AddMaxHearts)
-					queuedItem.AddMaxHearts = 0
-					player:AddHearts(queuedItem.AddHearts)
-					queuedItem.AddHearts = 0
+				if queuedItem.Type == ItemType.ITEM_PASSIVE or queuedItem.Type == ItemType.ITEM_ACTIVE then
+					--print("SET!")
+					PickupWhiteHexanowCollectible(player, queuedItem.ID, HexanowPlayerDatas[playerID].SelectedWhiteItem)
 				end
-			else
-				if HexanowPlayerDatas[playerID].onceHoldingItem then
-					HexanowPlayerDatas[playerID].onceHoldingItem = false
-					HexanowPlayerDatas[playerID].upcomingItem = nil
-					HexanowPlayerDatas[playerID].upcomingType = nil
-					UpdateCostumes(player)
+				--[[
+				EternalCharges = EternalCharges + math.max(0, queuedItem.AddSoulHearts)
+				EternalCharges = EternalCharges + math.max(0, queuedItem.AddBlackHearts)
+				for i=1,math.ceil(queuedItem.AddBlackHearts/2) do
+					player:UseActiveItem(CollectibleType.COLLECTIBLE_NECRONOMICON, UseFlag.USE_NOANIM | UseFlag.USE_NOCOSTUME | UseFlag.USE_NOANNOUNCER)
 				end
+				queuedItem.AddSoulHearts = 0
+				queuedItem.AddBlackHearts = 0
+				player:AddCoins(queuedItem.AddCoins)
+				queuedItem.AddCoins = 0
+				player:AddBombs(queuedItem.AddBombs)
+				queuedItem.AddBombs = 0
+				player:AddKeys(queuedItem.AddKeys)
+				queuedItem.AddKeys = 0
+				player:AddMaxHearts(queuedItem.AddMaxHearts)
+				queuedItem.AddMaxHearts = 0
+				player:AddHearts(queuedItem.AddHearts)
+				queuedItem.AddHearts = 0
+				]]
+				player:FlushQueueItem()
+				local countSoul = queuedItem.AddSoulHearts
+				local countBlack = queuedItem.AddBlackHearts
+				player:FlushQueueItem()
+				RearrangeHearts(player, {SoulHearts = countSoul + countBlack, BlackHearts = countBlack})
 			end
-			]]
+
 			local item1dem = 1
 			local item2dem = 1
 			local item3dem = 1
@@ -1733,13 +1741,15 @@ local function TickEventHexanow(player)
 		while removedSomething do
 			removedSomething = false
 			--for ID = CollectibleType.NUM_COLLECTIBLES - 1, 1, -1 do
-			local ID = 0
-			while true do
-				ID = ID + 1
-				local item = Isaac.GetItemConfig():GetCollectible(ID)
+			local limit = Isaac.GetItemConfig():GetCollectibles().Size -1
+			for ID=0,limit do
+				--ID = ID + 1
+				--local item = Isaac.GetItemConfig():GetCollectible(ID)
+				--[[
 				if ID >= CollectibleType.NUM_COLLECTIBLES and item == nil then
 					break
 				end
+				]]
 				local ownNum = HexanowOwnedCollectibleNum(player, ID, true)
 				local maxNum = HexanowCollectibleMaxAllowed(player, ID)
 				local exceededNum = math.max(0, ownNum - maxNum)
@@ -1800,6 +1810,9 @@ end
 
 -- 初始化人物
 local function InitPlayerHexanow(player)
+	if IsHexanowTainted(player) then
+		player:ChangePlayerType(playerTypeHexanow)
+	end
 	if IsHexanow(player) then
 		player:GetData().StartedAsHexanow = true
 
@@ -1818,7 +1831,7 @@ local function InitPlayerHexanow(player)
 		--player:AddHearts(-1)
 		--player:AddCard(Card.CARD_JUSTICE)
 		--player:AddCard(Card.CARD_CRACKED_KEY)
-		if player:GetData().InitedAsTaintedHexanow == true then
+		if HexanowFlags:HasFlag("TAINTED") then
 			player:AddMaxHearts(12)
 			player:AddHearts(13)
 			player:AddTrinket(TrinketType.TRINKET_PERFECTION | 32768)
@@ -1831,10 +1844,10 @@ local function InitPlayerHexanow(player)
 		-- print("PostGameStarted for", player:GetName())
 
 		itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_MEGA_MUSH)
-		itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_GUPPYS_PAW)
-		itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_POTATO_PEELER)
-		itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_SUMPTORIUM)
-		itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_MAGIC_SKIN)
+		--itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_GUPPYS_PAW)
+		--itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_POTATO_PEELER)
+		--itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_SUMPTORIUM)
+		--itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_MAGIC_SKIN)
 
 		--itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_ANALOG_STICK)
 		--itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_URANUS)
@@ -1868,7 +1881,33 @@ local function InitPlayerHexanowTainted(player)
 	if IsHexanowTainted(player) then
 		--print("CALLED ACCEPT!")
 		player:ChangePlayerType(playerTypeHexanow)
-		player:GetData().InitedAsTaintedHexanow = true
+		if not HexanowFlags:HasFlag("TAINTED") then
+			HexanowFlags:AddFlag("TAINTED")
+			--player:AddCard(Card.CARD_CRACKED_KEY)
+			--player:AddCollectible(CollectibleType.COLLECTIBLE_DEATH_CERTIFICATE, 0, false)
+			player:AddCoins(99)
+			player:AddBombs(99)
+			player:AddKeys(99)
+			--player:AddEternalHearts(24)
+			EternalCharges = EternalCharges + 99
+
+			--local stageType = Game():GetLevel():GetStageType()
+
+			-- stageType == StageType.STAGETYPE_GREEDMODE
+				--level:SetStage(LevelStage.STAGE7_GREED, stageType)
+				--level:SetNextStage()
+				--level:SetStage(13, stageType)
+				--level:SetNextStage()
+
+			if Game().Difficulty == Difficulty.DIFFICULTY_GREED
+			or Game().Difficulty == Difficulty.DIFFICULTY_GREEDIER
+			then
+				Isaac.ExecuteCommand("stage 6")
+			else
+				Isaac.ExecuteCommand("stage 13")
+			end
+			TaintedHexanowRoomOverride()
+		end
 	end
 end
 
@@ -1997,39 +2036,13 @@ end
 
 -- 在游戏被初始化后运行
 function HexanowMod.Main:PostGameStarted(loadedFromSaves)
-	if not loadedFromSaves then -- 仅限新游戏
-		local player = PlayerFindFirst(function(player) return player:GetData().InitedAsTaintedHexanow == true end)
-		if not HexanowFlags:HasFlag("TAINTED") and player ~= nil then
-			HexanowFlags:AddFlag("TAINTED")
-			player:GetData().InitedAsTaintedHexanow = nil
-			--player:AddCard(Card.CARD_CRACKED_KEY)
-			--player:AddCollectible(CollectibleType.COLLECTIBLE_DEATH_CERTIFICATE, 0, false)
-			player:AddCoins(99)
-			player:AddBombs(99)
-			player:AddKeys(99)
-			--player:AddEternalHearts(24)
-			EternalCharges = EternalCharges + 99
-
-			--local stageType = Game():GetLevel():GetStageType()
-
-			-- stageType == StageType.STAGETYPE_GREEDMODE
-				--level:SetStage(LevelStage.STAGE7_GREED, stageType)
-				--level:SetNextStage()
-				--level:SetStage(13, stageType)
-				--level:SetNextStage()
-
-			if Game().Difficulty == Difficulty.DIFFICULTY_GREED
-			or Game().Difficulty == Difficulty.DIFFICULTY_GREEDIER
-			then
-				Isaac.ExecuteCommand("stage 6")
-			else
-				Isaac.ExecuteCommand("stage 13")
-			end
-			TaintedHexanowRoomOverride()
-		end
+	if loadedFromSaves then
+		MaintainPortal(true)
+	else
+		CallForEveryPlayer(InitPlayerHexanowTainted)
+		CallForEveryPlayer(InitPlayerHexanow)
 	end
 end
-HexanowMod:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, HexanowMod.Main.PostGameStarted)
 
 -- 自定义命令行
 function HexanowMod.Main:ExecuteCmd(cmd, params)
@@ -2230,21 +2243,10 @@ HexanowMod:AddCallback(ModCallbacks.MC_EXECUTE_CMD, HexanowMod.Main.ExecuteCmd);
 -- 在玩家被加载后运行
 function HexanowMod.Main:PostPlayerInit(player)
 	if HexanowMod.gameInited then
-		InitPlayerHexanowTainted(player)
 		InitPlayerHexanow(player)
 	end
 end
 HexanowMod:AddCallback(ModCallbacks.MC_POST_PLAYER_INIT, HexanowMod.Main.PostPlayerInit)
-
--- 在游戏被初始化后运行
-function HexanowMod.Main:PostGameStarted(loadedFromSaves)
-	if not loadedFromSaves then -- 仅限新游戏
-		HexanowMod.Main.WipeTempVar()
-		CallForEveryPlayer(InitPlayerHexanowTainted)
-		CallForEveryPlayer(InitPlayerHexanow)
-	end
-end
-HexanowMod:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, HexanowMod.Main.PostGameStarted)
 
 -- 时间回溯
 function HexanowMod.Main:HexanowUseItem(itemId, itemRng, player, useFlags, activeSlot, customVarData)
@@ -2727,7 +2729,7 @@ function HexanowMod.Main:PrePickupCollision(pickup, collider, low)
 			end
 		end
 
-		
+		--[[
 		if pickup.SubType ~= 0
 		and player:CanPickupItem()
 		and not player:IsHoldingItem()
@@ -2741,6 +2743,7 @@ function HexanowMod.Main:PrePickupCollision(pickup, collider, low)
 			--	return nil
 			--end
 		end
+		]]
 
 
 		--[[
@@ -3345,6 +3348,9 @@ end
 HexanowMod:AddCallback(ModCallbacks.MC_POST_UPDATE, HexanowMod.Main.PostUpdate)
 
 function HexanowMod.Main:PostPlayerUpdate(player)
+	if not HexanowMod.gameInited then
+		return
+	end
 	TickEventHexanow(player)
 	TryCastFireHexanow(player)
 end
@@ -3492,13 +3498,3 @@ function HexanowMod.Main:PostTearUpdate(tear)
 	end
 end
 HexanowMod:AddCallback(ModCallbacks.MC_POST_TEAR_UPDATE , HexanowMod.Main.PostTearUpdate)
-
---[[
--- 在游戏被初始化后运行
-function HexanowMod.Main:PostGameStarted(loadedFromSaves)
-	if loadedFromSaves then -- 仅限新游戏
-		MaintainPortal(true)
-	end
-end
-HexanowMod:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, HexanowMod.Main.PostGameStarted)
-]]

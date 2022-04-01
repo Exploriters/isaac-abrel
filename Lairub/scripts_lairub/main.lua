@@ -779,7 +779,7 @@ function DebugMessageRendering()
 		if not IsLairub(player) then
 			return
 		end
-		local screenxy = Game():GetRoom():WorldToScreenPosition(player.Position)
+		local screenxy = Isaac.WorldToScreen(player.Position)
 		local x, y = screenxy.X, screenxy.Y
 		local str1 = "Enabled: "..tostring(LairubPlayerDatas[GetPlayerID(player)].enabledAbility)
 		Explorite.RenderText(str1, x - Explorite.GetTextWidth(str1)/2, y + 6, 255, 255, 255, 255)
@@ -792,7 +792,7 @@ function StartingTipRendering()
 		if player == nil then
 			return
 		end
-		local screenxy = Game():GetRoom():WorldToScreenPosition(player.Position)
+		local screenxy = Isaac.WorldToScreen(player.Position)
 		local x, y = screenxy.X, screenxy.Y
 		local str1 = LairubLang:_("starting_tip1", LairubButtonName(player, "hide_ui"))
 		local str2 = LairubLang:_("starting_tip2", LairubButtonName(player, "help"))
@@ -814,7 +814,7 @@ function DialogueRendering()
 	if step == nil then
 		return
 	end
-	local screenxy = Game():GetRoom():WorldToScreenPosition(player.Position)
+	local screenxy = Isaac.WorldToScreen(player.Position)
 	local x, y = screenxy.X, screenxy.Y
 	local lines = {}
 	local steppingStr = LairubLang:_("dialogue_stepping_hint", LairubButtonName(player, "step_dialogue"))
@@ -1147,7 +1147,7 @@ local function LairubRendering(player, pos)
 		local playerID = GetPlayerID(player)
 		local sprite = LairubPlayerDatas[playerID].overlaySprite
 		local offset = LairubPlayerDatas[playerID].overlayOffset
-		local screenxy = Game():GetRoom():WorldToScreenPosition(player.Position)
+		local screenxy = Isaac.WorldToScreen(player.Position)
 		if sprite ~= nil then
 			sprite:Render(screenxy + offset, Vector(0,0), Vector(0,0))
 			while LairubPlayerDatas[playerID].overlayFrame > 1 do

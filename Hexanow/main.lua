@@ -1,5 +1,9 @@
 HexanowMod = RegisterMod("Hexanow", 1);
 
+if not REPENTANCE then
+	return
+end
+
 if Explorite == nil then
 	function HexanowMod:checkMissingExploriteStart(loadedFromSaves)
 		local numPlayers = Game():GetNumPlayers()
@@ -100,8 +104,9 @@ function HexanowMod.Core:PostGameStarted(loadedFromSaves)
 	LoadHexanowModData()
 	if not loadedFromSaves then -- 仅限新游戏
 		WipeTempVar()
-		SaveHexanowModData()
 	end
+	HexanowMod.Main.PostGameStarted(self, loadedFromSaves)
+	SaveHexanowModData()
 	HexanowMod.gameInited = true
 end
 HexanowMod:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, HexanowMod.Core.PostGameStarted)
