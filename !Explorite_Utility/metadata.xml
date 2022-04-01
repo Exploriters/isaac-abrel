@@ -3,8 +3,8 @@
     <name>Explorite utility</name>
     <directory>!explorite_utility</directory>
     <id>2780875807</id>
-    <description>Explorite Utility is a lib that providing functions for multiple mods to use.</description>
-    <version>1.4</version>
+    <description>Explorite utility is a lib that providing methods for  mods to use.</description>
+    <version>1.5</version>
     <visibility>Public</visibility>
     <tag id="Lua"/>
 </metadata>
