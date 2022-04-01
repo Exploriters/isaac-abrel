@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <metadata>
-    <name>Explorite utility</name>
+    <name>!Explorite Utility</name>
     <directory>!explorite_utility</directory>
     <id>2780875807</id>
     <description>Explorite utility is a lib that providing methods for  mods to use.</description>
-    <version>1.5</version>
+    <version>1.6</version>
     <visibility>Public</visibility>
     <tag id="Lua"/>
 </metadata>

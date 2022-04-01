@@ -20,7 +20,7 @@ Starting with no coin, key or bomb.
 Hexanow can only have red hearts. Any soul hearts, bone hearts and black hearts are converted to eternal charges.
 [hr][/hr][h1]Activation abilities:[/h1]
 Hexanow has some unique abilities that can be enabled by pressing a key:[list]
-[*][b]Recolor portal (Shift/Tap LT): [/b]Change the color you want to use for attack. Both color have same damage effect.
+[*][b]Select portal frequency(Shift/Tap LT): [/b]Change the color you want to use for attack. Both color have same damage effect.
 [*][b]Select inventory slot (Alt/Hold LT): [/b]Change the slot that store incoming item.[/list]
 [hr][/hr][h1]Exclusive mechanics:[/h1][list]
 [*]Hexanow's costume are locked and cannot be changed.
@@ -57,7 +57,7 @@ Hexanow has some unique abilities that can be enabled by pressing a key:[list]
 [*]If Hexanow have 12 broken hearts, she will die.[/list]
 [hr][/hr][h1]Multiplayer support:[/h1]
 Hexanow is fully implemented for multiplayer and supports controller.
-With more than one Hexanow in same game, they have different beam colors and portal colors too. 
+With more than one Hexanow in same game, they share eternal charges, and have different beam colors and portal colors too. 
 [hr][/hr]Hexanow is currently not completely finished, glitches and malfunctions can occurred. Feel free to send feedback to us!
 Thanks to all supporters and developers of Hexanow!
 </description>
