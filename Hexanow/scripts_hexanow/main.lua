@@ -23,6 +23,15 @@ APIOverride.OverrideClassFunction(EntityPlayer, "GetHeartLimit", function(interv
 end)
 ]]--
 --[[
+local baseEntityPlayerHasCurseMistEffect = APIOverride.GetCurrentClassFunction(EntityPlayer, "HasCurseMistEffect")
+APIOverride.OverrideClassFunction(EntityPlayer, "HasCurseMistEffect", function(interval)
+	if IsHexanow(interval) then
+		return false
+	end
+	return baseEntityPlayerHasCurseMistEffect(interval)
+end)
+]]
+--[[
 local baseEntityPlayerHasCollectible = APIOverride.GetCurrentClassFunction(EntityPlayer, "HasCollectible")
 APIOverride.OverrideClassFunction(EntityPlayer, "HasCollectible", function(interval, Type, IgnoreModifiers)
     local result = baseEntityPlayerHasCollectible(interval, Type, IgnoreModifiers)
@@ -524,6 +533,9 @@ local function HexanowCriticalHit(player)
 end
 -- 物品谓词
 local function HexanowOwnedCollectibleNum(player, ID, IgnoreModifiers)
+	if Isaac.GetItemConfig():GetCollectible(ID) == nil then
+		return 0
+	end
 	local num = player:GetCollectibleNum(ID, IgnoreModifiers)
 	--[[
 	if ID ~= 0 and HexanowPlayerDatas[GetPlayerID(player)].upcomingItem == ID then
@@ -848,7 +860,7 @@ local function TeleportToPortalLocation(entity, portalOwnerPlayerID, portalColor
 				--entity:AddVelocity(dir * 40)
 				--entity:AddControlsCooldown(2)
 			end
-		elseif entity:ToPlayer() ~= nil then
+		elseif entity:ToPlayer() ~= nil and not entity:ToPlayer():IsCoopGhost() then
 			if location.InRoomGridIndex == nil then
 				print("NIL!!!")
 			end
@@ -1031,12 +1043,14 @@ local function PortalLaserInterval(laser)
 	if laser.FrameCount >= 20 then
 		laser:Remove()
 	elseif not laser:IsDead() then
-		local endpointeffect = Isaac.Spawn(EntityType.ENTITY_EFFECT, entityVariantHexanowLaserEndpoint, 0, laser.EndPoint, Vector(0,0), nil)
-		endpointeffect.DepthOffset = 3000
 		local laserSprite = laser:GetSprite()
-		local impactSprite = endpointeffect:GetSprite()
-		impactSprite:SetFrame("Loop", laser.FrameCount % 4)
-		impactSprite.Color = Color(laserSprite.Color.R, laserSprite.Color.G, laserSprite.Color.B, 1)
+		if laser:GetSprite():GetAnimation() == "BeamLaser" then
+			local endpointeffect = Isaac.Spawn(EntityType.ENTITY_EFFECT, entityVariantHexanowLaserEndpoint, 0, laser.EndPoint, Vector(0,0), nil)
+			endpointeffect.DepthOffset = 3000
+			local impactSprite = endpointeffect:GetSprite()
+			impactSprite:SetFrame("Loop", laser.FrameCount % 4)
+			impactSprite.Color = Color(laserSprite.Color.R, laserSprite.Color.G, laserSprite.Color.B, 1)
+		end
 		laserSprite.Color = Color(laserSprite.Color.R, laserSprite.Color.G, laserSprite.Color.B, 1 - laser.FrameCount / 20)
 	end
 end
@@ -1158,13 +1172,20 @@ local function CastHexanowLaser(player, position, degrees, colorType, fromOtherB
 	local laser = EntityLaser.ShootAngle(entityVariantHexanowLaser, position, degrees, 0, offset, player)
 	local sprite = laser:GetSprite()
 	local color = GetHexanowPortalColor(player, colorType)
+	local damage = player.Damage
+	local tearFlags = player.TearFlags | TearFlags.TEAR_ICE
+	if player:IsCoopGhost() then
+		damage = 0
+		tearFlags = TearFlags.TEAR_NORMAL
+		sprite:SetAnimation("ThinLaser", false)
+	end
 	sprite.Color = color
-	laser.CollisionDamage = player.Damage
+	laser.CollisionDamage = damage
 	laser.DepthOffset = -10 --3000
 	laser.Shrink = false
 	laser.DisableFollowParent = true
 	laser.OneHit = true
-	laser.TearFlags = player.TearFlags | TearFlags.TEAR_ICE
+	laser.TearFlags = tearFlags
 	laser:Update()
 	PortalLaserInterval(laser)
 	if not fromOtherBeam then
@@ -1203,8 +1224,8 @@ local function CastHexanowLaser(player, position, degrees, colorType, fromOtherB
 					)
 					Game():BombExplosionEffects(
 						intersection,
-						player.Damage,
-						player.TearFlags | TearFlags.TEAR_ICE,
+						damage,
+						tearFlags,
 						Color(color.R,color.G,color.B,0),
 						player,
 						1,
@@ -1222,7 +1243,7 @@ local function CastHexanowLaser(player, position, degrees, colorType, fromOtherB
 					Game():BombTearflagEffects(
 						intersection,
 						40,
-						player.TearFlags | TearFlags.TEAR_ICE,
+						tearFlags,
 						player,
 						1
 					)
@@ -1235,11 +1256,11 @@ local function CastHexanowLaser(player, position, degrees, colorType, fromOtherB
 					)
 					Game():BombDamage(
 						intersection,
-						player.Damage,
+						damage,
 						40,
 						false,
 						player,
-						player.TearFlags | TearFlags.TEAR_ICE,
+						tearFlags,
 						DamageFlag.DAMAGE_LASER,
 						false
 					)
@@ -1294,9 +1315,9 @@ local function TaintedHexanowRoomOverride()
 			if pickup ~= nil then
 				if pickup.Variant == PickupVariant.PICKUP_COLLECTIBLE and pickup.SubType ~= 0 then
 					local redKey = CollectibleType.COLLECTIBLE_RED_KEY
-					if redMap ~= nil then
-						redKey = redMap
-					end
+					--if redMap ~= nil then
+					--	redKey = redMap
+					--end
 					if not HexanowFlags:HasFlag("TEFFECT_REDKEY_GEN") and room:GetBackdropType() == 51 and pickup.SubType ~= redKey then
 						pickup:Morph(pickup.Type, pickup.Variant, redKey, true)
 						HexanowFlags:AddFlag("TEFFECT_REDKEY_GEN")
@@ -1353,6 +1374,11 @@ local function TickEventHexanow(player)
 		local roomEntities = Isaac.GetRoomEntities()
 		local playerID = GetPlayerID(player)
 
+		--[[
+		if player:HasCurseMistEffect() then
+			player:RemoveCurseMistEffect()
+		end
+		]]
 		player:GetData().StartedAsHexanow = true
 
 		if game == nil
@@ -1523,7 +1549,7 @@ local function TickEventHexanow(player)
 			updatedCostumesOvertime = false
 		end
 		]]
-		if player:IsHoldingItem()
+		if player:IsHoldingItem() or player:IsCoopGhost()
 		then
 			HexanowPlayerDatas[playerID].onceHoldingItem = true
 		elseif HexanowPlayerDatas[playerID].onceHoldingItem then
@@ -1738,13 +1764,12 @@ local function TickEventHexanow(player)
 		end
 
 		local removedSomething = true
+		local limit = Isaac.GetItemConfig():GetCollectibles().Size - 1
 		while removedSomething do
 			removedSomething = false
 			--for ID = CollectibleType.NUM_COLLECTIBLES - 1, 1, -1 do
-			local limit = Isaac.GetItemConfig():GetCollectibles().Size -1
-			for ID=0,limit do
+			for ID=1,limit do
 				--ID = ID + 1
-				--local item = Isaac.GetItemConfig():GetCollectible(ID)
 				--[[
 				if ID >= CollectibleType.NUM_COLLECTIBLES and item == nil then
 					break
@@ -1797,12 +1822,15 @@ local function TryCastFireHexanow(player)
 	if IsHexanow(player) then
 		local playerID = GetPlayerID(player)
 		local aimDirection = player:GetAimDirection()
-
+		local maxFireDelay = player.MaxFireDelay
+		if player:IsCoopGhost() then
+			maxFireDelay = 20
+		end
 		if player.FireDelay <= 0
 		and not (aimDirection.X == 0 and aimDirection.Y == 0)
 		then
-			player.HeadFrameDelay = math.floor(player.MaxFireDelay)
-			player.FireDelay = math.floor(player.MaxFireDelay)
+			player.HeadFrameDelay = math.floor(maxFireDelay)
+			player.FireDelay = math.floor(maxFireDelay)
 			CastHexanowLaser(player, player.Position, aimDirection:GetAngleDegrees(), HexanowPlayerDatas[playerID].portalToolColor)
 		end
 	end
@@ -2345,17 +2373,18 @@ function HexanowMod.Main:PostNewLevel()
 	end
 	HexanowFlags:AddFlag("TREASURE_ROOM_NOT_ENTERED")
 	HexanowFlags:RemoveFlag("MIRROR_WORLD_PORTALS_GENERATED")
-	--[[
 	CallForEveryPlayer(
 		function(player)
 			if IsHexanow(player) then
+				player:AddHearts(math.max(0, player:GetMaxHearts()))
+				--[[
 				if Game():GetLevel():GetStage() ~= 13 then
 					player:UseActiveItem(hexanowPortalTool, false, false, true, false)
 				end
+				]]
 			end
 		end
 	)
-	]]
 end
 HexanowMod:AddCallback(ModCallbacks.MC_POST_NEW_LEVEL, HexanowMod.Main.PostNewLevel)
 
@@ -2433,6 +2462,18 @@ function HexanowMod.Main:PostNewRoom()
 	)
 
 	if PlayerTypeExistInGame(playerTypeHexanow) then
+		if room:GetType() == RoomType.ROOM_ANGEL
+		and not HexanowFlags:HasFlag("ROOM_ANGEL_REWARD")
+		then
+			HexanowFlags:AddFlag("ROOM_ANGEL_REWARD")
+			local eheart = Isaac.Spawn(EntityType.ENTITY_PICKUP, PickupVariant.PICKUP_HEART, HeartSubType.HEART_ETERNAL, room:GetCenterPos(), Vector(0,0), nil)
+			--eheart:GetSprite():Play("Loop", true)
+		end
+		if room:GetType() == RoomType.ROOM_PLANETARIUM
+		and not HexanowFlags:HasFlag("ROOM_PLANETARIUM_REWARD")
+		then
+			HexanowFlags:AddFlag("ROOM_PLANETARIUM_REWARD")
+		end
 		--[[
 		for i = 0, DoorSlot.NUM_DOOR_SLOTS - 1 do
 			local door = room:GetDoor(i)
@@ -2489,6 +2530,7 @@ function HexanowMod.Main:PostNewRoom()
 		)
 		]]--
 	end
+	--CallForEveryPlayer(TickEventHexanow)
 end
 HexanowMod:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, HexanowMod.Main.PostNewRoom)
 
@@ -2533,6 +2575,7 @@ function HexanowMod.Main:EntityTakeDmg(TookDamage, DamageAmount, DamageFlags, Da
 	]]
 	local player = TookDamage:ToPlayer()
 	if player ~= nil and IsHexanow(player) then
+		--print(DamageAmount, DamageFlags, DamageCountdownFrames)
 		local room = Game():GetRoom()
 		if (DamageFlags & DamageFlag.DAMAGE_SPIKES ~= 0 and room:GetType() ~= RoomType.ROOM_SACRIFICE and room:GetType() ~= RoomType.ROOM_DEVIL)
 		--or (DamageSource.Entity ~= nil and DamageSource.Entity.Parent ~= nil and player == DamageSource.Entity.Parent:ToPlayer())
@@ -2659,9 +2702,11 @@ function HexanowMod.Main:PrePickupCollision(pickup, collider, low)
 
 		if pickup.Variant == PickupVariant.PICKUP_HEART then
 			if pickup.SubType == HeartSubType.HEART_ETERNAL
-			and player:GetMaxHearts() >= 24
-			and player:GetHearts() < player:GetMaxHearts()
-			and player:GetEternalHearts() >= 1 then
+			and (player:GetHearts() < 24 or player:GetEternalHearts() < 1)
+			--and player:GetMaxHearts() >= player:GetHeartsLimit()
+			--and player:GetHearts() < player:GetMaxHearts()
+			--and player:GetEternalHearts() >= 1
+			then
 				if pickup:IsShopItem() then
 					if player:GetNumCoins() >= pickup.Price and not player:IsHoldingItem() then
 						player:AddCoins(-pickup.Price)
@@ -2672,10 +2717,15 @@ function HexanowMod.Main:PrePickupCollision(pickup, collider, low)
 				end
 				--SFXManager():Play(SoundEffect.SOUND_SUPERHOLY, 1, 0, false, 1 )
 				pickup:GetSprite():Play("Collect", true)
-				player:AddEternalHearts(2)
+				player:AddBrokenHearts(-player:GetBrokenHearts())
+				RearrangeHearts(player)
+				player:AddEternalHearts(200)
+				if player:GetEternalHearts() < 1 then
+					player:AddEternalHearts(1)
+				end
 				pickup:PlayPickupSound()
 				--print("DESTROYING")
-				player:AddHearts(player:GetMaxHearts())
+				--player:AddHearts(player:GetMaxHearts())
 				--if pickup:IsShopItem() then
 				--	--pickup:Morph(pickup.Type, pickup.Variant, 0, true)
 				--	pickup.SubType = 0
@@ -2854,6 +2904,9 @@ function HexanowMod.Main:EvaluateCache(player, cacheFlag, tear)
 				player.MoveSpeed = player.MoveSpeed - 0.15
 			end
 		elseif cacheFlag == CacheFlag.CACHE_DAMAGE then
+			--[[if player:IsCoopGhost() then
+				player.Damage = -0.5
+			else]]
 			if Game():GetRoom():GetType() ~= RoomType.ROOM_DUNGEON then
 				player.Damage = player.Damage * 3 -- (1.0 + 2.5 * player:GetMaxHearts() / 24.0 - 0.5)
 			else

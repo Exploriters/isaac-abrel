@@ -48,6 +48,7 @@ local function LairubAbilityData()
 	local cted = {}
 	setmetatable(cted, lairubAbilityData)
 	cted.name = ""
+	cted.displayAllowsEnable = function (player) return false end
 	cted.startingInterval = function (player) end
 	cted.endingInterval = function (player) end
 	cted.enabledInterval = function (player) end
@@ -308,6 +309,23 @@ LairubMod:AddCallback(ModCallbacks.MC_POST_EFFECT_UPDATE, LairubMod.Main.LairubS
 
 --==== Ability claim ====--
 
+local function DisplayCanEnableAbility(player, ability)
+	local playerID = GetPlayerID(player)
+	if LairubAbilityDatas[ability] == nil or player == nil then
+		return false
+	end
+	if not IsLairub(player) then
+		return false
+	end
+	if player:IsDead() then
+		return false
+	end
+	if player:IsCoopGhost() then
+		return false
+	end
+	return LairubAbilityDatas[ability].displayAllowsEnable(player)
+end
+
 local function CanEnableAbility(player, ability)
 	local playerID = GetPlayerID(player)
 	if LairubAbilityDatas[ability] == nil or player == nil then
@@ -317,6 +335,9 @@ local function CanEnableAbility(player, ability)
 		return false
 	end
 	if player:IsDead() then
+		return false
+	end
+	if player:IsCoopGhost() then
 		return false
 	end
 	if ability == "dialogue" then
@@ -593,6 +614,7 @@ LairubMod:AddCallback( ModCallbacks.MC_EVALUATE_CACHE, LairubMod.Main.EvaluateCa
 
 LairubAbilityDatas.swap_form = LairubAbilityData()
 LairubAbilityDatas.swap_form.name = "swap_form"
+LairubAbilityDatas.swap_form.displayAllowsEnable = function (player) return true end
 LairubAbilityDatas.swap_form.startingInterval = function (player) if MonitKeyPress(player,"swap_form") then ClaimAbility(player, "swap_form") end end
 LairubAbilityDatas.swap_form.endingInterval = function (player) if LairubPlayerDatas[GetPlayerID(player)].enabledAbilityTime > 30 then ReleaseAbility(player, "swap_form") end end
 LairubAbilityDatas.swap_form.onEnable = function (player)
@@ -616,6 +638,7 @@ end
 
 LairubAbilityDatas.release_souls = LairubAbilityData()
 LairubAbilityDatas.release_souls.name = "release_souls"
+LairubAbilityDatas.release_souls.displayAllowsEnable = function (player) return SoulCount > 0 end
 LairubAbilityDatas.release_souls.startingInterval = function (player) if IsLairubButtonPressed(player,"release_souls") then ClaimAbility(player, "release_souls") end end
 LairubAbilityDatas.release_souls.endingInterval = function (player) if not IsLairubButtonPressed(player,"release_souls") then ReleaseAbility(player, "release_souls") end end
 LairubAbilityDatas.release_souls.onEnable = function (player)
@@ -646,6 +669,7 @@ end
 
 LairubAbilityDatas.soul_cross = LairubAbilityData()
 LairubAbilityDatas.soul_cross.name = "soul_cross"
+LairubAbilityDatas.soul_cross.displayAllowsEnable = function (player) return LairubPlayerDatas[GetPlayerID(player)].crossPlaced == nil or LairubPlayerDatas[GetPlayerID(player)].crossPlaced:IsDead() end
 LairubAbilityDatas.soul_cross.startingInterval = function (player)
 	if MonitKeyPress(player,"soul_cross") and (
 		LairubPlayerDatas[GetPlayerID(player)].crossPlaced == nil or LairubPlayerDatas[GetPlayerID(player)].crossPlaced:IsDead()
@@ -715,6 +739,7 @@ end
 
 LairubAbilityDatas.teleport_to_devil_room = LairubAbilityData()
 LairubAbilityDatas.teleport_to_devil_room.name = "teleport_to_devil_room"
+LairubAbilityDatas.teleport_to_devil_room.displayAllowsEnable = function (player) return true end
 LairubAbilityDatas.teleport_to_devil_room.startingInterval = function (player) if IsLairubButtonPressed(player,"teleport_to_devil_room") then ClaimAbility(player, "teleport_to_devil_room") end end
 LairubAbilityDatas.teleport_to_devil_room.onEnable = function (player)
 	--player.Velocity = Vector(0, 0)
@@ -740,6 +765,7 @@ end
 
 LairubAbilityDatas.dialogue = LairubAbilityData()
 LairubAbilityDatas.dialogue.name = "dialogue"
+LairubAbilityDatas.dialogue.displayAllowsEnable = function (player) return false end
 LairubAbilityDatas.dialogue.startingInterval = function (player)
 	if LairubDialogueManager.onGoingDialogue ~= nil then
 		ClaimAbility(player, "dialogue")
@@ -861,21 +887,23 @@ function AbilitiesCardRendering(pos, player)
 	local ReleaseIcon = LairubPlayerDatas[GetPlayerID(player)].sprites.ReleaseIcon
 	local TeleportSign = LairubPlayerDatas[GetPlayerID(player)].sprites.TeleportSign
 	--==AttackIcon==--
-	if LairubPlayerDatas[GetPlayerID(player)].form ~= 2 then
+	--[[if not DisplayCanEnableAbility(player, "swap_form") then
+		AttackIcon:SetFrame("Locking", 1)
+	else]]if LairubPlayerDatas[GetPlayerID(player)].form ~= 2 then
 		AttackIcon:SetFrame("Normal", 1)
 	else
 		AttackIcon:SetFrame("Take Soul", 1)
 	end
 	--==CrossIcon==--
-	if LairubPlayerDatas[GetPlayerID(player)].crossPlaced == nil or LairubPlayerDatas[GetPlayerID(player)].crossPlaced:IsDead() then
+	if DisplayCanEnableAbility(player, "soul_cross") then
 		CrossIcon:SetFrame("Ready", 1)
 	else
 		CrossIcon:SetFrame("Locking", 1)
 	end
 	--==ReleaseIcon==--
-	if SoulCount > 0 then
+	if DisplayCanEnableAbility(player, "release_souls") then
 		ReleaseIcon:SetFrame("Ready", 1)
-	elseif SoulCount <= 0 then
+	else
 		ReleaseIcon:SetFrame("Locking", 1)
 	end
 	--==Teleport To Devil Room==--
@@ -1002,8 +1030,15 @@ local function TickEventLairub(player)
 			LairubPlayerDatas[playerID].overlayFrame = LairubPlayerDatas[playerID].overlayFrame + 1
 		end
 		MaintainOverlay(player)
-		if player:IsDead() and LairubPlayerDatas[playerID].enabledAbility ~= nil then
-			ReleaseAbility(player, LairubPlayerDatas[playerID].enabledAbility)
+		if player:IsDead() or player:IsCoopGhost() then
+			if LairubPlayerDatas[playerID].enabledAbility ~= nil then
+				ReleaseAbility(player, LairubPlayerDatas[playerID].enabledAbility)
+			end
+			if LairubPlayerDatas[playerID].form ~= 1 then
+				LairubPlayerDatas[playerID].form = 1
+				UpdateCostume(player)
+				UpdateCache(player)
+			end
 		end
 		--==== Changed Tears ====--	
 		--== Changed Icon==--

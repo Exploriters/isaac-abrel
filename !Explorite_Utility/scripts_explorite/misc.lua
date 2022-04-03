@@ -59,8 +59,13 @@ function GetDimensionOfRoomDesc(roomDesc)
     end
 end
 
+local lastDim = 0
 function GetCurrentDimension()
-	return GetDimensionOfRoomDesc(Game():GetLevel():GetCurrentRoomDesc())
+	local dim = GetDimensionOfRoomDesc(Game():GetLevel():GetCurrentRoomDesc())
+	if dim ~= nil then
+		lastDim = dim
+	end
+	return lastDim
 end
 
 -- 为每个玩家执行目标函数
