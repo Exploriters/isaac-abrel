@@ -498,7 +498,7 @@ local function RearrangeHearts(player, extra)
 	--local brokenRemove = math.max(0, math.min(math.floor((EternalCharges - 1) / 3), countBroken))
 	EternalBroken(player, 0)
 
-	while math.max(0, math.min(12, player:GetHeartLimit()) - maxHearts) > 0 do
+	while math.max(0, math.min(12, player:GetHeartLimit()) - player:GetMaxHearts()) > 0 do
 		player:AddMaxHearts(2)
 		EternalBroken(player, 1)
 	end
