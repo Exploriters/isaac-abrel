@@ -392,7 +392,7 @@ local function EternalBroken(player, count)
 		EternalCharges = 0
 	end
 	if EternalCharges > 0 and player:GetBrokenHearts() > 0 then
-		local brokenRemove = math.max(0, math.min(EternalCharges, countBroken % 6))
+		local brokenRemove = math.max(0, math.min(EternalCharges, player:GetBrokenHearts() % 6))
 		player:AddBrokenHearts(-brokenRemove)
 		EternalCharges = EternalCharges - brokenRemove
 	end
