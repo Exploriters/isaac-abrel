@@ -64,7 +64,7 @@ end)
 ----------
 
 --local hexanowItem = Isaac.GetItemIdByName( "Hexanow's Soul" )
-local redMap = Isaac.GetItemIdByName("Red Map")
+--local redMap = Isaac.GetItemIdByName("Red Map")
 --local hexanowPortalTool = Isaac.GetItemIdByName("Eternal Portal")
 local hexanowStatTriggerItem = Isaac.GetItemIdByName( "Hexanow overall stat trigger" )
 local hexanowHairCostume = Isaac.GetCostumeIdByPath("gfx/characters/HexanowHair.anm2")
@@ -80,15 +80,19 @@ local entityVariantHexanowLaserEndpoint = Isaac.GetEntityVariantByName("Hexanow 
 
 local portalColor = {}
 portalColor[1] = {}
+portalColor[1][0] = Color(255 / 255, 255 / 255, 255 / 255)
 portalColor[1][1] = Color(9 / 255, 132 / 255, 255 / 255)
 portalColor[1][2] = Color(234 / 255, 135 / 255, 0 / 255)
 portalColor[2] = {}
+portalColor[2][0] = Color(255 / 255, 255 / 255, 255 / 255)
 portalColor[2][1] = Color(0 / 255, 0 / 255, 255 / 255)
 portalColor[2][2] = Color(255 / 255, 255 / 255, 0 / 255)
 portalColor[3] = {}
+portalColor[3][0] = Color(255 / 255, 255 / 255, 255 / 255)
 portalColor[3][1] = Color(0 / 255, 255 / 255, 255 / 255)
 portalColor[3][2] = Color(255 / 255, 0 / 255, 255 / 255)
 portalColor[4] = {}
+portalColor[4][0] = Color(255 / 255, 255 / 255, 255 / 255)
 portalColor[4][1] = Color(255 / 255, 0 / 255, 0 / 255)
 portalColor[4][2] = Color(0 / 255, 255 / 255, 0 / 255)
 
@@ -294,7 +298,7 @@ function HexanowMod.Main.ApplyVar(objective)
 			HexanowPlayerDatas[playerID].WhiteItem[i] = tonumber(objective:Read("Player"..playerID.."-WhiteItem-"..i, "0"))
 		end
 		HexanowPlayerDatas[playerID].portalToolColor = tonumber(objective:Read("Player"..playerID.."-portalToolColor", "2"))
-		if HexanowPlayerDatas[playerID].portalToolColor ~= 1 and HexanowPlayerDatas[playerID].portalToolColor ~= 2 then
+		if HexanowPlayerDatas[playerID].portalToolColor ~= 0 and HexanowPlayerDatas[playerID].portalToolColor ~= 1 and HexanowPlayerDatas[playerID].portalToolColor ~= 2 then
 			HexanowPlayerDatas[playerID].portalToolColor = 2
 		end
 		for dim=0,2 do
@@ -622,7 +626,7 @@ local function HexanowWhiteCollectiblePredicate(ID, ignoreEnsured)
 		--or	ID == CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR
 		))
 		]]
-		--or	ID == CollectibleType.COLLECTIBLE_BIRTHRIGHT
+		or	ID == CollectibleType.COLLECTIBLE_BIRTHRIGHT
 
 		--or	(item.Quality >= 4 and item.ItemType ~= ItemType.ITEM_FAMILIAR)
 
@@ -1234,98 +1238,100 @@ local function CastHexanowLaser(player, position, degrees, colorType, fromOtherB
 				end
 			end
 		)
-		local endpoint = EntityLaser.CalculateEndPoint(position + offset, Vector.FromAngle(degrees), Vector(0,0), player, 20)
-		local settedPortal = SetPortal(player, colorType, room, Game():GetLevel():GetCurrentRoomDesc(), endpoint)
-		if settedPortal then
-			local newPosition, newDegrees = HexanowLaserOverPortalLocation(player, degrees, colorType)
-			if newPosition ~= nil and newDegrees ~= nil then
-				CastHexanowLaser(player, newPosition, newDegrees, (colorType)%2+1, true)
-				local newEndpoint = EntityLaser.CalculateEndPoint(newPosition, Vector.FromAngle(newDegrees), Vector(0,0), player, 20)
-				local intersection = ComputeIntersection(position, endpoint, newPosition, newEndpoint)
-				if (degrees - newDegrees) % 180 ~= 0 and intersection ~= nil then
-					SFXManager():Play(SoundEffect.SOUND_FREEZE_SHATTER, 1, 0, false, 1 )
-					--[[
-					local bomb = player:FireBomb(intersection, Vector(0, 0), player)
-					bomb.Visible = false
-					bomb:AddTearFlags(TearFlags.TEAR_ICE)
-					bomb.ExplosionDamage = 0
-					bomb:SetExplosionCountdown(0)
-					local entitiesTempNoKnockback = {}
-					CallForEveryEntity(
-						function(entity)
-							if entity:HasEntityFlags(EntityFlag.FLAG_NO_KNOCKBACK) then
-								entity:AddEntityFlags(EntityFlag.FLAG_NO_KNOCKBACK)
-								entitiesTempNoKnockback[entity.Index] = true
+		if colorType == 1 or colorType == 2 then
+			local endpoint = EntityLaser.CalculateEndPoint(position + offset, Vector.FromAngle(degrees), Vector(0,0), player, 20)
+			local settedPortal = SetPortal(player, colorType, room, Game():GetLevel():GetCurrentRoomDesc(), endpoint)
+			if settedPortal then
+				local newPosition, newDegrees = HexanowLaserOverPortalLocation(player, degrees, colorType)
+				if newPosition ~= nil and newDegrees ~= nil then
+					CastHexanowLaser(player, newPosition, newDegrees, (colorType)%2+1, true)
+					local newEndpoint = EntityLaser.CalculateEndPoint(newPosition, Vector.FromAngle(newDegrees), Vector(0,0), player, 20)
+					local intersection = ComputeIntersection(position, endpoint, newPosition, newEndpoint)
+					if (degrees - newDegrees) % 180 ~= 0 and intersection ~= nil then
+						SFXManager():Play(SoundEffect.SOUND_FREEZE_SHATTER, 1, 0, false, 1 )
+						--[[
+						local bomb = player:FireBomb(intersection, Vector(0, 0), player)
+						bomb.Visible = false
+						bomb:AddTearFlags(TearFlags.TEAR_ICE)
+						bomb.ExplosionDamage = 0
+						bomb:SetExplosionCountdown(0)
+						local entitiesTempNoKnockback = {}
+						CallForEveryEntity(
+							function(entity)
+								if entity:HasEntityFlags(EntityFlag.FLAG_NO_KNOCKBACK) then
+									entity:AddEntityFlags(EntityFlag.FLAG_NO_KNOCKBACK)
+									entitiesTempNoKnockback[entity.Index] = true
+								end
 							end
-						end
-					)
-					Game():BombExplosionEffects(
-						intersection,
-						damage,
-						tearFlags,
-						Color(color.R,color.G,color.B,0),
-						player,
-						1,
-						false,
-						false,
-						DamageFlag.DAMAGE_LASER
-					)
-					CallForEveryEntity(
-						function(entity)
-							if entitiesTempNoKnockback[entity.Index] then
-								entity:ClearEntityFlags(EntityFlag.FLAG_NO_KNOCKBACK)
+						)
+						Game():BombExplosionEffects(
+							intersection,
+							damage,
+							tearFlags,
+							Color(color.R,color.G,color.B,0),
+							player,
+							1,
+							false,
+							false,
+							DamageFlag.DAMAGE_LASER
+						)
+						CallForEveryEntity(
+							function(entity)
+								if entitiesTempNoKnockback[entity.Index] then
+									entity:ClearEntityFlags(EntityFlag.FLAG_NO_KNOCKBACK)
+								end
 							end
-						end
-					)
-					Game():BombTearflagEffects(
-						intersection,
-						40,
-						tearFlags,
-						player,
-						1
-					)
-					]]
-					local entitiesTempNoBombKnockback = {}
-					CallForEveryEntity(
-						function(entity)
-							entitiesTempNoBombKnockback[entity.Index] = Vector(entity.Velocity.X, entity.Velocity.Y)
-						end
-					)
-					Game():BombDamage(
-						intersection,
-						damage,
-						40,
-						false,
-						player,
-						tearFlags,
-						DamageFlag.DAMAGE_LASER,
-						false
-					)
-					CallForEveryEntity(
-						function(entity)
-							if entitiesTempNoBombKnockback[entity.Index] ~= nil then
-								local v1 = entitiesTempNoBombKnockback[entity.Index]
-								local v2 = entity.Velocity
-								if v1.X ~= v2.X or v1.Y ~= v2.Y then
-									entity.Velocity = v1
-									local pickup = entity:ToPickup()
-									if pickup ~= nil
-									and entity.Type == EntityType.ENTITY_PICKUP
-									and entity.Variant == PickupVariant.PICKUP_BOMBCHEST
-									then
-										pickup:TryOpenChest(player)
-									end
-									local NPC = entity:ToNPC()
-									if NPC ~= nil
-									and NPC.Type == EntityType.ENTITY_FIREPLACE
-									then
-										NPC:TakeDamage(player.Damage, DamageFlag.DAMAGE_EXPLOSION, EntityRef(player), 0)
+						)
+						Game():BombTearflagEffects(
+							intersection,
+							40,
+							tearFlags,
+							player,
+							1
+						)
+						]]
+						local entitiesTempNoBombKnockback = {}
+						CallForEveryEntity(
+							function(entity)
+								entitiesTempNoBombKnockback[entity.Index] = Vector(entity.Velocity.X, entity.Velocity.Y)
+							end
+						)
+						Game():BombDamage(
+							intersection,
+							damage,
+							40,
+							false,
+							player,
+							tearFlags,
+							DamageFlag.DAMAGE_LASER,
+							false
+						)
+						CallForEveryEntity(
+							function(entity)
+								if entitiesTempNoBombKnockback[entity.Index] ~= nil then
+									local v1 = entitiesTempNoBombKnockback[entity.Index]
+									local v2 = entity.Velocity
+									if v1.X ~= v2.X or v1.Y ~= v2.Y then
+										entity.Velocity = v1
+										local pickup = entity:ToPickup()
+										if pickup ~= nil
+										and entity.Type == EntityType.ENTITY_PICKUP
+										and entity.Variant == PickupVariant.PICKUP_BOMBCHEST
+										then
+											pickup:TryOpenChest(player)
+										end
+										local NPC = entity:ToNPC()
+										if NPC ~= nil
+										and NPC.Type == EntityType.ENTITY_FIREPLACE
+										then
+											NPC:TakeDamage(player.Damage, DamageFlag.DAMAGE_EXPLOSION, EntityRef(player), 0)
+										end
 									end
 								end
 							end
-						end
-					)
-					FreezeGridEntity(intersection)
+						)
+						FreezeGridEntity(intersection)
+					end
 				end
 			end
 		end
@@ -1404,291 +1410,230 @@ local function TickEventHexanow(player)
 	if IsHexanowTainted(player) then
 		player:ChangePlayerType(playerTypeHexanow)
 	end
-	if IsHexanow(player) then
-		local game = Game()
-		local level = game:GetLevel()
-		local room = game:GetRoom()
-		local roomEntities = Isaac.GetRoomEntities()
-		local playerID = GetPlayerID(player)
+	if not IsHexanow(player) then
+		return
+	end
+	local game = Game()
+	local level = game:GetLevel()
+	local room = game:GetRoom()
+	local roomEntities = Isaac.GetRoomEntities()
+	local playerID = GetPlayerID(player)
 
-		--[[
-		if player:HasCurseMistEffect() then
-			player:RemoveCurseMistEffect()
-		end
-		]]
-		player:GetData().StartedAsHexanow = true
+	--[[
+	if player:HasCurseMistEffect() then
+		player:RemoveCurseMistEffect()
+	end
+	]]
+	player:GetData().StartedAsHexanow = true
 
-		if game == nil
-		or level == nil
-		or room == nil
-		or roomEntities == nil
-		then
-			--return nil
-		end
+	if game == nil
+	or level == nil
+	or room == nil
+	or roomEntities == nil
+	then
+		--return nil
+	end
 
-		--[[
-		if player:IsDead() and player:GetHeartLimit() > 0 then
-			player:Revive()
-			local damage = math.max(0, 1 + player:GetHearts() - player:GetRottenHearts() + player:GetSoulHearts() + player:GetEternalHearts())
-			player:TakeDamage(damage, DamageFlag.DAMAGE_INVINCIBLE, EntityRef(player), 0)
-		end
-		]]
+	--[[
+	if player:IsDead() and player:GetHeartLimit() > 0 then
+		player:Revive()
+		local damage = math.max(0, 1 + player:GetHearts() - player:GetRottenHearts() + player:GetSoulHearts() + player:GetEternalHearts())
+		player:TakeDamage(damage, DamageFlag.DAMAGE_INVINCIBLE, EntityRef(player), 0)
+	end
+	]]
 
-		--player:FlushQueueItem()
+	--player:FlushQueueItem()
 
-		--[[
-		if not player:IsFlying() and Game():GetRoom():IsClear() and not player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_TRANSCENDENCE) then
+	--[[
+	if not player:IsFlying() and Game():GetRoom():IsClear() and not player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_TRANSCENDENCE) then
 
-			-- player:UseActiveItem(CollectibleType.COLLECTIBLE_BIBLE,false,true,true,false)
-			-- player:UseCard(Card.CARD_HANGED_MAN)
-			--if not player:HasCollectible(CollectibleType.COLLECTIBLE_TRANSCENDENCE) then
-			--	player:AddCollectible(CollectibleType.COLLECTIBLE_TRANSCENDENCE, 0, false)
-			--	player:AddCacheFlags(CacheFlag.CACHE_FLYING)
-			--	player:RemoveCollectible(CollectibleType.COLLECTIBLE_TRANSCENDENCE)
-			--end
-
-			--player:GetEffects():AddCollectibleEffect(CollectibleType.COLLECTIBLE_TRANSCENDENCE, false, 1)
-			--player:AddCacheFlags(CacheFlag.CACHE_FLYING)
-
-			-- player:GetEffects():RemoveCollectibleEffect(CollectibleType.COLLECTIBLE_TRANSCENDENCE)
-		end
-		]]
-		if Game():GetRoom():IsClear() and not roomClearBounsEnabled then
-			roomClearBounsEnabled = true
-			UpdateCache(player)
-		end
-
-		--[[
-		if roomClearBounsEnabled and not player:IsFlying() then
-			UpdateCache(player)
-		end
-		]]
-
-		--[[
-		-- player:UseActiveItem(CollectibleType.COLLECTIBLE_SACRIFICIAL_ALTAR,false,true,true,false)
-
-		-- player:AddCollectible(CollectibleType.COLLECTIBLE_SCHOOLBAG, 0, false)
-		-- player:AddCollectible(CollectibleType.COLLECTIBLE_MOMS_PURSE, 0, false)
-		-- player:AddCollectible(CollectibleType.COLLECTIBLE_POLYDACTYLY, 0, false)
-		-- player:AddCollectible(CollectibleType.COLLECTIBLE_PRAYER_CARD, 0, false)
-		]]
-
-		--[[
-		if not player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_ANALOG_STICK) then
-			player:GetEffects():AddCollectibleEffect(CollectibleType.COLLECTIBLE_ANALOG_STICK, false)
-		end
-		]]
-		--if room:GetBackdropType() ~= 59 and room:GetBackdropType() ~= 58 then
-			--[[
-			if not player:HasCollectible(CollectibleType.COLLECTIBLE_ANALOG_STICK, true) then
-				player:AddCollectible(CollectibleType.COLLECTIBLE_ANALOG_STICK, 0, false)
-				UpdateCostumes(player)
-			end
-			if not player:HasCollectible(CollectibleType.COLLECTIBLE_URANUS, true) then
-				player:AddCollectible(CollectibleType.COLLECTIBLE_URANUS, 0, false)
-				UpdateCostumes(player)
-			end
-			if not player:HasCollectible(CollectibleType.COLLECTIBLE_NEPTUNUS, true) then
-				player:AddCollectible(CollectibleType.COLLECTIBLE_NEPTUNUS, 0, false)
-				UpdateCostumes(player)
-			end
-			]]
-			--if not player:HasCollectible(CollectibleType.COLLECTIBLE_SOL, true) then
-			--	player:AddCollectible(CollectibleType.COLLECTIBLE_SOL, 0, false)
-			--	UpdateCostumes(player)
-			--end
+		-- player:UseActiveItem(CollectibleType.COLLECTIBLE_BIBLE,false,true,true,false)
+		-- player:UseCard(Card.CARD_HANGED_MAN)
+		--if not player:HasCollectible(CollectibleType.COLLECTIBLE_TRANSCENDENCE) then
+		--	player:AddCollectible(CollectibleType.COLLECTIBLE_TRANSCENDENCE, 0, false)
+		--	player:AddCacheFlags(CacheFlag.CACHE_FLYING)
+		--	player:RemoveCollectible(CollectibleType.COLLECTIBLE_TRANSCENDENCE)
 		--end
 
+		--player:GetEffects():AddCollectibleEffect(CollectibleType.COLLECTIBLE_TRANSCENDENCE, false, 1)
+		--player:AddCacheFlags(CacheFlag.CACHE_FLYING)
 
+		-- player:GetEffects():RemoveCollectibleEffect(CollectibleType.COLLECTIBLE_TRANSCENDENCE)
+	end
+	]]
+	if Game():GetRoom():IsClear() and not roomClearBounsEnabled then
+		roomClearBounsEnabled = true
+		UpdateCache(player)
+	end
+
+	--[[
+	if roomClearBounsEnabled and not player:IsFlying() then
+		UpdateCache(player)
+	end
+	]]
+
+	--[[
+	-- player:UseActiveItem(CollectibleType.COLLECTIBLE_SACRIFICIAL_ALTAR,false,true,true,false)
+
+	-- player:AddCollectible(CollectibleType.COLLECTIBLE_SCHOOLBAG, 0, false)
+	-- player:AddCollectible(CollectibleType.COLLECTIBLE_MOMS_PURSE, 0, false)
+	-- player:AddCollectible(CollectibleType.COLLECTIBLE_POLYDACTYLY, 0, false)
+	-- player:AddCollectible(CollectibleType.COLLECTIBLE_PRAYER_CARD, 0, false)
+	]]
+
+	--[[
+	if not player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_ANALOG_STICK) then
+		player:GetEffects():AddCollectibleEffect(CollectibleType.COLLECTIBLE_ANALOG_STICK, false)
+	end
+	]]
+	--if room:GetBackdropType() ~= 59 and room:GetBackdropType() ~= 58 then
 		--[[
-		local VREntityNotTraced = true
-		local VRHolding = false
+		if not player:HasCollectible(CollectibleType.COLLECTIBLE_ANALOG_STICK, true) then
+			player:AddCollectible(CollectibleType.COLLECTIBLE_ANALOG_STICK, 0, false)
+			UpdateCostumes(player)
+		end
+		if not player:HasCollectible(CollectibleType.COLLECTIBLE_URANUS, true) then
+			player:AddCollectible(CollectibleType.COLLECTIBLE_URANUS, 0, false)
+			UpdateCostumes(player)
+		end
+		if not player:HasCollectible(CollectibleType.COLLECTIBLE_NEPTUNUS, true) then
+			player:AddCollectible(CollectibleType.COLLECTIBLE_NEPTUNUS, 0, false)
+			UpdateCostumes(player)
+		end
+		]]
+		--if not player:HasCollectible(CollectibleType.COLLECTIBLE_SOL, true) then
+		--	player:AddCollectible(CollectibleType.COLLECTIBLE_SOL, 0, false)
+		--	UpdateCostumes(player)
+		--end
+	--end
 
-		--if player:HasCollectible(CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR, true) then
-		if player:GetActiveItem(ActiveSlot.SLOT_PRIMARY) == CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR
-		or player:GetActiveItem(ActiveSlot.SLOT_SECONDARY) == CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR
+
+	--[[
+	local VREntityNotTraced = true
+	local VRHolding = false
+
+	--if player:HasCollectible(CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR, true) then
+	if player:GetActiveItem(ActiveSlot.SLOT_PRIMARY) == CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR
+	or player:GetActiveItem(ActiveSlot.SLOT_SECONDARY) == CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR
+	then
+		VREntityNotTraced = false
+		VRHolding = true
+	end
+
+	for i,entity in ipairs(roomEntities) do
+		local pickup = entity:ToPickup()
+		if pickup ~= nil then
+			if pickup.Type == EntityType.ENTITY_PICKUP
+			and pickup.Variant == PickupVariant.PICKUP_COLLECTIBLE
+			and pickup.SubType == CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR
+			then
+				if not VREntityNotTraced then
+					entity:Remove()
+				end
+				VREntityNotTraced = false
+			end
+		end
+	end
+
+	if VREntityNotTraced then
+		if player:GetActiveItem(ActiveSlot.SLOT_PRIMARY) == CollectibleType.COLLECTIBLE_NULL
+		-- and not player:HasTrinket(TrinketType.TRINKET_BUTTER)
 		then
-			VREntityNotTraced = false
+			player:AddCollectible(CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR, 0, false)
 			VRHolding = true
 		end
+	end
+	]]
 
-		for i,entity in ipairs(roomEntities) do
-			local pickup = entity:ToPickup()
-			if pickup ~= nil then
-				if pickup.Type == EntityType.ENTITY_PICKUP
-				and pickup.Variant == PickupVariant.PICKUP_COLLECTIBLE
-				and pickup.SubType == CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR
-				then
-					if not VREntityNotTraced then
-						entity:Remove()
-					end
-					VREntityNotTraced = false
-				end
-			end
-		end
-
-		if VREntityNotTraced then
-			if player:GetActiveItem(ActiveSlot.SLOT_PRIMARY) == CollectibleType.COLLECTIBLE_NULL
-			-- and not player:HasTrinket(TrinketType.TRINKET_BUTTER)
-			then
-				player:AddCollectible(CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR, 0, false)
-				VRHolding = true
-			end
-		end
-		]]
-
-		--[[
-		if VRHolding then
-			if player:GetActiveItem(ActiveSlot.SLOT_POCKET) == CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR
-			then
-				player:RemoveCollectible(CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR, true, ActiveSlot.SLOT_POCKET)
-			end
-		else
-			if player:GetActiveItem(ActiveSlot.SLOT_POCKET) ~= CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR
-			then
-				player:SetPocketActiveItem(CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR, ActiveSlot.SLOT_POCKET, false)
-			end
-		end
-		]]
-
-			--[[
-			if lastMaxHearts ~= player:GetMaxHearts() then
-				print("Max hearts mismatching detected ( from ", lastMaxHearts, " to ", player:GetMaxHearts(), "), cache update queued.")
-				UpdateCache(player)
-				lastMaxHearts = player:GetMaxHearts()
-			end
-			]]
-
-			-- TestDoDmg(player)
-		--[[
-		if player:IsDead() then
-			--player:Revive()
-		end
-		]]
-		--[[
-		if room:GetFrameCount() == 1 then
-			ApplyEternalHearts(player)
-			UpdateCostumes(player)
-		else
-		end
-		]]
-		--[[ --Malfunction
-		if  ( player.Velocity.X < 0.05 and player.Velocity.X > -0.05)
-		and ( player.Velocity.Y < 0.05 and player.Velocity.Y > -0.05)
-		and ( player:GetRecentMovementVector().X < 0.05 and player:GetRecentMovementVector().X > -0.05)
-		and ( player:GetRecentMovementVector().Y < 0.05 and player:GetRecentMovementVector().Y > -0.05)
+	--[[
+	if VRHolding then
+		if player:GetActiveItem(ActiveSlot.SLOT_POCKET) == CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR
 		then
-			if player.FireDelay < 0 and not updatedCostumesOvertime then
-				UpdateCostumes(player)
-				updatedCostumesOvertime = true
-			end
-		else
-			updatedCostumesOvertime = false
+			player:RemoveCollectible(CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR, true, ActiveSlot.SLOT_POCKET)
 		end
-		]]
-		if player:IsHoldingItem() or player:IsCoopGhost()
+	else
+		if player:GetActiveItem(ActiveSlot.SLOT_POCKET) ~= CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR
 		then
-			HexanowPlayerDatas[playerID].onceHoldingItem = true
-		elseif HexanowPlayerDatas[playerID].onceHoldingItem then
-			UpdateCostumes(player)
-			HexanowPlayerDatas[playerID].onceHoldingItem = false
+			player:SetPocketActiveItem(CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR, ActiveSlot.SLOT_POCKET, false)
 		end
+	end
+	]]
+
 		--[[
-		if HexanowPlayerDatas[playerID].lastCanFly ~= player.CanFly then
-			UpdateCostumes(player)
-			HexanowPlayerDatas[playerID].lastCanFly = player.CanFly
+		if lastMaxHearts ~= player:GetMaxHearts() then
+			print("Max hearts mismatching detected ( from ", lastMaxHearts, " to ", player:GetMaxHearts(), "), cache update queued.")
+			UpdateCache(player)
+			lastMaxHearts = player:GetMaxHearts()
 		end
 		]]
-		--[[
-		if room:GetAliveEnemiesCount() <= 0 then
-			ApplyEternalHearts(player)
-			EternalChargeForFree = true
-		else
-			EternalChargeForFree = false
-			ApplyEternalCharge(player)
+
+		-- TestDoDmg(player)
+	--[[
+	if player:IsDead() then
+		--player:Revive()
+	end
+	]]
+	--[[
+	if room:GetFrameCount() == 1 then
+		ApplyEternalHearts(player)
+		UpdateCostumes(player)
+	else
+	end
+	]]
+	--[[ --Malfunction
+	if  ( player.Velocity.X < 0.05 and player.Velocity.X > -0.05)
+	and ( player.Velocity.Y < 0.05 and player.Velocity.Y > -0.05)
+	and ( player:GetRecentMovementVector().X < 0.05 and player:GetRecentMovementVector().X > -0.05)
+	and ( player:GetRecentMovementVector().Y < 0.05 and player:GetRecentMovementVector().Y > -0.05)
+	then
+		if player.FireDelay < 0 and not updatedCostumesOvertime then
+			UpdateCostumes(player)
+			updatedCostumesOvertime = true
 		end
-		]]
-		EternalChargeForFree = room:GetAliveEnemiesCount() <= 0
+	else
+		updatedCostumesOvertime = false
+	end
+	]]
+	if player:IsHoldingItem() or player:IsCoopGhost()
+	then
+		HexanowPlayerDatas[playerID].onceHoldingItem = true
+	elseif HexanowPlayerDatas[playerID].onceHoldingItem then
+		UpdateCostumes(player)
+		HexanowPlayerDatas[playerID].onceHoldingItem = false
+	end
+	--[[
+	if HexanowPlayerDatas[playerID].lastCanFly ~= player.CanFly then
+		UpdateCostumes(player)
+		HexanowPlayerDatas[playerID].lastCanFly = player.CanFly
+	end
+	]]
+	--[[
+	if room:GetAliveEnemiesCount() <= 0 then
+		ApplyEternalHearts(player)
+		EternalChargeForFree = true
+	else
+		EternalChargeForFree = false
 		ApplyEternalCharge(player)
+	end
+	]]
+	EternalChargeForFree = room:GetAliveEnemiesCount() <= 0
+	ApplyEternalCharge(player)
 
-		--[[
-		for i,entity in ipairs(roomEntities) do
-			local tear = entity:ToTear()
-		end
-		]]
+	--[[
+	for i,entity in ipairs(roomEntities) do
+		local tear = entity:ToTear()
+	end
+	]]
 
-		RearrangeHearts(player)
+	RearrangeHearts(player)
 
-		-- EnsureFamiliars(player)
+	-- EnsureFamiliars(player)
 
-		if IsKeyboardInput(player.ControllerIndex) then
-			if Input.IsButtonPressed(Keyboard.KEY_LEFT_SHIFT, player.ControllerIndex)
-			then
-				if HexanowPlayerDatas[playerID].WhiteItemSelectTriggered then
-					HexanowPlayerDatas[playerID].WhiteItemSelectTriggered = false
-					if HexanowPlayerDatas[playerID].WhiteItemSelectTriggered == false then
-						if HexanowPlayerDatas[playerID].portalToolColor == 1 then
-							HexanowPlayerDatas[playerID].portalToolColor = 2
-						else
-							HexanowPlayerDatas[playerID].portalToolColor = 1
-						end
-					end
-				end
-			else
-				HexanowPlayerDatas[playerID].WhiteItemSelectTriggered = true
-			end
-			if Input.IsButtonPressed(Keyboard.KEY_LEFT_ALT, player.ControllerIndex)
-			then
-				if HexanowPlayerDatas[playerID].WhiteItemSelectPressed >= 20
-				or HexanowPlayerDatas[playerID].WhiteItemSelectPressed <= -1
-				then
-					HexanowPlayerDatas[playerID].WhiteItemSelectPressed = 0
-				end
-				if HexanowPlayerDatas[playerID].WhiteItemSelectPressed == 0 then
-					local slot = HexanowPlayerDatas[playerID].SelectedWhiteItem
-	
-					if slot == 1
-					or slot == 2
-					or slot == 3
-					then
-						slot = slot + 1
-					else
-						slot = 1
-					end
-	
-					HexanowPlayerDatas[playerID].SelectedWhiteItem = slot
-				end
-				HexanowPlayerDatas[playerID].WhiteItemSelectPressed = 1 -- HexanowPlayerDatas[playerID].WhiteItemSelectPressed + 1
-			else
-				HexanowPlayerDatas[playerID].WhiteItemSelectPressed = -1
-			end
-		else
-			if Input.IsActionPressed(ButtonAction.ACTION_DROP, player.ControllerIndex)
-			then
-				if HexanowPlayerDatas[playerID].WhiteItemSelectPressed >= 20 then
-					HexanowPlayerDatas[playerID].WhiteItemSelectPressed = 0
-				end
-				if HexanowPlayerDatas[playerID].WhiteItemSelectPressed == 0 then
-					HexanowPlayerDatas[playerID].WhiteItemSelectTriggered = true
-					local slot = HexanowPlayerDatas[playerID].SelectedWhiteItem
-	
-					if slot == 1
-					or slot == 2
-					or slot == 3
-					then
-						slot = slot + 1
-					else
-						slot = 1
-					end
-	
-					HexanowPlayerDatas[playerID].SelectedWhiteItem = slot
-				end
-				if HexanowPlayerDatas[playerID].WhiteItemSelectPressed <= -1 then
-					HexanowPlayerDatas[playerID].WhiteItemSelectTriggered = false
-					HexanowPlayerDatas[playerID].WhiteItemSelectPressed = 0
-				end
-				HexanowPlayerDatas[playerID].WhiteItemSelectPressed = HexanowPlayerDatas[playerID].WhiteItemSelectPressed + 1
-			else
+	if IsKeyboardInput(player.ControllerIndex) then
+		if Input.IsButtonPressed(Keyboard.KEY_LEFT_SHIFT, player.ControllerIndex)
+		then
+			if HexanowPlayerDatas[playerID].WhiteItemSelectTriggered then
+				HexanowPlayerDatas[playerID].WhiteItemSelectTriggered = false
 				if HexanowPlayerDatas[playerID].WhiteItemSelectTriggered == false then
 					if HexanowPlayerDatas[playerID].portalToolColor == 1 then
 						HexanowPlayerDatas[playerID].portalToolColor = 2
@@ -1696,165 +1641,248 @@ local function TickEventHexanow(player)
 						HexanowPlayerDatas[playerID].portalToolColor = 1
 					end
 				end
+			end
+		else
+			HexanowPlayerDatas[playerID].WhiteItemSelectTriggered = true
+		end
+		if Input.IsButtonPressed(Keyboard.KEY_LEFT_ALT, player.ControllerIndex)
+		then
+			if HexanowPlayerDatas[playerID].WhiteItemSelectPressed >= 20
+			or HexanowPlayerDatas[playerID].WhiteItemSelectPressed <= -1
+			then
+				HexanowPlayerDatas[playerID].WhiteItemSelectPressed = 0
+			end
+			if HexanowPlayerDatas[playerID].WhiteItemSelectPressed == 0 then
+				local slot = HexanowPlayerDatas[playerID].SelectedWhiteItem
+
+				if slot == 1
+				or slot == 2
+				or slot == 3
+				then
+					slot = slot + 1
+				else
+					slot = 1
+				end
+
+				HexanowPlayerDatas[playerID].SelectedWhiteItem = slot
+
+				if player:HasCollectible(CollectibleType.COLLECTIBLE_BIRTHRIGHT, true)
+				then
+					HexanowPlayerDatas[playerID].portalToolColor = 0
+				end
+			end
+			HexanowPlayerDatas[playerID].WhiteItemSelectPressed = 1 -- HexanowPlayerDatas[playerID].WhiteItemSelectPressed + 1
+		else
+			HexanowPlayerDatas[playerID].WhiteItemSelectPressed = -1
+		end
+	else
+		if Input.IsActionPressed(ButtonAction.ACTION_DROP, player.ControllerIndex)
+		then
+			if HexanowPlayerDatas[playerID].WhiteItemSelectPressed >= 20 then
+				HexanowPlayerDatas[playerID].WhiteItemSelectPressed = 0
+			end
+			if HexanowPlayerDatas[playerID].WhiteItemSelectPressed == 0 then
 				HexanowPlayerDatas[playerID].WhiteItemSelectTriggered = true
-				HexanowPlayerDatas[playerID].WhiteItemSelectPressed = -1
+				local slot = HexanowPlayerDatas[playerID].SelectedWhiteItem
+
+				if slot == 1
+				or slot == 2
+				or slot == 3
+				then
+					slot = slot + 1
+				else
+					slot = 1
+				end
+
+				HexanowPlayerDatas[playerID].SelectedWhiteItem = slot
+
+				if player:HasCollectible(CollectibleType.COLLECTIBLE_BIRTHRIGHT, true)
+				then
+					HexanowPlayerDatas[playerID].portalToolColor = 0
+				end
 			end
+			if HexanowPlayerDatas[playerID].WhiteItemSelectPressed <= -1 then
+				HexanowPlayerDatas[playerID].WhiteItemSelectTriggered = false
+				HexanowPlayerDatas[playerID].WhiteItemSelectPressed = 0
+			end
+			HexanowPlayerDatas[playerID].WhiteItemSelectPressed = HexanowPlayerDatas[playerID].WhiteItemSelectPressed + 1
+		else
+			if HexanowPlayerDatas[playerID].WhiteItemSelectTriggered == false then
+				if HexanowPlayerDatas[playerID].portalToolColor == 1 then
+					HexanowPlayerDatas[playerID].portalToolColor = 2
+				else
+					HexanowPlayerDatas[playerID].portalToolColor = 1
+				end
+			end
+			HexanowPlayerDatas[playerID].WhiteItemSelectTriggered = true
+			HexanowPlayerDatas[playerID].WhiteItemSelectPressed = -1
 		end
-
-		--local tracedItems = player:GetCollectibleCount()
-
-		--local missingWhiteCollectible = false
-		--local missingWhiteTrinket = false
-		--local hasWhiteCollectible = false
-		--local hasWhiteTrinket = false
-
-		local item1 = HexanowPlayerDatas[playerID].WhiteItem[1]
-		local item2 = HexanowPlayerDatas[playerID].WhiteItem[2]
-		local item3 = HexanowPlayerDatas[playerID].WhiteItem[3]
-
-		local item1Missing = item1 == 0
-		local item2Missing = item2 == 0
-		local item3Missing = item3 == 0
-
-		--if not player:IsHoldingItem() then
-		if true then
-			local queuedItem = player.QueuedItem.Item
-			if queuedItem ~= nil then
-				if queuedItem.Type == ItemType.ITEM_PASSIVE or queuedItem.Type == ItemType.ITEM_ACTIVE then
-					--print("SET!")
-					PickupWhiteHexanowCollectible(player, queuedItem.ID, HexanowPlayerDatas[playerID].SelectedWhiteItem)
-				end
-				--[[
-				EternalBroken(player, -math.max(0, queuedItem.AddSoulHearts))
-				EternalBroken(player, -math.max(0, queuedItem.AddBlackHearts))
-				for i=1,math.ceil(queuedItem.AddBlackHearts/2) do
-					player:UseActiveItem(CollectibleType.COLLECTIBLE_NECRONOMICON, UseFlag.USE_NOANIM | UseFlag.USE_NOCOSTUME | UseFlag.USE_NOANNOUNCER)
-				end
-				queuedItem.AddSoulHearts = 0
-				queuedItem.AddBlackHearts = 0
-				player:AddCoins(queuedItem.AddCoins)
-				queuedItem.AddCoins = 0
-				player:AddBombs(queuedItem.AddBombs)
-				queuedItem.AddBombs = 0
-				player:AddKeys(queuedItem.AddKeys)
-				queuedItem.AddKeys = 0
-				player:AddMaxHearts(queuedItem.AddMaxHearts)
-				queuedItem.AddMaxHearts = 0
-				player:AddHearts(queuedItem.AddHearts)
-				queuedItem.AddHearts = 0
-				]]
-				player:FlushQueueItem()
-				local countSoul = queuedItem.AddSoulHearts
-				local countBlack = queuedItem.AddBlackHearts
-				player:FlushQueueItem()
-				RearrangeHearts(player, {SoulHearts = countSoul + countBlack, BlackHearts = countBlack})
-			end
-
-			local item1dem = 1
-			local item2dem = 1
-			local item3dem = 1
-
-
-			if item2 == item1 then
-				item2dem = item2dem + 1
-			end
-			if item3 == item1 then
-				item3dem = item3dem + 1
-			end
-			if item3 == item2 then
-				item3dem = item3dem + 1
-			end
-
-			if not item1Missing and HexanowOwnedCollectibleNum(player, item1, true) < item1dem then
-				item1Missing = true
-				SetWhiteHexanowCollectible(player, 0, 1)
-			end
-
-			if not item2Missing and  HexanowOwnedCollectibleNum(player, item2, true) < item2dem then
-				item2Missing = true
-				SetWhiteHexanowCollectible(player, 0, 2)
-			end
-
-			if not item3Missing and  HexanowOwnedCollectibleNum(player, item3, true) < item3dem then
-				item3Missing = true
-				SetWhiteHexanowCollectible(player, 0, 3)
-			end
-
-			--[[
-			--if WhiteHexanowTrinketID == 0
-			--or not player:HasTrinket(WhiteHexanowTrinketID, true) then
-			--	missingWhiteTrinket = true
-			--end
-
-			--if WhiteHexanowCollectibleID == 0
-			--or not player:HasCollectible(WhiteHexanowCollectibleID, true)
-			--then
-				--missingWhiteCollectible = true
-			--end
-
-			--if player:HasCollectible(WhiteHexanowCollectibleID, true) then
-				--missingWhiteTrinket = false
-				--hasWhiteTrinket = true
-			--end
-			--if player:HasTrinket(WhiteHexanowTrinketID, true) then
-			--	missingWhiteCollectible = false
-			--	hasWhiteCollectible = true
-			--end
-			]]
-		end
-
-		local removedSomething = true
-		local limit = Isaac.GetItemConfig():GetCollectibles().Size - 1
-		while removedSomething do
-			removedSomething = false
-			--for ID = CollectibleType.NUM_COLLECTIBLES - 1, 1, -1 do
-			for ID=1,limit do
-				--ID = ID + 1
-				--[[
-				if ID >= CollectibleType.NUM_COLLECTIBLES and item == nil then
-					break
-				end
-				]]
-				local ownNum = HexanowOwnedCollectibleNum(player, ID, true)
-				local maxNum = HexanowCollectibleMaxAllowed(player, ID)
-				local exceededNum = math.max(0, ownNum - maxNum)
-
-
-				--if not HexanowBlackCollectiblePredicate(ID) and exceededNum >= 1 and missingWhiteCollectible then
-				--	SetWhiteHexanowCollectible(player, ID)
-				--	exceededNum = exceededNum - 1
-				--	--print("MISSING WHITE COLLECTIBLE FIX")
-				--end
-
-				--print("MISSING WHITE COLLECTIBLE FIX")
-
-				if not HexanowBlackCollectiblePredicate(ID) then
-					if item1Missing and exceededNum >= 1 then
-						SetWhiteHexanowCollectible(player, ID, 1)
-						exceededNum = exceededNum - 1
-					end
-					if item2Missing and exceededNum >= 1 then
-						SetWhiteHexanowCollectible(player, ID, 2)
-						exceededNum = exceededNum - 1
-					end
-					if item3Missing and exceededNum >= 1 then
-						SetWhiteHexanowCollectible(player, ID, 3)
-						exceededNum = exceededNum - 1
-					end
-				end
-
-				if exceededNum > 0 then
-					removedSomething = true
-					for i = 1, exceededNum do
-						player:RemoveCollectible(ID, true)
-						EternalBroken(player, -4) --item.Quality * 2 + 1
-					end
-				end
-			end
-		end
-
-		--player.ItemHoldCooldown = 0
 	end
+
+	--local tracedItems = player:GetCollectibleCount()
+
+	--local missingWhiteCollectible = false
+	--local missingWhiteTrinket = false
+	--local hasWhiteCollectible = false
+	--local hasWhiteTrinket = false
+
+	local item1 = HexanowPlayerDatas[playerID].WhiteItem[1]
+	local item2 = HexanowPlayerDatas[playerID].WhiteItem[2]
+	local item3 = HexanowPlayerDatas[playerID].WhiteItem[3]
+
+	local item1Missing = item1 == 0
+	local item2Missing = item2 == 0
+	local item3Missing = item3 == 0
+
+	--if not player:IsHoldingItem() then
+	if true then
+		local queuedItem = player.QueuedItem.Item
+		if queuedItem ~= nil then
+			if queuedItem.Type == ItemType.ITEM_PASSIVE or queuedItem.Type == ItemType.ITEM_ACTIVE then
+				--print("SET!")
+				PickupWhiteHexanowCollectible(player, queuedItem.ID, HexanowPlayerDatas[playerID].SelectedWhiteItem)
+				--[[
+				if queuedItem.ID == CollectibleType.COLLECTIBLE_BIRTHRIGHT
+				then
+					player:SetPocketActiveItem(hexanowPortalTool, ActiveSlot.SLOT_POCKET, true)
+				end
+				]]
+			end
+			--[[
+			EternalBroken(player, -math.max(0, queuedItem.AddSoulHearts))
+			EternalBroken(player, -math.max(0, queuedItem.AddBlackHearts))
+			for i=1,math.ceil(queuedItem.AddBlackHearts/2) do
+				player:UseActiveItem(CollectibleType.COLLECTIBLE_NECRONOMICON, UseFlag.USE_NOANIM | UseFlag.USE_NOCOSTUME | UseFlag.USE_NOANNOUNCER)
+			end
+			queuedItem.AddSoulHearts = 0
+			queuedItem.AddBlackHearts = 0
+			player:AddCoins(queuedItem.AddCoins)
+			queuedItem.AddCoins = 0
+			player:AddBombs(queuedItem.AddBombs)
+			queuedItem.AddBombs = 0
+			player:AddKeys(queuedItem.AddKeys)
+			queuedItem.AddKeys = 0
+			player:AddMaxHearts(queuedItem.AddMaxHearts)
+			queuedItem.AddMaxHearts = 0
+			player:AddHearts(queuedItem.AddHearts)
+			queuedItem.AddHearts = 0
+			]]
+			local countSoul = queuedItem.AddSoulHearts
+			local countBlack = queuedItem.AddBlackHearts
+			player:FlushQueueItem()
+			RearrangeHearts(player, {SoulHearts = countSoul + countBlack, BlackHearts = countBlack})
+		end
+
+		local item1dem = 1
+		local item2dem = 1
+		local item3dem = 1
+
+
+		if item2 == item1 then
+			item2dem = item2dem + 1
+		end
+		if item3 == item1 then
+			item3dem = item3dem + 1
+		end
+		if item3 == item2 then
+			item3dem = item3dem + 1
+		end
+
+		if not item1Missing and HexanowOwnedCollectibleNum(player, item1, true) < item1dem then
+			item1Missing = true
+			SetWhiteHexanowCollectible(player, 0, 1)
+		end
+
+		if not item2Missing and  HexanowOwnedCollectibleNum(player, item2, true) < item2dem then
+			item2Missing = true
+			SetWhiteHexanowCollectible(player, 0, 2)
+		end
+
+		if not item3Missing and  HexanowOwnedCollectibleNum(player, item3, true) < item3dem then
+			item3Missing = true
+			SetWhiteHexanowCollectible(player, 0, 3)
+		end
+
+		--[[
+		--if WhiteHexanowTrinketID == 0
+		--or not player:HasTrinket(WhiteHexanowTrinketID, true) then
+		--	missingWhiteTrinket = true
+		--end
+
+		--if WhiteHexanowCollectibleID == 0
+		--or not player:HasCollectible(WhiteHexanowCollectibleID, true)
+		--then
+			--missingWhiteCollectible = true
+		--end
+
+		--if player:HasCollectible(WhiteHexanowCollectibleID, true) then
+			--missingWhiteTrinket = false
+			--hasWhiteTrinket = true
+		--end
+		--if player:HasTrinket(WhiteHexanowTrinketID, true) then
+		--	missingWhiteCollectible = false
+		--	hasWhiteCollectible = true
+		--end
+		]]
+	end
+
+	local removedSomething = true
+	local limit = Isaac.GetItemConfig():GetCollectibles().Size - 1
+	while removedSomething do
+		removedSomething = false
+		--for ID = CollectibleType.NUM_COLLECTIBLES - 1, 1, -1 do
+		for ID=1,limit do
+			--ID = ID + 1
+			--[[
+			if ID >= CollectibleType.NUM_COLLECTIBLES and item == nil then
+				break
+			end
+			]]
+			local ownNum = HexanowOwnedCollectibleNum(player, ID, true)
+			local maxNum = HexanowCollectibleMaxAllowed(player, ID)
+			local exceededNum = math.max(0, ownNum - maxNum)
+
+
+			--if not HexanowBlackCollectiblePredicate(ID) and exceededNum >= 1 and missingWhiteCollectible then
+			--	SetWhiteHexanowCollectible(player, ID)
+			--	exceededNum = exceededNum - 1
+			--	--print("MISSING WHITE COLLECTIBLE FIX")
+			--end
+
+			--print("MISSING WHITE COLLECTIBLE FIX")
+
+			if not HexanowBlackCollectiblePredicate(ID) then
+				if item1Missing and exceededNum >= 1 then
+					SetWhiteHexanowCollectible(player, ID, 1)
+					exceededNum = exceededNum - 1
+				end
+				if item2Missing and exceededNum >= 1 then
+					SetWhiteHexanowCollectible(player, ID, 2)
+					exceededNum = exceededNum - 1
+				end
+				if item3Missing and exceededNum >= 1 then
+					SetWhiteHexanowCollectible(player, ID, 3)
+					exceededNum = exceededNum - 1
+				end
+			end
+
+			if exceededNum > 0 then
+				removedSomething = true
+				for i = 1, exceededNum do
+					player:RemoveCollectible(ID, true)
+					EternalBroken(player, -4) --item.Quality * 2 + 1
+				end
+			end
+		end
+	end
+
+	--player.ItemHoldCooldown = 0
+	--[[
+	if player.FrameCount % 3 == 0 and player:HasCollectible(CollectibleType.COLLECTIBLE_BIRTHRIGHT, true) and player:GetActiveItem(ActiveSlot.SLOT_POCKET) ~= hexanowPortalTool
+	then
+		player:SetPocketActiveItem(hexanowPortalTool, ActiveSlot.SLOT_POCKET, true)
+	end
+	]]
 end
 
 -- 玩家攻击，每一帧执行
@@ -1867,19 +1895,30 @@ local function TryCastFireHexanow(player)
 		if player:IsCoopGhost() then
 			maxFireDelay = 20
 		end
-		if data.PhaseBeamCooldown[data.portalToolColor] > 0 then
-			data.PhaseBeamCooldown[data.portalToolColor] = data.PhaseBeamCooldown[data.portalToolColor] - 1
-		elseif data.PhaseBeamCooldown[data.portalToolColor%2+1] > 0 then
-			data.PhaseBeamCooldown[data.portalToolColor%2+1] = data.PhaseBeamCooldown[data.portalToolColor%2+1] - 1
+		local portalColor = data.portalToolColor
+		if portalColor ~= 1 and portalColor ~= 2 then
+			if data.PhaseBeamCooldown[1] > data.PhaseBeamCooldown[2] then
+				portalColor = 2
+			else
+				portalColor = 1
+			end
 		end
-		if data.PhaseBeamCooldown[data.portalToolColor] <=0
+		if data.PhaseBeamCooldown[portalColor] > 0 then
+			data.PhaseBeamCooldown[portalColor] = data.PhaseBeamCooldown[portalColor] - 1
+		elseif data.PhaseBeamCooldown[portalColor%2+1] > 0 then
+			data.PhaseBeamCooldown[portalColor%2+1] = data.PhaseBeamCooldown[portalColor%2+1] - 1
+		end
+		if data.PhaseBeamCooldown[portalColor] <=0
 		--and player.FireDelay <= 0
 		and not (aimDirection.X == 0 and aimDirection.Y == 0)
 		then
 			player.HeadFrameDelay = math.floor(maxFireDelay)
 			player.FireDelay = math.floor(maxFireDelay)
-			data.PhaseBeamCooldown[data.portalToolColor] =  math.floor(maxFireDelay * 6)
+			data.PhaseBeamCooldown[portalColor] =  math.floor(maxFireDelay * 6)
 			CastHexanowLaser(player, player.Position, aimDirection:GetAngleDegrees(), data.portalToolColor)
+			if data.portalToolColor ~= 1 and data.portalToolColor ~= 2 then
+				TryCastFireHexanow(player)
+			end
 		end
 	end
 end
@@ -2067,17 +2106,18 @@ local function SelManageRander(pos, playerID, sortNum)
 		portalCreated2:Render(pos + Vector(0,0), Vector(0,0), Vector(0,0))
 	end
 
+	if data.portalToolColor == 1 then
+		if portal1created then
+			portalSelected:SetFrame("PortalSelectedCreated", 0)
+		else
+			portalSelected:SetFrame("PortalSelected", 0)
+		end
+	end
 	if data.portalToolColor == 2 then
 		if portal2created then
 			portalSelected:SetFrame("PortalSelectedCreated", 1)
 		else
 			portalSelected:SetFrame("PortalSelected", 1)
-		end
-	else
-		if portal1created then
-			portalSelected:SetFrame("PortalSelectedCreated", 0)
-		else
-			portalSelected:SetFrame("PortalSelected", 0)
 		end
 	end
 
@@ -2115,8 +2155,9 @@ local function SelManageRander(pos, playerID, sortNum)
 	arraw:Render(pos + Vector(0,(data.SelectedWhiteItem-1)*16), Vector(0,0), Vector(0,0))
 	pahserCooldown1:Render(pos + Vector(0,0), Vector(0,0), Vector(0,0))
 	pahserCooldown2:Render(pos + Vector(0,8), Vector(0,0), Vector(0,0))
-	portalSelected:Render(pos + Vector(0,0), Vector(0,0), Vector(0,0))
-
+	if data.portalToolColor == 1 or data.portalToolColor == 2 then
+		portalSelected:Render(pos + Vector(0,0), Vector(0,0), Vector(0,0))
+	end
 end
 
 ------------------------------------------------------------
