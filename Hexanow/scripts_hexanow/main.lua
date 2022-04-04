@@ -804,11 +804,12 @@ local function FreezeGridEntity(pos)
 				gridEntity:Hurt(1000)
 			end
 			if gridEntity:GetType() == GridEntityType.GRID_ROCKB
-			or gridEntity:GetType() == GridEntityType.GRID_LOCK
 			or gridEntity:GetType() == GridEntityType.GRID_PILLAR
+			or gridEntity:GetType() == GridEntityType.GRID_LOCK
 			then
+				SFXManager():Play(SoundEffect.SOUND_METAL_BLOCKBREAK, 1, 0, false, 1 )
 				gridEntity.State = 2
-				gridEntity:Init(0)
+				gridEntity:Init(1)
 				--[[
 				gridEntity:SetType(GridEntityType.GRID_DECORATION)
 				gridEntity:Destroy()

@@ -64,7 +64,7 @@ Hexanow is fully implemented for multiplayer and supports controller.
 With more than one Hexanow in same game, they share eternal charges, and have different beam colors and portal colors too. 
 [hr][/hr]Hexanow is currently not completely finished, glitches and malfunctions can occurred. Feel free to send feedback to us!
 Thanks to all supporters and developers of Hexanow!</description>
-    <version>1.20</version>
+    <version>1.21</version>
     <visibility>Public</visibility>
     <tag id="Lua"/>
     <tag id="Player Characters"/>
