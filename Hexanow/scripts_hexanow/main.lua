@@ -72,7 +72,7 @@ local hexanowBodyCostume = Isaac.GetCostumeIdByPath("gfx/characters/HexanowBody.
 local hexanowBodyFlightCostume = Isaac.GetCostumeIdByPath("gfx/characters/HexanowFlight.anm2")
 
 --local entityVariantHeartsBlender = Isaac.GetEntityVariantByName("Hearts Blender")
-local entityVariantHexanowLaser = Isaac.GetEntityVariantByName("Laser (Hexanow)")
+local entityVariantHexanowLaser = Isaac.GetEntityVariantByName("Laser (Hexanow Phaser)")
 local entityVariantHexanowPortalDoor = Isaac.GetEntityVariantByName("Hexanow Portal Door")
 local entityVariantHexanowPortalCreation = Isaac.GetEntityVariantByName("Hexanow Portal Creation")
 local entityVariantHexanowLaserEndpoint = Isaac.GetEntityVariantByName("Hexanow Portal Endpoint")
@@ -173,6 +173,8 @@ function hexanowPlayerData:GenSpriteCaches()
 	self.sprites.portalCreated1 = Sprite()
 	self.sprites.portalCreated2 = Sprite()
 	self.sprites.portalSelected = Sprite()
+	self.sprites.pahserCooldown1 = Sprite()
+	self.sprites.pahserCooldown2 = Sprite()
 	self.sprites.frame0:Load("gfx/ui/HexanowInventory.anm2", true)
 	self.sprites.frame1:Load("gfx/ui/HexanowInventory.anm2", true)
 	self.sprites.frame2:Load("gfx/ui/HexanowInventory.anm2", true)
@@ -187,6 +189,8 @@ function hexanowPlayerData:GenSpriteCaches()
 	self.sprites.portalCreated1:Load("gfx/ui/HexanowInventory.anm2", true)
 	self.sprites.portalCreated2:Load("gfx/ui/HexanowInventory.anm2", true)
 	self.sprites.portalSelected:Load("gfx/ui/HexanowInventory.anm2", true)
+	self.sprites.pahserCooldown1:Load("gfx/ui/HexanowInventory.anm2", true)
+	self.sprites.pahserCooldown2:Load("gfx/ui/HexanowInventory.anm2", true)
 	self.sprites.arraw:SetFrame("Select", 0)
 	self.sprites.item1:SetFrame("Base", 0)
 	self.sprites.item2:SetFrame("Base", 0)
@@ -195,6 +199,8 @@ function hexanowPlayerData:GenSpriteCaches()
 	self.sprites.portalBase2:SetFrame("PortalBase", 1)
 	self.sprites.portalCreated1:SetFrame("PortalCreated", 0)
 	self.sprites.portalCreated2:SetFrame("PortalCreated", 1)
+	self.sprites.pahserCooldown1:SetFrame("PhaseBeamCooldown", 0)
+	self.sprites.pahserCooldown2:SetFrame("PhaseBeamCooldown", 0)
 end
 
 local function HexanowPlayerData()
@@ -206,6 +212,9 @@ local function HexanowPlayerData()
 	cted.WhiteItem[3] = 0
 	cted.SelectedWhiteItem = 1
 	cted.portalToolColor = 2
+	cted.PhaseBeamCooldown = {}
+	cted.PhaseBeamCooldown[1] = 0
+	cted.PhaseBeamCooldown[2] = 0
 	cted.CreatedPortals = {}
 	cted.CreatedPortals[0] = {}
 	cted.CreatedPortals[0][1] = nil
@@ -376,6 +385,19 @@ local function UpdateCache(player)
 	]]
 end
 
+local function EternalBroken(player, count)
+	EternalCharges = EternalCharges - count
+	if EternalCharges < 0 then
+		player:AddBrokenHearts(-EternalCharges)
+		EternalCharges = 0
+	end
+	if EternalCharges > 0 and player:GetBrokenHearts() > 0 then
+		local brokenRemove = math.max(0, math.min(EternalCharges, countBroken % 6))
+		player:AddBrokenHearts(-brokenRemove)
+		EternalCharges = EternalCharges - brokenRemove
+	end
+end
+
 -- 给予永恒之心
 local function ApplyEternalHearts(player)
 	if player:GetEternalHearts() <= 0 then
@@ -385,9 +407,17 @@ end
 
 -- 给予永恒充能
 local function ApplyEternalCharge(player)
+	--[[
 	if player:GetEternalHearts() <= 0 and (EternalCharges > 0 or player:GetHeartLimit() <= 0)then
 		player:AddEternalHearts(1)
 		EternalCharges = EternalCharges - 1
+	end
+	]]
+	if player:GetEternalHearts() <= 0 then
+		player:AddEternalHearts(1)
+		if not EternalChargeForFree then
+			EternalBroken(player, 1)
+		end
 	end
 end
 
@@ -464,18 +494,19 @@ local function RearrangeHearts(player, extra)
 	player:AddBoneHearts(-countBone)
 	player:AddGoldenHearts(countGold)
 
-	if (countSoul > 0 or countBone > 0) and player:GetHearts() <=0 then
-		player:AddMaxHearts(math.max(0, 12 - maxHearts))
-		player:AddHearts(1)
-		EternalCharges = EternalCharges - 1
-	end
-
 	--local brokenRemove = math.max(0, math.min(EternalCharges, math.max(0, countBroken - 6)))
 	--local brokenRemove = math.max(0, math.min(math.floor((EternalCharges - 1) / 3), countBroken))
-	local brokenRemove = math.max(0, math.min(EternalCharges, countBroken % 6))
-	player:AddBrokenHearts(-brokenRemove)
-	EternalCharges = EternalCharges - brokenRemove
-	player:AddMaxHearts(math.max(0, 12 - maxHearts))
+	EternalBroken(player, 0)
+
+	while math.max(0, math.min(12, player:GetHeartLimit()) - maxHearts) > 0 do
+		player:AddMaxHearts(2)
+		EternalBroken(player, 1)
+	end
+
+	if (countSoul > 0 or countBone > 0) and player:GetHearts() <=0 then
+		player:AddHearts(1)
+		EternalBroken(player, 1)
+	end
 
 
 	return nil ----------------------------------------------------------------
@@ -762,19 +793,25 @@ local function FreezeGridEntity(pos)
 			if pit ~= nil then
 				pit:MakeBridge(nil)
 			end
-			local rock = gridEntity:ToRock()
-			if rock ~= nil then
+			if gridEntity:ToRock() ~= nil then
 				gridEntity:Destroy()
+			end
+			if gridEntity:ToTNT() ~= nil or gridEntity:ToPoop() ~= nil then
+				gridEntity:Hurt(1000)
 			end
 			if gridEntity:GetType() == GridEntityType.GRID_ROCKB
 			or gridEntity:GetType() == GridEntityType.GRID_LOCK
 			or gridEntity:GetType() == GridEntityType.GRID_PILLAR
 			then
+				gridEntity.State = 2
+				gridEntity:Init(0)
+				--[[
 				gridEntity:SetType(GridEntityType.GRID_DECORATION)
 				gridEntity:Destroy()
-			end
-			if gridEntity:ToTNT() ~= nil or gridEntity:ToPoop() then
-				gridEntity:Hurt(1000)
+				room:RemoveGridEntity(gridEntity:GetGridIndex(), gridEntity:GetGridIndex(), true)
+				gridEntity:Update()
+				room:Update()
+				]]
 			end
 		end
 
@@ -787,9 +824,9 @@ local function FreezeGridEntity(pos)
 				or entity.Type == EntityType.ENTITY_BRIMSTONE_HEAD
 				or entity.Type == EntityType.ENTITY_GAPING_MAW
 				or entity.Type == EntityType.ENTITY_BROKEN_GAPING_MAW
-				or entity.Type == EntityType.ENTITY_QUAKE_GRIMACE
-				or entity.Type == EntityType.ENTITY_BOMB_GRIMACE)
-				then
+				--or entity.Type == EntityType.ENTITY_QUAKE_GRIMACE
+				--or entity.Type == EntityType.ENTITY_BOMB_GRIMACE
+				)then
 					entity:Kill()
 				end
 			end
@@ -1562,14 +1599,17 @@ local function TickEventHexanow(player)
 			HexanowPlayerDatas[playerID].lastCanFly = player.CanFly
 		end
 		]]
-
+		--[[
 		if room:GetAliveEnemiesCount() <= 0 then
 			ApplyEternalHearts(player)
 			EternalChargeForFree = true
 		else
-			ApplyEternalCharge(player)
 			EternalChargeForFree = false
+			ApplyEternalCharge(player)
 		end
+		]]
+		EternalChargeForFree = room:GetAliveEnemiesCount() <= 0
+		ApplyEternalCharge(player)
 
 		--[[
 		for i,entity in ipairs(roomEntities) do
@@ -1685,8 +1725,8 @@ local function TickEventHexanow(player)
 					PickupWhiteHexanowCollectible(player, queuedItem.ID, HexanowPlayerDatas[playerID].SelectedWhiteItem)
 				end
 				--[[
-				EternalCharges = EternalCharges + math.max(0, queuedItem.AddSoulHearts)
-				EternalCharges = EternalCharges + math.max(0, queuedItem.AddBlackHearts)
+				EternalBroken(player, -math.max(0, queuedItem.AddSoulHearts))
+				EternalBroken(player, -math.max(0, queuedItem.AddBlackHearts))
 				for i=1,math.ceil(queuedItem.AddBlackHearts/2) do
 					player:UseActiveItem(CollectibleType.COLLECTIBLE_NECRONOMICON, UseFlag.USE_NOANIM | UseFlag.USE_NOCOSTUME | UseFlag.USE_NOANNOUNCER)
 				end
@@ -1807,7 +1847,7 @@ local function TickEventHexanow(player)
 					removedSomething = true
 					for i = 1, exceededNum do
 						player:RemoveCollectible(ID, true)
-						EternalCharges = EternalCharges + 4 --item.Quality * 2 + 1
+						EternalBroken(player, -4) --item.Quality * 2 + 1
 					end
 				end
 			end
@@ -1823,15 +1863,23 @@ local function TryCastFireHexanow(player)
 		local playerID = GetPlayerID(player)
 		local aimDirection = player:GetAimDirection()
 		local maxFireDelay = player.MaxFireDelay
+		local data = HexanowPlayerDatas[playerID]
 		if player:IsCoopGhost() then
 			maxFireDelay = 20
 		end
-		if player.FireDelay <= 0
+		if data.PhaseBeamCooldown[data.portalToolColor] > 0 then
+			data.PhaseBeamCooldown[data.portalToolColor] = data.PhaseBeamCooldown[data.portalToolColor] - 1
+		elseif data.PhaseBeamCooldown[data.portalToolColor%2+1] > 0 then
+			data.PhaseBeamCooldown[data.portalToolColor%2+1] = data.PhaseBeamCooldown[data.portalToolColor%2+1] - 1
+		end
+		if data.PhaseBeamCooldown[data.portalToolColor] <=0
+		--and player.FireDelay <= 0
 		and not (aimDirection.X == 0 and aimDirection.Y == 0)
 		then
 			player.HeadFrameDelay = math.floor(maxFireDelay)
 			player.FireDelay = math.floor(maxFireDelay)
-			CastHexanowLaser(player, player.Position, aimDirection:GetAngleDegrees(), HexanowPlayerDatas[playerID].portalToolColor)
+			data.PhaseBeamCooldown[data.portalToolColor] =  math.floor(maxFireDelay * 6)
+			CastHexanowLaser(player, player.Position, aimDirection:GetAngleDegrees(), data.portalToolColor)
 		end
 	end
 end
@@ -1950,22 +1998,27 @@ local function SelManageRander(pos, playerID, sortNum)
 	if sortNum >= 1 then
 		FrameAnm = "Frame2"
 	end
+	local data = HexanowPlayerDatas[playerID]
+	local player = Game():GetPlayer(playerID - 1)
+
 	pos = pos + Vector(sortNum*16, 0)
 
-	local frame0 = HexanowPlayerDatas[playerID].sprites.frame0
-	local frame1 = HexanowPlayerDatas[playerID].sprites.frame1
-	local frame2 = HexanowPlayerDatas[playerID].sprites.frame2
-	local frame3 = HexanowPlayerDatas[playerID].sprites.frame3
-	local frame4 = HexanowPlayerDatas[playerID].sprites.frame4
-	local arraw = HexanowPlayerDatas[playerID].sprites.arraw
-	local item1 = HexanowPlayerDatas[playerID].sprites.item1
-	local item2 = HexanowPlayerDatas[playerID].sprites.item2
-	local item3 = HexanowPlayerDatas[playerID].sprites.item3
-	local portalBase1 = HexanowPlayerDatas[playerID].sprites.portalBase1
-	local portalBase2 = HexanowPlayerDatas[playerID].sprites.portalBase2
-	local portalCreated1 = HexanowPlayerDatas[playerID].sprites.portalCreated1
-	local portalCreated2 = HexanowPlayerDatas[playerID].sprites.portalCreated2
-	local portalSelected = HexanowPlayerDatas[playerID].sprites.portalSelected
+	local frame0 = data.sprites.frame0
+	local frame1 = data.sprites.frame1
+	local frame2 = data.sprites.frame2
+	local frame3 = data.sprites.frame3
+	local frame4 = data.sprites.frame4
+	local arraw = data.sprites.arraw
+	local item1 = data.sprites.item1
+	local item2 = data.sprites.item2
+	local item3 = data.sprites.item3
+	local portalBase1 = data.sprites.portalBase1
+	local portalBase2 = data.sprites.portalBase2
+	local portalCreated1 = data.sprites.portalCreated1
+	local portalCreated2 = data.sprites.portalCreated2
+	local portalSelected = data.sprites.portalSelected
+	local pahserCooldown1 = data.sprites.pahserCooldown1
+	local pahserCooldown2 = data.sprites.pahserCooldown2
 
 	local portalColor1 = GetHexanowPortalColor(Game():GetPlayer(playerID-1), 1)
 	local portalColor2 = GetHexanowPortalColor(Game():GetPlayer(playerID-1), 2)
@@ -1983,11 +2036,11 @@ local function SelManageRander(pos, playerID, sortNum)
 	portalBase2.Color = portalColor2
 
 	--[[
-	if HexanowPlayerDatas[playerID].SelectedWhiteItem == 1 then
+	if data.SelectedWhiteItem == 1 then
 		arraw:SetFrame("Select", 0)
-	elseif HexanowPlayerDatas[playerID].SelectedWhiteItem == 2 then
+	elseif data.SelectedWhiteItem == 2 then
 		arraw:SetFrame("Select", 1)
-	elseif HexanowPlayerDatas[playerID].SelectedWhiteItem == 3 then
+	elseif data.SelectedWhiteItem == 3 then
 		arraw:SetFrame("Select", 2)
 	else
 		arraw:SetFrame("Select", 3)
@@ -2014,7 +2067,7 @@ local function SelManageRander(pos, playerID, sortNum)
 		portalCreated2:Render(pos + Vector(0,0), Vector(0,0), Vector(0,0))
 	end
 
-	if HexanowPlayerDatas[playerID].portalToolColor == 2 then
+	if data.portalToolColor == 2 then
 		if portal2created then
 			portalSelected:SetFrame("PortalSelectedCreated", 1)
 		else
@@ -2028,24 +2081,30 @@ local function SelManageRander(pos, playerID, sortNum)
 		end
 	end
 
-	if HexanowPlayerDatas[playerID].WhiteItem[1] ~= nil then
-		local item = Isaac.GetItemConfig():GetCollectible(HexanowPlayerDatas[playerID].WhiteItem[1])
+	local cdanm1, cdanm2 = "PhaseBeamCooldown", "PhaseBeamCooldown"
+	if portal1created then cdanm1 = "PhaseBeamCooldownCreated" end
+	if portal2created then cdanm2 = "PhaseBeamCooldownCreated" end
+	pahserCooldown1:SetFrame(cdanm1, math.max(0, math.min(13, math.ceil(data.PhaseBeamCooldown[1] / (player.MaxFireDelay * 6) * 13))))
+	pahserCooldown2:SetFrame(cdanm2, math.max(0, math.min(13, math.ceil(data.PhaseBeamCooldown[2] / (player.MaxFireDelay * 6) * 13))))
+
+	if data.WhiteItem[1] ~= nil then
+		local item = Isaac.GetItemConfig():GetCollectible(data.WhiteItem[1])
 		if item ~= nil then
 			item1:ReplaceSpritesheet(0,item.GfxFileName)
 			item1:LoadGraphics()
 			item1:Render(pos + Vector(0,16*1), Vector(0,0), Vector(0,0))
 		end
 	end
-	if HexanowPlayerDatas[playerID].WhiteItem[2] ~= nil then
-	local item = Isaac.GetItemConfig():GetCollectible(HexanowPlayerDatas[playerID].WhiteItem[2])
+	if data.WhiteItem[2] ~= nil then
+	local item = Isaac.GetItemConfig():GetCollectible(data.WhiteItem[2])
 		if item ~= nil then
 			item2:ReplaceSpritesheet(0,item.GfxFileName)
 			item2:LoadGraphics()
 			item2:Render(pos + Vector(0,16*2), Vector(0,0), Vector(0,0))
 		end
 	end
-	if HexanowPlayerDatas[playerID].WhiteItem[3] ~= nil then
-	local item = Isaac.GetItemConfig():GetCollectible(HexanowPlayerDatas[playerID].WhiteItem[3])
+	if data.WhiteItem[3] ~= nil then
+	local item = Isaac.GetItemConfig():GetCollectible(data.WhiteItem[3])
 		if item ~= nil then
 			item3:ReplaceSpritesheet(0,item.GfxFileName)
 			item3:LoadGraphics()
@@ -2053,7 +2112,9 @@ local function SelManageRander(pos, playerID, sortNum)
 		end
 	end
 
-	arraw:Render(pos + Vector(0,(HexanowPlayerDatas[playerID].SelectedWhiteItem-1)*16), Vector(0,0), Vector(0,0))
+	arraw:Render(pos + Vector(0,(data.SelectedWhiteItem-1)*16), Vector(0,0), Vector(0,0))
+	pahserCooldown1:Render(pos + Vector(0,0), Vector(0,0), Vector(0,0))
+	pahserCooldown2:Render(pos + Vector(0,8), Vector(0,0), Vector(0,0))
 	portalSelected:Render(pos + Vector(0,0), Vector(0,0), Vector(0,0))
 
 end
@@ -2276,13 +2337,13 @@ function HexanowMod.Main:PostPlayerInit(player)
 end
 HexanowMod:AddCallback(ModCallbacks.MC_POST_PLAYER_INIT, HexanowMod.Main.PostPlayerInit)
 
--- 时间回溯
+-- 使用物品
 function HexanowMod.Main:HexanowUseItem(itemId, itemRng, player, useFlags, activeSlot, customVarData)
 	if not IsHexanow(player) then
 		return
 	end
 	if HexanowBlackCollectiblePredicate(itemId) then
-		EternalCharges = EternalCharges + 4
+		EternalBroken(player, -4)
 		return {
 			Discharge = true,
 			Remove = true,
@@ -2311,17 +2372,12 @@ function HexanowMod.Main:HexanowUseItem(itemId, itemRng, player, useFlags, activ
 	or itemId == CollectibleType.COLLECTIBLE_POTATO_PEELER
 	or itemId == CollectibleType.COLLECTIBLE_MAGIC_SKIN
 	then
-		player:AddBrokenHearts(1)
+		RearrangeHearts(player)
 	end
 	if itemId == CollectibleType.COLLECTIBLE_SUMPTORIUM
 	then
 		if EternalChargeForFree then
-			if EternalCharges > 0 then
-				EternalCharges = EternalCharges - 1
-			else
-				player:AddBrokenHearts(1)
-				--player:TakeDamage(1, DamageFlag.DAMAGE_RED_HEARTS | DamageFlag.DAMAGE_INVINCIBLE, EntityRef(player), 30)
-			end
+			EternalBroken(player, 1)
 		end
 		--[[
 		if player:GetHearts() - player:GetRottenHearts() + player:GetSoulHearts() <= 0
@@ -2369,7 +2425,7 @@ function HexanowMod.Main:PostNewLevel()
 	end
 	MaintainPortal(true)
 	if HexanowFlags:HasFlag("TREASURE_ROOM_NOT_ENTERED") then
-		EternalCharges = EternalCharges + 0
+		EternalBroken(player, -0)
 	end
 	HexanowFlags:AddFlag("TREASURE_ROOM_NOT_ENTERED")
 	HexanowFlags:RemoveFlag("MIRROR_WORLD_PORTALS_GENERATED")
@@ -2406,6 +2462,7 @@ function HexanowMod.Main:PostNewRoom()
 		else
 			pos = room:GetGridPosition(queuedNextRoomGrid)
 		end
+		FreezeGridEntity(pos)
 		CallForEveryPlayer(
 			function(player)
 				player:AnimateTeleport()
@@ -2454,7 +2511,7 @@ function HexanowMod.Main:PostNewRoom()
 			UpdateCostumes(player)
 			if IsHexanow(player) then
 				ApplyEternalHearts(player)
-				roomClearBounsEnabled = not Game():GetRoom():IsClear()
+				roomClearBounsEnabled = Game():GetRoom():IsClear()
 				UpdateCache(player)
 				UpdateCostumes(player)
 			end
@@ -2474,14 +2531,12 @@ function HexanowMod.Main:PostNewRoom()
 		then
 			HexanowFlags:AddFlag("ROOM_PLANETARIUM_REWARD")
 		end
-		--[[
 		for i = 0, DoorSlot.NUM_DOOR_SLOTS - 1 do
 			local door = room:GetDoor(i)
-			if door ~= nil and door:IsRoomType(RoomType.ROOM_PLANETARIUM) then
-				door:TryUnlock(nil, true)
+			if door ~= nil and door:IsRoomType(RoomType.ROOM_PLANETARIUM) and door:IsLocked() then
+				door:SetLocked(false)
 			end
 		end
-		]]
 		--[[
 		level:ApplyBlueMapEffect()
 		level:ApplyCompassEffect()
@@ -2681,6 +2736,30 @@ function HexanowMod.Main:PreTearCollision(tear, collider, low)
 end
 HexanowMod:AddCallback(ModCallbacks.MC_PRE_TEAR_COLLISION , HexanowMod.Main.PreTearCollision)
 
+local function ExecutePickup(player, pickup, func)
+	if pickup:IsShopItem() then
+		if player:GetNumCoins() >= pickup.Price and not player:IsHoldingItem() then
+			player:AddCoins(-pickup.Price)
+			player:AnimatePickup(pickup:GetSprite())
+		else
+			return true
+		end
+	end
+	pickup:GetSprite():Play("Collect", true)
+	if func ~= nil then
+		func()
+	end
+	pickup:PlayPickupSound()
+	--print("DESTROYING")
+	--if pickup:IsShopItem() then
+	--	--pickup:Morph(pickup.Type, pickup.Variant, 0, true)
+	--	pickup.SubType = 0
+	--else
+		pickup:Remove()
+	--end
+	return pickup:IsShopItem()
+end
+
 -- 改变掉落物拾取行为
 function HexanowMod.Main:PrePickupCollision(pickup, collider, low)
 	local player = collider:ToPlayer()
@@ -2702,37 +2781,33 @@ function HexanowMod.Main:PrePickupCollision(pickup, collider, low)
 
 		if pickup.Variant == PickupVariant.PICKUP_HEART then
 			if pickup.SubType == HeartSubType.HEART_ETERNAL
-			and (player:GetHearts() < 24 or player:GetEternalHearts() < 1)
-			--and player:GetMaxHearts() >= player:GetHeartsLimit()
+			--and (player:GetHearts() < 24 or player:GetEternalHearts() < 1)
+			--and player:GetMaxHearts() >= player:GetHeartLimit()
 			--and player:GetHearts() < player:GetMaxHearts()
 			--and player:GetEternalHearts() >= 1
+			and player:GetBrokenHearts() > 0
 			then
-				if pickup:IsShopItem() then
-					if player:GetNumCoins() >= pickup.Price and not player:IsHoldingItem() then
-						player:AddCoins(-pickup.Price)
-						player:AnimatePickup(pickup:GetSprite())
-					else
-						return true
+				return ExecutePickup(player, pickup, function()
+					--SFXManager():Play(SoundEffect.SOUND_SUPERHOLY, 1, 0, false, 1 )
+					--player:AddHearts(player:GetMaxHearts())
+					--player:AddBrokenHearts(-player:GetBrokenHearts())
+					player:AddBrokenHearts(-player:GetBrokenHearts())
+					RearrangeHearts(player)
+					--player:AddEternalHearts(200)
+					if player:GetEternalHearts() < 1 then
+						player:AddEternalHearts(1)
 					end
-				end
-				--SFXManager():Play(SoundEffect.SOUND_SUPERHOLY, 1, 0, false, 1 )
-				pickup:GetSprite():Play("Collect", true)
-				player:AddBrokenHearts(-player:GetBrokenHearts())
-				RearrangeHearts(player)
-				player:AddEternalHearts(200)
-				if player:GetEternalHearts() < 1 then
-					player:AddEternalHearts(1)
-				end
-				pickup:PlayPickupSound()
-				--print("DESTROYING")
-				--player:AddHearts(player:GetMaxHearts())
-				--if pickup:IsShopItem() then
-				--	--pickup:Morph(pickup.Type, pickup.Variant, 0, true)
-				--	pickup.SubType = 0
-				--else
-					pickup:Remove()
-				--end
+				end)
+			elseif pickup.SubType == HeartSubType.HEART_ROTTEN
+			and player:GetHearts() >= player:GetMaxHearts()
+			then
 				return pickup:IsShopItem()
+			elseif pickup.SubType == HeartSubType.HEART_BONE
+			and player:GetMaxHearts() < player:GetHeartLimit()
+			then
+				return ExecutePickup(player, pickup, function()
+					player:AddMaxHearts(2)
+				end)
 			elseif
 				pickup.SubType == HeartSubType.HEART_HALF_SOUL
 			or	pickup.SubType == HeartSubType.HEART_SOUL
@@ -2740,43 +2815,32 @@ function HexanowMod.Main:PrePickupCollision(pickup, collider, low)
 			or	pickup.SubType == HeartSubType.HEART_BLACK
 			or	pickup.SubType == HeartSubType.HEART_BLENDED
 			then
-
-				if pickup:IsShopItem() then
-					if player:GetNumCoins() >= pickup.Price and not player:IsHoldingItem() then
-						player:AddCoins(-pickup.Price)
-						player:AnimatePickup(pickup:GetSprite())
-					else
-						return true
-					end
-				end
-
-				local score = 2
-				if pickup.SubType == HeartSubType.HEART_HALF_SOUL then
-					score = 1
-				elseif pickup.SubType == HeartSubType.HEART_BLACK then
-					score = 2
-					player:UseActiveItem(CollectibleType.COLLECTIBLE_NECRONOMICON, UseFlag.USE_NOANIM | UseFlag.USE_NOCOSTUME | UseFlag.USE_NOANNOUNCER)
-				elseif pickup.SubType == HeartSubType.HEART_BLENDED then
-					if player:GetMaxHearts() - player:GetHearts() > 1 then
-						player:AddHearts(2)
-						score = 0
-					elseif player:GetMaxHearts() - player:GetHearts() == 1 then
-						player:AddHearts(1)
+				return ExecutePickup(player, pickup, function()
+					local score = 2
+					if pickup.SubType == HeartSubType.HEART_HALF_SOUL then
 						score = 1
-					else
+					elseif pickup.SubType == HeartSubType.HEART_BLACK then
 						score = 2
+						player:UseActiveItem(CollectibleType.COLLECTIBLE_NECRONOMICON, UseFlag.USE_NOANIM | UseFlag.USE_NOCOSTUME | UseFlag.USE_NOANNOUNCER)
+					elseif pickup.SubType == HeartSubType.HEART_BLENDED then
+						if player:GetMaxHearts() - player:GetHearts() > 1 then
+							player:AddHearts(2)
+							score = 0
+						elseif player:GetMaxHearts() - player:GetHearts() == 1 then
+							player:AddHearts(1)
+							score = 1
+						else
+							score = 2
+						end
 					end
-				end
-
-				if pickup.SubType == HeartSubType.HEART_BLENDED then
-					SFXManager():Play(SoundEffect.SOUND_HOLY, 1, 0, false, 1 )
-				else
-					pickup:PlayPickupSound()
-				end
-				EternalCharges = EternalCharges + score
-				pickup:GetSprite():Play("Collect", true)
-				pickup:Remove()
-				return pickup:IsShopItem()
+	
+					if pickup.SubType == HeartSubType.HEART_BLENDED then
+						SFXManager():Play(SoundEffect.SOUND_HOLY, 1, 0, false, 1 )
+					else
+						pickup:PlayPickupSound()
+					end
+					EternalBroken(player, -score)
+				end)
 			end
 		end
 

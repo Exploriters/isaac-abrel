@@ -10,7 +10,7 @@
 	bigportrait="playerportraitbig_Hexanow.png"
 	canShoot="false"
 	costumeSuffix="hexanow"
-	birthright="not done"/>
+	birthright="tertiary phaser"/>
 	
   <player name="Tainted Hexanow" skin="character_Hexanow.png" hp="12" black="0" bombs="0" keys="0" card="0"
 	items=""
@@ -19,6 +19,6 @@
 	bigportrait="playerportraitbig_Hexanow.png"
 	canShoot="false"
 	costumeSuffix="hexanow"
-	birthright="not done"
+	birthright="tertiary phaser"
 	bSkinParent="Hexanow"/>
 </players>

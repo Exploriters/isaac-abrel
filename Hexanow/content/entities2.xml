@@ -13,7 +13,7 @@
         <gibs amount="0" blood="0" bone="0" eye="0" gut="0" large="0" />
 	</entity>
 	-->
-    <entity anm2path="HexanowBeam.anm2" baseHP="0" boss="0" champion="0" collisionDamage="0" collisionMass="8" collisionRadius="20" friction="1" id="7" name="Laser (Hexanow)" numGridCollisionPoints="0" shadowSize="0" stageHP="0" variant="302">
+    <entity anm2path="HexanowBeam.anm2" baseHP="0" boss="0" champion="0" collisionDamage="0" collisionMass="8" collisionRadius="20" friction="1" id="7" name="Laser (Hexanow Phaser)" numGridCollisionPoints="0" shadowSize="0" stageHP="0" variant="302">
         <gibs amount="0" blood="0" bone="0" eye="0" gut="0" large="0" />
     </entity>
 
