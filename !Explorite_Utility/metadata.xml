@@ -4,7 +4,7 @@
     <directory>!explorite_utility</directory>
     <id>2780875807</id>
     <description>Explorite utility is a lib that providing methods for  mods to use.</description>
-    <version>1.8</version>
+    <version>1.9</version>
     <visibility>Public</visibility>
     <tag id="Lua"/>
 </metadata>

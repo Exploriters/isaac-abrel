@@ -179,3 +179,22 @@ function Parse00(value)
 	end
 	return str
 end
+
+function GetPlayerShotCount(player)
+	if player:HasCollectible(CollectibleType.COLLECTIBLE_20_20)
+	or player:HasCollectible(CollectibleType.COLLECTIBLE_INNER_EYE)
+	or player:HasCollectible(CollectibleType.COLLECTIBLE_MUTANT_SPIDER)
+	or player:GetPlayerType() == PlayerType.PLAYER_KEEPER
+	or player:GetPlayerType() == PlayerType.PLAYER_KEEPER_B
+	then
+		return 2
+		+ math.max(0, player:GetCollectibleNum(CollectibleType.COLLECTIBLE_20_20) - 1)
+		+ player:GetCollectibleNum(CollectibleType.COLLECTIBLE_INNER_EYE)
+		+ player:GetCollectibleNum(CollectibleType.COLLECTIBLE_MUTANT_SPIDER) * 2
+		+ player:GetEffects():GetCollectibleEffectNum(CollectibleType.COLLECTIBLE_INNER_EYE)
+		+ player:GetEffects():GetCollectibleEffectNum(CollectibleType.COLLECTIBLE_MUTANT_SPIDER) * 2
+		+ (player:GetPlayerType() == PlayerType.PLAYER_KEEPER and {1} or {0})[1]
+		+ (player:GetPlayerType() == PlayerType.PLAYER_KEEPER_B and {2} or {0})[1]
+	end
+	return 1
+end

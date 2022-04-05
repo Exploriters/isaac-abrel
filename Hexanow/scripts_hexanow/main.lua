@@ -1084,7 +1084,7 @@ end
 HexanowMod:AddCallback(ModCallbacks.MC_POST_EFFECT_RENDER, HexanowMod.Main.PortalDoorRender, entityVariantHexanowPortalDoor)
 
 local function PortalLaserInterval(laser)
-	if true then
+	if laser.OneHit then
 		laser.CollisionDamage = 0
 		laser.TearFlags = TearFlags.TEAR_NORMAL
 	end
@@ -1092,6 +1092,7 @@ local function PortalLaserInterval(laser)
 		laser:Remove()
 	elseif not laser:IsDead() then
 		local laserSprite = laser:GetSprite()
+		laserSprite.Color = Color(laserSprite.Color.R, laserSprite.Color.G, laserSprite.Color.B, 1 - laser.FrameCount / 20)
 		if laser:GetSprite():GetAnimation() == "BeamLaser" then
 			local endpointeffect = Isaac.Spawn(EntityType.ENTITY_EFFECT, entityVariantHexanowLaserEndpoint, 0, laser.EndPoint, Vector(0,0), nil)
 			endpointeffect.DepthOffset = 3000
@@ -1099,7 +1100,6 @@ local function PortalLaserInterval(laser)
 			impactSprite:SetFrame("Loop", laser.FrameCount % 4)
 			impactSprite.Color = Color(laserSprite.Color.R, laserSprite.Color.G, laserSprite.Color.B, 1)
 		end
-		laserSprite.Color = Color(laserSprite.Color.R, laserSprite.Color.G, laserSprite.Color.B, 1 - laser.FrameCount / 20)
 	end
 end
 
@@ -1205,46 +1205,142 @@ local function HexanowLaserOverPortalLocation(player, degrees, colorType)
 	return nil
 end
 
-local function CastHexanowLaser(player, position, degrees, colorType, fromOtherBeam)
-	local offset = Vector(0, 0)
-	local entitiesTempNoLaserKnockback = {}
-	if not fromOtherBeam then
-		--offset = Vector(0, -26)
-		CallForEveryEntity(
-			function(entity)
-				entitiesTempNoLaserKnockback[entity.Index] = Vector(entity.Velocity.X, entity.Velocity.Y)
+local function ExecuteHexanowLaserIntersectionEffect(player, position, color, damage, tearFlags)
+	SFXManager():Play(SoundEffect.SOUND_FREEZE_SHATTER, 1, 0, false, 1 )
+	--[[
+	Game():BombDamage(
+		position,
+		damage,
+		40,
+		false,
+		player,
+		tearFlags,
+		DamageFlag.DAMAGE_LASER,
+		false
+	)
+	Game():BombExplosionEffects(
+		position,
+		damage,
+		tearFlags,
+		Color(color.R,color.G,color.B,0),
+		player,
+		1,
+		false,
+		false,
+		DamageFlag.DAMAGE_LASER
+	)
+	CallForEveryEntity(
+		function(entity)
+			if entitiesTempNoKnockback[entity.Index] then
+				entity:ClearEntityFlags(EntityFlag.FLAG_NO_KNOCKBACK)
 			end
-		)
+		end
+	)
+	Game():BombTearflagEffects(
+		position,
+		40,
+		tearFlags,
+		player,
+		1
+	)
+	]]
+	local entitiesTempNoBombKnockback = {}
+	CallForEveryEntity(
+		function(entity)
+			entitiesTempNoBombKnockback[entity.Index] = Vector(entity.Velocity.X, entity.Velocity.Y)
+		end
+	)
+	if player:HasCollectible(CollectibleType.COLLECTIBLE_DR_FETUS)
+	or player:HasCollectible(CollectibleType.COLLECTIBLE_EPIC_FETUS)
+	then
+		local bomb = player:FireBomb(position, Vector(0, 0), player)
+		bomb.Visible = false
+		bomb:AddTearFlags(TearFlags.TEAR_ICE)
+		bomb.ExplosionDamage = math.min(damage * 5, 30) + damage * 5
+		bomb:SetExplosionCountdown(0)
 	end
-	local room = Game():GetRoom()
-	local laser = EntityLaser.ShootAngle(entityVariantHexanowLaser, position, degrees, 0, offset, player)
-	local sprite = laser:GetSprite()
-	local color = GetHexanowPortalColor(player, colorType)
-	local damage = player.Damage
-	local tearFlags = player.TearFlags | TearFlags.TEAR_ICE
-	if player:IsCoopGhost() then
-		damage = 0
-		tearFlags = TearFlags.TEAR_NORMAL
-		sprite:SetAnimation("ThinLaser", false)
-	end
-	sprite.Color = color
-	laser.CollisionDamage = damage
-	laser.DepthOffset = -10 --3000
-	laser.Shrink = false
-	laser.DisableFollowParent = true
-	laser.OneHit = true
-	laser.TearFlags = tearFlags
-	laser:Update()
-	PortalLaserInterval(laser)
-	if not fromOtherBeam then
-		SFXManager():Play(SoundEffect.SOUND_FREEZE, 1, 0, false, 1 )
-		CallForEveryEntity(
-			function(entity)
-				if entitiesTempNoLaserKnockback[entity.Index] ~= nil then
-					entity.Velocity = entitiesTempNoLaserKnockback[entity.Index]
+	CallForEveryEntity(
+		function(entity)
+			if entitiesTempNoBombKnockback[entity.Index] ~= nil then
+				local v1 = entitiesTempNoBombKnockback[entity.Index]
+				local v2 = entity.Velocity
+				if v1.X ~= v2.X or v1.Y ~= v2.Y then
+					entity.Velocity = v1
+					local pickup = entity:ToPickup()
+					if pickup ~= nil
+					and entity.Type == EntityType.ENTITY_PICKUP
+					and entity.Variant == PickupVariant.PICKUP_BOMBCHEST
+					then
+						pickup:TryOpenChest(player)
+					end
+					local NPC = entity:ToNPC()
+					if NPC ~= nil
+					and NPC.Type == EntityType.ENTITY_FIREPLACE
+					then
+						NPC:TakeDamage(player.Damage, DamageFlag.DAMAGE_EXPLOSION, EntityRef(player), 0)
+					end
 				end
 			end
-		)
+		end
+	)
+	FreezeGridEntity(position)
+end
+
+local function CastHexanowLaser(player, position, degrees, colorType, fromOtherBeam)
+	local offset = Vector(0, 0)
+	local color = GetHexanowPortalColor(player, colorType)
+	local room = Game():GetRoom()
+	local laserCount = 1
+	local spread = 15
+	local damage = player.Damage
+	local onehit = true
+	local tearFlags = player.TearFlags | TearFlags.TEAR_ICE
+	if fromOtherBeam then
+		spread = 1.25
+	end
+	if not player:IsCoopGhost() then
+		laserCount = GetPlayerShotCount(player)
+		onehit = player:GetCollectibleNum(CollectibleType.COLLECTIBLE_BRIMSTONE) + player:GetEffects():GetCollectibleEffectNum(CollectibleType.COLLECTIBLE_BRIMSTONE) <= 0
+	else
+		damage = 0
+		tearFlags = TearFlags.TEAR_NORMAL
+	end
+	if fromOtherBeam then
+		laserCount = 1
+	end
+	for i=0,laserCount - 1 do
+		local degreeFactor = (i - (laserCount - 1) / 2)
+		local laser = EntityLaser.ShootAngle(entityVariantHexanowLaser, position, degrees + spread * degreeFactor, 0, offset, player)
+		local sprite = laser:GetSprite()
+		if player:IsCoopGhost() then
+			sprite:SetAnimation("ThinLaser", false)
+		end
+		sprite.Color = color
+		laser.CollisionDamage = damage
+		laser.DepthOffset = -10 --3000
+		laser.Shrink = false
+		laser.DisableFollowParent = true
+		laser.OneHit = onehit
+		laser.TearFlags = tearFlags
+		laser:Update()
+		PortalLaserInterval(laser)
+	end
+	if laserCount % 2 == 0 then
+		local laser = EntityLaser.ShootAngle(entityVariantHexanowLaser, position, degrees, 0, offset, player)
+		local sprite = laser:GetSprite()
+		sprite:SetAnimation("ThinLaser", false)
+		sprite.Color = color
+		laser.CollisionDamage = 0
+		laser.DepthOffset = -10 --3000
+		laser.Shrink = false
+		laser.DisableFollowParent = true
+		laser.OneHit = onehit
+		laser.TearFlags = TearFlags.TEAR_NORMAL
+		laser:Update()
+		PortalLaserInterval(laser)
+	end
+	if not fromOtherBeam then
+		SFXManager():Play(SoundEffect.SOUND_FREEZE, 1, 0, false, 1 )
 		if colorType == 1 or colorType == 2 then
 			local endpoint = EntityLaser.CalculateEndPoint(position + offset, Vector.FromAngle(degrees), Vector(0,0), player, 20)
 			local settedPortal = SetPortal(player, colorType, room, Game():GetLevel():GetCurrentRoomDesc(), endpoint)
@@ -1255,89 +1351,7 @@ local function CastHexanowLaser(player, position, degrees, colorType, fromOtherB
 					local newEndpoint = EntityLaser.CalculateEndPoint(newPosition, Vector.FromAngle(newDegrees), Vector(0,0), player, 20)
 					local intersection = ComputeIntersection(position, endpoint, newPosition, newEndpoint)
 					if (degrees - newDegrees) % 180 ~= 0 and intersection ~= nil then
-						SFXManager():Play(SoundEffect.SOUND_FREEZE_SHATTER, 1, 0, false, 1 )
-						--[[
-						local bomb = player:FireBomb(intersection, Vector(0, 0), player)
-						bomb.Visible = false
-						bomb:AddTearFlags(TearFlags.TEAR_ICE)
-						bomb.ExplosionDamage = 0
-						bomb:SetExplosionCountdown(0)
-						local entitiesTempNoKnockback = {}
-						CallForEveryEntity(
-							function(entity)
-								if entity:HasEntityFlags(EntityFlag.FLAG_NO_KNOCKBACK) then
-									entity:AddEntityFlags(EntityFlag.FLAG_NO_KNOCKBACK)
-									entitiesTempNoKnockback[entity.Index] = true
-								end
-							end
-						)
-						Game():BombExplosionEffects(
-							intersection,
-							damage,
-							tearFlags,
-							Color(color.R,color.G,color.B,0),
-							player,
-							1,
-							false,
-							false,
-							DamageFlag.DAMAGE_LASER
-						)
-						CallForEveryEntity(
-							function(entity)
-								if entitiesTempNoKnockback[entity.Index] then
-									entity:ClearEntityFlags(EntityFlag.FLAG_NO_KNOCKBACK)
-								end
-							end
-						)
-						Game():BombTearflagEffects(
-							intersection,
-							40,
-							tearFlags,
-							player,
-							1
-						)
-						]]
-						local entitiesTempNoBombKnockback = {}
-						CallForEveryEntity(
-							function(entity)
-								entitiesTempNoBombKnockback[entity.Index] = Vector(entity.Velocity.X, entity.Velocity.Y)
-							end
-						)
-						Game():BombDamage(
-							intersection,
-							damage,
-							40,
-							false,
-							player,
-							tearFlags,
-							DamageFlag.DAMAGE_LASER,
-							false
-						)
-						CallForEveryEntity(
-							function(entity)
-								if entitiesTempNoBombKnockback[entity.Index] ~= nil then
-									local v1 = entitiesTempNoBombKnockback[entity.Index]
-									local v2 = entity.Velocity
-									if v1.X ~= v2.X or v1.Y ~= v2.Y then
-										entity.Velocity = v1
-										local pickup = entity:ToPickup()
-										if pickup ~= nil
-										and entity.Type == EntityType.ENTITY_PICKUP
-										and entity.Variant == PickupVariant.PICKUP_BOMBCHEST
-										then
-											pickup:TryOpenChest(player)
-										end
-										local NPC = entity:ToNPC()
-										if NPC ~= nil
-										and NPC.Type == EntityType.ENTITY_FIREPLACE
-										then
-											NPC:TakeDamage(player.Damage, DamageFlag.DAMAGE_EXPLOSION, EntityRef(player), 0)
-										end
-									end
-								end
-							end
-						)
-						FreezeGridEntity(intersection)
+						ExecuteHexanowLaserIntersectionEffect(player, intersection, color, damage * (onehit and {1} or {10})[1], tearFlags)
 					end
 				end
 			end
