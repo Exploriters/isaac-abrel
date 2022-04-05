@@ -1208,16 +1208,6 @@ end
 local function ExecuteHexanowLaserIntersectionEffect(player, position, color, damage, tearFlags)
 	SFXManager():Play(SoundEffect.SOUND_FREEZE_SHATTER, 1, 0, false, 1 )
 	--[[
-	Game():BombDamage(
-		position,
-		damage,
-		40,
-		false,
-		player,
-		tearFlags,
-		DamageFlag.DAMAGE_LASER,
-		false
-	)
 	Game():BombExplosionEffects(
 		position,
 		damage,
@@ -1259,6 +1249,16 @@ local function ExecuteHexanowLaserIntersectionEffect(player, position, color, da
 		bomb.ExplosionDamage = math.min(damage * 5, 30) + damage * 5
 		bomb:SetExplosionCountdown(0)
 	end
+	Game():BombDamage(
+		position,
+		damage,
+		40,
+		false,
+		player,
+		tearFlags,
+		DamageFlag.DAMAGE_LASER,
+		false
+	)
 	CallForEveryEntity(
 		function(entity)
 			if entitiesTempNoBombKnockback[entity.Index] ~= nil then
@@ -2807,19 +2807,26 @@ local function ExecutePickup(player, pickup, func)
 			return true
 		end
 	end
-	pickup:GetSprite():Play("Collect", true)
 	if func ~= nil then
 		func()
 	end
 	pickup:PlayPickupSound()
 	--print("DESTROYING")
-	--if pickup:IsShopItem() then
+	if pickup:IsShopItem() then
 	--	--pickup:Morph(pickup.Type, pickup.Variant, 0, true)
 	--	pickup.SubType = 0
-	--else
 		pickup:Remove()
-	--end
-	return pickup:IsShopItem()
+		player:TryRemoveTrinket(TrinketType.TRINKET_STORE_CREDIT)
+		--[[
+		if player:HasCollectible(CollectibleType.COLLECTIBLE_RESTOCK) then
+		end
+		]]
+	else
+		pickup:GetSprite():Play("Collect", true)
+		--pickup:Remove()
+		pickup:Die()
+	end
+	return true --pickup:IsShopItem()
 end
 
 -- 改变掉落物拾取行为
@@ -2839,6 +2846,8 @@ function HexanowMod.Main:PrePickupCollision(pickup, collider, low)
 			--SetWhiteHexanowCollectible(player, 0)
 			pickup:Remove()
 			return false
+		end
+		if pickup.Variant == PickupVariant.PICKUP_LIL_BATTERY then
 		end
 
 		if pickup.Variant == PickupVariant.PICKUP_HEART then

@@ -33,9 +33,9 @@ Hexanow has some unique abilities that can be enabled by pressing a key:[list]
 [*]Hexanow cannot have her heart containers below 6, unless the space is occupied by broken hearts. Several effects that consume heart container will add broken hearts instead.[/list]
 [b]Phaser: [/b][list]
 [*]A powerful wide beam attack known as phase beam, that hits multiple enemies, and create portal when it hit a wall surface.
-[*]The beam only dealt damage once upon fire. It dealt no damage while dissipating.
+[*]The beam only dealt damage once upon fire and dealt no damage while dissipating, unless she have Brimstone.
 [*]Phase beam will pass through the portal and shoot out from another portal.
-[*]When two phase beam crossing, it creates an explosion, that destroy tiles and fill pits, even metal blocks and grimaces.
+[*]When two phase beam crossing, it creates an explosion, that destroy tiles and fill pits, even metal blocks and grimaces. With Dr. Fetus or Epic Fetus, this explosion will be even more deadly.
 [*]Try to make enemies being hit by both beams and the explosion, will triple her damage.
 [*]Since the fire of phase beam will result the portal with the same color being canceled, Hexanow can place bombs to dealt damage, if necessary.[/list]
 [b]Bindinged inventory: [/b][list]
@@ -65,7 +65,7 @@ Hexanow is fully implemented for multiplayer and supports controller.
 With more than one Hexanow in same game, they share eternal charges, and have different beam colors and portal colors too. 
 [hr][/hr]Hexanow is currently not completely finished, glitches and malfunctions can occurred. Feel free to send feedback to us!
 Thanks to all supporters and developers of Hexanow!</description>
-    <version>1.26</version>
+    <version>1.28</version>
     <visibility>Public</visibility>
     <tag id="Lua"/>
     <tag id="Player Characters"/>
