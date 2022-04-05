@@ -512,7 +512,7 @@ local function RearrangeHearts(player, extra)
 
 	while
 	math.max(0, math.min(12, player:GetHeartLimit()) - player:GetMaxHearts()) > 0
-	and not (player:GetHeartLimit() - player:GetMaxHearts() <= 2 and EternalCharges <= 0)
+	and not (player:GetHeartLimit() - player:GetMaxHearts() <= 2 and EternalCharges <= 0 and player:GetHeartLimit() > 2)
 	do
 		player:AddMaxHearts(2)
 		EternalBroken(player, 1)
