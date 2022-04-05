@@ -498,17 +498,23 @@ local function RearrangeHearts(player, extra)
 	player:AddBoneHearts(-countBone)
 	player:AddGoldenHearts(countGold)
 
+	if (countSoul > 0 or countBone > 0) and player:GetHearts() <=0 then
+		if player:GetMaxHearts() < 2 then
+			player:AddMaxHearts(2)
+		end
+		player:AddHearts(1)
+		EternalBroken(player, 1)
+	end
+
 	--local brokenRemove = math.max(0, math.min(EternalCharges, math.max(0, countBroken - 6)))
 	--local brokenRemove = math.max(0, math.min(math.floor((EternalCharges - 1) / 3), countBroken))
 	EternalBroken(player, 0)
 
-	while math.max(0, math.min(12, player:GetHeartLimit()) - player:GetMaxHearts()) > 0 do
+	while
+	math.max(0, math.min(12, player:GetHeartLimit()) - player:GetMaxHearts()) > 0
+	and not (player:GetHeartLimit() - player:GetMaxHearts() <= 2 and EternalCharges <= 0)
+	do
 		player:AddMaxHearts(2)
-		EternalBroken(player, 1)
-	end
-
-	if (countSoul > 0 or countBone > 0) and player:GetHearts() <=0 then
-		player:AddHearts(1)
 		EternalBroken(player, 1)
 	end
 
@@ -2844,12 +2850,6 @@ function HexanowMod.Main:PrePickupCollision(pickup, collider, low)
 			and player:GetHearts() >= player:GetMaxHearts()
 			then
 				return pickup:IsShopItem()
-			elseif pickup.SubType == HeartSubType.HEART_BONE
-			and player:GetMaxHearts() < player:GetHeartLimit()
-			then
-				return ExecutePickup(player, pickup, function()
-					player:AddMaxHearts(2)
-				end)
 			elseif
 				pickup.SubType == HeartSubType.HEART_HALF_SOUL
 			or	pickup.SubType == HeartSubType.HEART_SOUL
@@ -2860,6 +2860,9 @@ function HexanowMod.Main:PrePickupCollision(pickup, collider, low)
 				return ExecutePickup(player, pickup, function()
 					local score = 2
 					if pickup.SubType == HeartSubType.HEART_HALF_SOUL then
+						score = 1
+					elseif pickup.SubType == HeartSubType.HEART_BONE and player:GetMaxHearts() < player:GetHeartLimit() then
+						player:AddMaxHearts(2)
 						score = 1
 					elseif pickup.SubType == HeartSubType.HEART_BLACK then
 						score = 2
@@ -2875,13 +2878,12 @@ function HexanowMod.Main:PrePickupCollision(pickup, collider, low)
 							score = 2
 						end
 					end
-	
+
 					if pickup.SubType == HeartSubType.HEART_BLENDED then
 						SFXManager():Play(SoundEffect.SOUND_HOLY, 1, 0, false, 1 )
-					else
-						pickup:PlayPickupSound()
 					end
 					EternalBroken(player, -score)
+					RearrangeHearts(player)
 				end)
 			end
 		end

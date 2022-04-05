@@ -45,7 +45,8 @@ Hexanow has some unique abilities that can be enabled by pressing a key:[list]
 [b]Eternal charges: [/b][list]
 [*]Hexanow cannot have soul, black or bone hearts. Instead, Hexanow collects eternal charges.
 [*]Soul, black and bone hearts, and exceeded items, are converted into eternal charges.
-[*]As long as eternal charges are not depleted to 0, Hexanow gains eternal heart at the cost of one eternal charge, which can absorb 1 damage from each hit.
+[*]Hexanow gains eternal heart at the cost of one eternal charge, which can absorb 1 damage from each hit.
+[*]Once eternal charges are depleted to 0, further uses of eternal charges will cause Hexanow gains broken hearts.
 [*]If the room is cleared, Hexanow gains eternal hearts for free.
 [*]Eternal charges can clear broken hearts, but cannot reduce it to below 6 if she has 6 or more broken hearts.[/list]
 [b]Eternal portal: [/b][list]
@@ -64,7 +65,7 @@ Hexanow is fully implemented for multiplayer and supports controller.
 With more than one Hexanow in same game, they share eternal charges, and have different beam colors and portal colors too. 
 [hr][/hr]Hexanow is currently not completely finished, glitches and malfunctions can occurred. Feel free to send feedback to us!
 Thanks to all supporters and developers of Hexanow!</description>
-    <version>1.21</version>
+    <version>1.23</version>
     <visibility>Public</visibility>
     <tag id="Lua"/>
     <tag id="Player Characters"/>
