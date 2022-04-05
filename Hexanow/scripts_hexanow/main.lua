@@ -117,6 +117,7 @@ local queuedNextRoomGrid = nil
 
 local EternalChargeSprite = Sprite()
 EternalChargeSprite:Load("gfx/ui/EternalCharge.anm2", true)
+EternalChargeSprite:SetFrame("Base", 0)
 
 Explorite.RegistSideBar("EternalCharge", function()
 	if not PlayerTypeExistInGame(playerTypeHexanow) then return nil end
@@ -125,7 +126,7 @@ Explorite.RegistSideBar("EternalCharge", function()
 	else
 		EternalChargeSprite:SetFrame("Base", 0)
 	end
-	return EternalChargeSprite, Parse00(EternalCharges)
+	return EternalChargeSprite, Parse00(EternalCharges)--..(EternalChargeForFree and {"+"} or {""})[1]
 end)
 
 local hexanowPlayerData = {
@@ -235,7 +236,7 @@ local function HexanowPlayerData()
 	cted.InRoomCreatedPortals = {}
 	cted.InRoomCreatedPortals[1] = nil
 	cted.InRoomCreatedPortals[2] = nil
-	cted.onceHoldingItem = false
+	cted.onceHoldingItem = 0
 	cted.lastCanFly = nil
 	cted.WhiteItemSelectPressed = -1
 	cted.WhiteItemSelectTriggered = true
@@ -389,17 +390,30 @@ local function UpdateCache(player)
 	]]
 end
 
+local function EternalBrokenEffect(player)
+	if player ~= nil and IsHexanow(player) then
+		if EternalCharges < 0 then
+			player:AddBrokenHearts(-EternalCharges)
+			EternalCharges = 0
+		end
+		if EternalCharges > 0 and player:GetBrokenHearts() > 0 then
+			local brokenRemove = math.max(0, math.min(EternalCharges, player:GetBrokenHearts() % 6))
+			player:AddBrokenHearts(-brokenRemove)
+			EternalCharges = EternalCharges - brokenRemove
+		end
+	end
+end
+
 local function EternalBroken(player, count)
 	EternalCharges = EternalCharges - count
-	if EternalCharges < 0 then
-		player:AddBrokenHearts(-EternalCharges)
-		EternalCharges = 0
+	if player ~= nil then
+		EternalBrokenEffect(player)
 	end
-	if EternalCharges > 0 and player:GetBrokenHearts() > 0 then
-		local brokenRemove = math.max(0, math.min(EternalCharges, player:GetBrokenHearts() % 6))
-		player:AddBrokenHearts(-brokenRemove)
-		EternalCharges = EternalCharges - brokenRemove
-	end
+	CallForEveryPlayer(function(player2)
+		if player ~= player2 then
+			EternalBrokenEffect(player2)
+		end
+	end)
 end
 
 -- 给予永恒之心
@@ -1617,10 +1631,17 @@ local function TickEventHexanow(player)
 	]]
 	if player:IsHoldingItem() or player:IsCoopGhost()
 	then
-		HexanowPlayerDatas[playerID].onceHoldingItem = true
-	elseif HexanowPlayerDatas[playerID].onceHoldingItem then
-		UpdateCostumes(player)
-		HexanowPlayerDatas[playerID].onceHoldingItem = false
+		HexanowPlayerDatas[playerID].onceHoldingItem = (player:IsCoopGhost() and {5} or {math.min(4, HexanowPlayerDatas[playerID].onceHoldingItem + 1)})[1]
+		if not HexanowPlayerDatas[playerID].onceHoldingItem == 3 then
+			UpdateCostumes(player)
+		end
+	else
+		if HexanowPlayerDatas[playerID].onceHoldingItem ~= 0
+		and HexanowPlayerDatas[playerID].onceHoldingItem ~= 4
+		then
+			UpdateCostumes(player)
+		end
+		HexanowPlayerDatas[playerID].onceHoldingItem = 0
 	end
 	--[[
 	if HexanowPlayerDatas[playerID].lastCanFly ~= player.CanFly then
@@ -1791,6 +1812,7 @@ local function TickEventHexanow(player)
 			local countSoul = queuedItem.AddSoulHearts
 			local countBlack = queuedItem.AddBlackHearts
 			player:FlushQueueItem()
+			--UpdateCostumes(player)
 			RearrangeHearts(player, {SoulHearts = countSoul + countBlack, BlackHearts = countBlack})
 		end
 
@@ -1814,12 +1836,12 @@ local function TickEventHexanow(player)
 			SetWhiteHexanowCollectible(player, 0, 1)
 		end
 
-		if not item2Missing and  HexanowOwnedCollectibleNum(player, item2, true) < item2dem then
+		if not item2Missing and HexanowOwnedCollectibleNum(player, item2, true) < item2dem then
 			item2Missing = true
 			SetWhiteHexanowCollectible(player, 0, 2)
 		end
 
-		if not item3Missing and  HexanowOwnedCollectibleNum(player, item3, true) < item3dem then
+		if not item3Missing and HexanowOwnedCollectibleNum(player, item3, true) < item3dem then
 			item3Missing = true
 			SetWhiteHexanowCollectible(player, 0, 3)
 		end
@@ -1872,17 +1894,22 @@ local function TickEventHexanow(player)
 
 			--print("MISSING WHITE COLLECTIBLE FIX")
 
+			local newItemRecieved = false
+
 			if not HexanowBlackCollectiblePredicate(ID) then
 				if item1Missing and exceededNum >= 1 then
 					SetWhiteHexanowCollectible(player, ID, 1)
+					newItemRecieved = true
 					exceededNum = exceededNum - 1
 				end
 				if item2Missing and exceededNum >= 1 then
 					SetWhiteHexanowCollectible(player, ID, 2)
+					newItemRecieved = true
 					exceededNum = exceededNum - 1
 				end
 				if item3Missing and exceededNum >= 1 then
 					SetWhiteHexanowCollectible(player, ID, 3)
+					newItemRecieved = true
 					exceededNum = exceededNum - 1
 				end
 			end
@@ -1891,8 +1918,13 @@ local function TickEventHexanow(player)
 				removedSomething = true
 				for i = 1, exceededNum do
 					player:RemoveCollectible(ID, true)
+					newItemRecieved = true
 					EternalBroken(player, -4) --item.Quality * 2 + 1
 				end
+			end
+
+			if newItemRecieved then
+				UpdateCostumes(player)
 			end
 		end
 	end
@@ -1933,7 +1965,7 @@ local function TryCastFireHexanow(player)
 		--and player.FireDelay <= 0
 		and not (aimDirection.X == 0 and aimDirection.Y == 0)
 		then
-			player.HeadFrameDelay = math.floor(maxFireDelay)
+			player.HeadFrameDelay = math.min(20, math.floor(maxFireDelay))
 			player.FireDelay = math.floor(maxFireDelay)
 			data.PhaseBeamCooldown[portalColor] =  math.floor(maxFireDelay * 6)
 			CastHexanowLaser(player, player.Position, aimDirection:GetAngleDegrees(), data.portalToolColor)
@@ -2487,7 +2519,7 @@ function HexanowMod.Main:PostNewLevel()
 	end
 	MaintainPortal(true)
 	if HexanowFlags:HasFlag("TREASURE_ROOM_NOT_ENTERED") then
-		EternalBroken(player, -0)
+		EternalBroken(nil, -0)
 	end
 	HexanowFlags:AddFlag("TREASURE_ROOM_NOT_ENTERED")
 	HexanowFlags:RemoveFlag("MIRROR_WORLD_PORTALS_GENERATED")
