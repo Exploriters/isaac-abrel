@@ -22,8 +22,6 @@ local costume_Lairub_Head = Isaac.GetCostumeIdByPath("gfx/characters/LairubHead.
 local costume_Lairub_Head_TakeSoul = Isaac.GetCostumeIdByPath("gfx/characters/LairubHead_TakeSoul.anm2")
 local costume_Lairub_Head_TakeSoulBase = Isaac.GetCostumeIdByPath("gfx/characters/LairubHead_TakeSoulBase.anm2")
 
-local LairubStatUpdateItem = Isaac.GetItemIdByName( "Lairub Stat Trigger" )
-
 local LairubSoulCross_Variant = Isaac.GetEntityVariantByName("LairubSoulCross")
 local LairubSoulEffect_Variant = Isaac.GetEntityVariantByName("LairubSoulEffect")
 
@@ -536,14 +534,7 @@ end
 
 --================================--
 
-function UpdateCache(player)
-	player:RemoveCollectible(LairubStatUpdateItem)
-	--player:AddCacheFlags(CacheFlag.CACHE_DAMAGE)
-	--player:AddCacheFlags(CacheFlag.CACHE_SPEED)
-	--player:AddCacheFlags(CacheFlag.CACHE_FIREDELAY)
-end
-
-function UpdateCostume(player)
+local function UpdateCostume(player)
 	if IsLairub(player) then
 		player:TryRemoveNullCostume(costume_Lairub_Body)
 		if not player:HasCollectible(CollectibleType.COLLECTIBLE_JUPITER) then

@@ -66,7 +66,6 @@ end)
 --local hexanowItem = Isaac.GetItemIdByName( "Hexanow's Soul" )
 --local redMap = Isaac.GetItemIdByName("Red Map")
 --local hexanowPortalTool = Isaac.GetItemIdByName("Eternal Portal")
-local hexanowStatTriggerItem = Isaac.GetItemIdByName( "Hexanow overall stat trigger" )
 local hexanowHairCostume = Isaac.GetCostumeIdByPath("gfx/characters/HexanowHair.anm2")
 local hexanowBodyCostume = Isaac.GetCostumeIdByPath("gfx/characters/HexanowBody.anm2")
 local hexanowBodyFlightCostume = Isaac.GetCostumeIdByPath("gfx/characters/HexanowFlight.anm2")
@@ -114,6 +113,16 @@ local roomClearBounsEnabled = false
 local EternalCharges = 0
 
 local queuedNextRoomGrid = nil
+
+local DisplayLabel = ""
+local DisplayDesc = ""
+local DisplayTime = 0
+
+local function SetHexanowSelDisplay(label, desc)
+	DisplayLabel = label
+	DisplayDesc = desc
+	DisplayTime = 120
+end
 
 local EternalChargeSprite = Sprite()
 EternalChargeSprite:Load("gfx/ui/EternalCharge.anm2", true)
@@ -284,6 +293,10 @@ function HexanowMod.Main.WipeTempVar()
 	queuedNextRoomGrid = nil
 	portalOverlaySprites = {}
 
+	DisplayLabel = ""
+	DisplayDesc = ""
+	DisplayTime = 0
+
 	HexanowPlayerDatas = {}
 	HexanowPlayerDatas[1] = HexanowPlayerData()
 	HexanowPlayerDatas[2] = HexanowPlayerData()
@@ -375,19 +388,6 @@ local function UpdateCostumes(player)
 		player:TryRemoveNullCostume(hexanowBodyCostume)
 		player:TryRemoveNullCostume(hexanowBodyFlightCostume)
 	end
-end
-
--- 提交缓存更新请求
-local function UpdateCache(player)
-	player:RemoveCollectible(hexanowStatTriggerItem)
-	--[[
-	player:AddCacheFlags(CacheFlag.CACHE_DAMAGE)
-	player:AddCacheFlags(CacheFlag.CACHE_SPEED)
-	player:AddCacheFlags(CacheFlag.CACHE_SHOTSPEED)
-	player:AddCacheFlags(CacheFlag.CACHE_FIREDELAY)
-	player:AddCacheFlags(CacheFlag.CACHE_RANGE)
-	player:AddCacheFlags(CacheFlag.CACHE_FLYING)
-	]]
 end
 
 local function EternalBrokenEffect(player)
@@ -748,18 +748,20 @@ local function PickupWhiteHexanowCollectible(player, ID, slot)
 		return nil
 	end
 
+	local data = HexanowPlayerDatas[playerID]
+
 	if slot == nil then
-		slot = HexanowPlayerDatas[playerID].SelectedWhiteItem
+		slot = data.SelectedWhiteItem
 	end
 
 	if slot ~= 1
 	and slot ~= 2
 	and slot ~= 3
-	and slot ~= 4
 	then
 		return nil
 	end
 
+	--[[
 	if item ~= nil and item.Type == ItemType.ITEM_ACTIVE then
 		local primaryAcItem = player:GetActiveItem(ActiveSlot.SLOT_PRIMARY)
 		if primaryAcItem ~= CollectibleType.COLLECTIBLE_NULL
@@ -767,33 +769,47 @@ local function PickupWhiteHexanowCollectible(player, ID, slot)
 			and player:GetActiveItem(ActiveSlot.SLOT_SECONDARY) == CollectibleType.COLLECTIBLE_NULL
 			)
 		then
-			if HexanowPlayerDatas[playerID].WhiteItem[1] == primaryAcItem then slot = 1 end
-			if HexanowPlayerDatas[playerID].WhiteItem[2] == primaryAcItem then slot = 2 end
-			if HexanowPlayerDatas[playerID].WhiteItem[3] == primaryAcItem then slot = 3 end
+			ActiveChange = true
+			if data.WhiteItem[1] == primaryAcItem then slot = 1 end
+			if data.WhiteItem[2] == primaryAcItem then slot = 2 end
+			if data.WhiteItem[3] == primaryAcItem then slot = 3 end
 		end
-	end
-
-	if slot == 4
-	then
-		return nil
 	end
 
 	if ID ~= CollectibleType.COLLECTIBLE_SCHOOLBAG
-	and HexanowPlayerDatas[playerID].WhiteItem[slot] == CollectibleType.COLLECTIBLE_SCHOOLBAG then
+	and data.WhiteItem[slot] == CollectibleType.COLLECTIBLE_SCHOOLBAG then
 		local secondaryID = player:GetActiveItem(ActiveSlot.SLOT_SECONDARY)
 		if secondaryID ~= CollectibleType.COLLECTIBLE_NULL then
-			if HexanowPlayerDatas[playerID].WhiteItem[1] == secondaryID then
-				HexanowPlayerDatas[playerID].WhiteItem[1] = 0
+			if data.WhiteItem[1] == secondaryID then
+				data.WhiteItem[1] = 0
 			end
-			if HexanowPlayerDatas[playerID].WhiteItem[2] == secondaryID then
-				HexanowPlayerDatas[playerID].WhiteItem[2] = 0
+			if data.WhiteItem[2] == secondaryID then
+				data.WhiteItem[2] = 0
 			end
-			if HexanowPlayerDatas[playerID].WhiteItem[3] == secondaryID then
-				HexanowPlayerDatas[playerID].WhiteItem[3] = 0
+			if data.WhiteItem[3] == secondaryID then
+				data.WhiteItem[3] = 0
 			end
 		end
 	end
-	
+	]]
+	if not ActiveChange then
+		if data.WhiteItem[slot] == 0 then
+			if data.WhiteItem[1] == 0 and slot ~= 1 then
+				data.SelectedWhiteItem = 1
+			elseif data.WhiteItem[2] == 0 and slot ~= 2 then
+				data.SelectedWhiteItem = 2
+			elseif data.WhiteItem[3] == 0 and slot ~= 3 then
+				data.SelectedWhiteItem = 3
+			else
+				data.SelectedWhiteItem = 4
+			end
+		else
+			if player:HasCollectible(data.WhiteItem[slot], true) then
+				player:RemoveCollectible(data.WhiteItem[slot], true)
+				EternalBroken(player, -4)
+			end
+		end
+	end
 	SetWhiteHexanowCollectible(player, ID, slot)
 end
 
@@ -1437,6 +1453,50 @@ local function TaintedHexanowRoomOverride()
 
 end
 
+local function TabItemSelection(player)
+	local playerID = GetPlayerID(player)
+	local data = HexanowPlayerDatas[playerID]
+	local slot = data.SelectedWhiteItem
+
+	if slot == 1
+	or slot == 2
+	or slot == 3
+	then
+		slot = slot + 1
+	else
+		slot = 1
+	end
+
+	data.SelectedWhiteItem = slot
+
+	if slot == 1 or slot == 2 or slot == 3 then
+		local item = Isaac.GetItemConfig():GetCollectible(data.WhiteItem[slot])
+		if item ~= nil then
+			SetHexanowSelDisplay(IsaacTranslate(item.Name), IsaacTranslate(item.Description))
+		else
+			SetHexanowSelDisplay(HexanowLang:_("empty_slot"), HexanowLang:_("empty_slot_desc"))
+		end
+	else
+		SetHexanowSelDisplay(HexanowLang:_("discard_slot"), HexanowLang:_("discard_slot_desc"))
+	end
+	DisplayTime = 120
+
+	if player:HasCollectible(CollectibleType.COLLECTIBLE_BIRTHRIGHT, true)
+	then
+		data.portalToolColor = 0
+	end
+end
+
+local function TabPortalSelection(player)
+	local playerID = GetPlayerID(player)
+	local data = HexanowPlayerDatas[playerID]
+	if data.portalToolColor == 1 then
+		data.portalToolColor = 2
+	else
+		data.portalToolColor = 1
+	end
+end
+
 -- 玩家刻事件，每一帧执行
 local function TickEventHexanow(player)
 	if player:GetData().StartedAsHexanow == true and not IsHexanow(player) then
@@ -1453,6 +1513,7 @@ local function TickEventHexanow(player)
 	local room = game:GetRoom()
 	local roomEntities = Isaac.GetRoomEntities()
 	local playerID = GetPlayerID(player)
+	local data = HexanowPlayerDatas[playerID]
 
 	--[[
 	if player:HasCurseMistEffect() then
@@ -1496,14 +1557,21 @@ local function TickEventHexanow(player)
 		-- player:GetEffects():RemoveCollectibleEffect(CollectibleType.COLLECTIBLE_TRANSCENDENCE)
 	end
 	]]
-	if Game():GetRoom():IsClear() and not roomClearBounsEnabled then
-		roomClearBounsEnabled = true
-		UpdateCache(player)
+	if Game():GetRoom():IsClear() then
+		if not roomClearBounsEnabled then
+			roomClearBounsEnabled = true
+			CallForEveryPlayer(function(player)if IsHexanow(player) then UpdateCache(player, CacheFlag.CACHE_SPEED) end end)
+		end
+	else
+		if roomClearBounsEnabled then
+			roomClearBounsEnabled = false
+			CallForEveryPlayer(function(player)if IsHexanow(player) then UpdateCache(player, CacheFlag.CACHE_SPEED) end end)
+		end
 	end
 
 	--[[
 	if roomClearBounsEnabled and not player:IsFlying() then
-		UpdateCache(player)
+		UpdateCache(player, CacheFlag.CACHE_FLYING)
 	end
 	]]
 
@@ -1631,22 +1699,22 @@ local function TickEventHexanow(player)
 	]]
 	if player:IsHoldingItem() or player:IsCoopGhost()
 	then
-		HexanowPlayerDatas[playerID].onceHoldingItem = (player:IsCoopGhost() and {5} or {math.min(4, HexanowPlayerDatas[playerID].onceHoldingItem + 1)})[1]
-		if not HexanowPlayerDatas[playerID].onceHoldingItem == 3 then
+		data.onceHoldingItem = (player:IsCoopGhost() and {5} or {math.min(4, data.onceHoldingItem + 1)})[1]
+		if data.onceHoldingItem == 3 then
 			UpdateCostumes(player)
 		end
 	else
-		if HexanowPlayerDatas[playerID].onceHoldingItem ~= 0
-		and HexanowPlayerDatas[playerID].onceHoldingItem ~= 4
+		if data.onceHoldingItem ~= 0
+		and data.onceHoldingItem ~= 4
 		then
 			UpdateCostumes(player)
 		end
-		HexanowPlayerDatas[playerID].onceHoldingItem = 0
+		data.onceHoldingItem = 0
 	end
 	--[[
-	if HexanowPlayerDatas[playerID].lastCanFly ~= player.CanFly then
+	if data.lastCanFly ~= player.CanFly then
 		UpdateCostumes(player)
-		HexanowPlayerDatas[playerID].lastCanFly = player.CanFly
+		data.lastCanFly = player.CanFly
 	end
 	]]
 	--[[
@@ -1674,90 +1742,50 @@ local function TickEventHexanow(player)
 	if IsKeyboardInput(player.ControllerIndex) then
 		if Input.IsButtonPressed(Keyboard.KEY_LEFT_SHIFT, player.ControllerIndex)
 		then
-			if HexanowPlayerDatas[playerID].WhiteItemSelectTriggered then
-				HexanowPlayerDatas[playerID].WhiteItemSelectTriggered = false
-				if HexanowPlayerDatas[playerID].WhiteItemSelectTriggered == false then
-					if HexanowPlayerDatas[playerID].portalToolColor == 1 then
-						HexanowPlayerDatas[playerID].portalToolColor = 2
-					else
-						HexanowPlayerDatas[playerID].portalToolColor = 1
-					end
+			if data.WhiteItemSelectTriggered then
+				data.WhiteItemSelectTriggered = false
+				if data.WhiteItemSelectTriggered == false then
+					TabPortalSelection(player)
 				end
 			end
 		else
-			HexanowPlayerDatas[playerID].WhiteItemSelectTriggered = true
+			data.WhiteItemSelectTriggered = true
 		end
 		if Input.IsButtonPressed(Keyboard.KEY_LEFT_ALT, player.ControllerIndex)
 		then
-			if HexanowPlayerDatas[playerID].WhiteItemSelectPressed >= 20
-			or HexanowPlayerDatas[playerID].WhiteItemSelectPressed <= -1
+			if data.WhiteItemSelectPressed >= 20
+			or data.WhiteItemSelectPressed <= -1
 			then
-				HexanowPlayerDatas[playerID].WhiteItemSelectPressed = 0
+				data.WhiteItemSelectPressed = 0
 			end
-			if HexanowPlayerDatas[playerID].WhiteItemSelectPressed == 0 then
-				local slot = HexanowPlayerDatas[playerID].SelectedWhiteItem
-
-				if slot == 1
-				or slot == 2
-				or slot == 3
-				then
-					slot = slot + 1
-				else
-					slot = 1
-				end
-
-				HexanowPlayerDatas[playerID].SelectedWhiteItem = slot
-
-				if player:HasCollectible(CollectibleType.COLLECTIBLE_BIRTHRIGHT, true)
-				then
-					HexanowPlayerDatas[playerID].portalToolColor = 0
-				end
+			if data.WhiteItemSelectPressed == 0 then
+				TabItemSelection(player)
 			end
-			HexanowPlayerDatas[playerID].WhiteItemSelectPressed = 1 -- HexanowPlayerDatas[playerID].WhiteItemSelectPressed + 1
+			data.WhiteItemSelectPressed = 1 -- data.WhiteItemSelectPressed + 1
 		else
-			HexanowPlayerDatas[playerID].WhiteItemSelectPressed = -1
+			data.WhiteItemSelectPressed = -1
 		end
 	else
 		if Input.IsActionPressed(ButtonAction.ACTION_DROP, player.ControllerIndex)
 		then
-			if HexanowPlayerDatas[playerID].WhiteItemSelectPressed >= 20 then
-				HexanowPlayerDatas[playerID].WhiteItemSelectPressed = 0
+			if data.WhiteItemSelectPressed >= 20 then
+				data.WhiteItemSelectPressed = 0
 			end
-			if HexanowPlayerDatas[playerID].WhiteItemSelectPressed == 0 then
-				HexanowPlayerDatas[playerID].WhiteItemSelectTriggered = true
-				local slot = HexanowPlayerDatas[playerID].SelectedWhiteItem
-
-				if slot == 1
-				or slot == 2
-				or slot == 3
-				then
-					slot = slot + 1
-				else
-					slot = 1
-				end
-
-				HexanowPlayerDatas[playerID].SelectedWhiteItem = slot
-
-				if player:HasCollectible(CollectibleType.COLLECTIBLE_BIRTHRIGHT, true)
-				then
-					HexanowPlayerDatas[playerID].portalToolColor = 0
-				end
+			if data.WhiteItemSelectPressed == 0 then
+				data.WhiteItemSelectTriggered = true
+				TabItemSelection(player)
 			end
-			if HexanowPlayerDatas[playerID].WhiteItemSelectPressed <= -1 then
-				HexanowPlayerDatas[playerID].WhiteItemSelectTriggered = false
-				HexanowPlayerDatas[playerID].WhiteItemSelectPressed = 0
+			if data.WhiteItemSelectPressed <= -1 then
+				data.WhiteItemSelectTriggered = false
+				data.WhiteItemSelectPressed = 0
 			end
-			HexanowPlayerDatas[playerID].WhiteItemSelectPressed = HexanowPlayerDatas[playerID].WhiteItemSelectPressed + 1
+			data.WhiteItemSelectPressed = data.WhiteItemSelectPressed + 1
 		else
-			if HexanowPlayerDatas[playerID].WhiteItemSelectTriggered == false then
-				if HexanowPlayerDatas[playerID].portalToolColor == 1 then
-					HexanowPlayerDatas[playerID].portalToolColor = 2
-				else
-					HexanowPlayerDatas[playerID].portalToolColor = 1
-				end
+			if data.WhiteItemSelectTriggered == false then
+				TabPortalSelection(player)
 			end
-			HexanowPlayerDatas[playerID].WhiteItemSelectTriggered = true
-			HexanowPlayerDatas[playerID].WhiteItemSelectPressed = -1
+			data.WhiteItemSelectTriggered = true
+			data.WhiteItemSelectPressed = -1
 		end
 	end
 
@@ -1768,9 +1796,9 @@ local function TickEventHexanow(player)
 	--local hasWhiteCollectible = false
 	--local hasWhiteTrinket = false
 
-	local item1 = HexanowPlayerDatas[playerID].WhiteItem[1]
-	local item2 = HexanowPlayerDatas[playerID].WhiteItem[2]
-	local item3 = HexanowPlayerDatas[playerID].WhiteItem[3]
+	local item1 = data.WhiteItem[1]
+	local item2 = data.WhiteItem[2]
+	local item3 = data.WhiteItem[3]
 
 	local item1Missing = item1 == 0
 	local item2Missing = item2 == 0
@@ -1780,9 +1808,10 @@ local function TickEventHexanow(player)
 	if true then
 		local queuedItem = player.QueuedItem.Item
 		if queuedItem ~= nil then
+			local slot = HexanowPlayerDatas[playerID].SelectedWhiteItem
 			if queuedItem.Type == ItemType.ITEM_PASSIVE or queuedItem.Type == ItemType.ITEM_ACTIVE then
 				--print("SET!")
-				PickupWhiteHexanowCollectible(player, queuedItem.ID, HexanowPlayerDatas[playerID].SelectedWhiteItem)
+				PickupWhiteHexanowCollectible(player, queuedItem.ID, data.SelectedWhiteItem)
 				--[[
 				if queuedItem.ID == CollectibleType.COLLECTIBLE_BIRTHRIGHT
 				then
@@ -1814,6 +1843,14 @@ local function TickEventHexanow(player)
 			player:FlushQueueItem()
 			--UpdateCostumes(player)
 			RearrangeHearts(player, {SoulHearts = countSoul + countBlack, BlackHearts = countBlack})
+			if queuedItem.Type == ItemType.ITEM_PASSIVE or queuedItem.Type == ItemType.ITEM_ACTIVE then
+				if slot == 4 then
+					if player:HasCollectible(queuedItem.ID, true) then
+						player:RemoveCollectible(queuedItem.ID, true)
+						EternalBroken(player, -4)
+					end
+				end
+			end
 		end
 
 		local item1dem = 1
@@ -2431,11 +2468,22 @@ function HexanowMod.Main:PostPlayerInit(player)
 end
 HexanowMod:AddCallback(ModCallbacks.MC_POST_PLAYER_INIT, HexanowMod.Main.PostPlayerInit)
 
+-- 使用口袋物品
+function HexanowMod.Main:HexanowUseCardPill(id, player, useFlags)
+	if not IsHexanow(player) then
+		return
+	end
+	UpdateCostumes(player)
+end
+HexanowMod:AddCallback(ModCallbacks.MC_USE_CARD, HexanowMod.Main.HexanowUseCardPill)
+HexanowMod:AddCallback(ModCallbacks.MC_USE_PILL, HexanowMod.Main.HexanowUseCardPill)
+
 -- 使用物品
 function HexanowMod.Main:HexanowUseItem(itemId, itemRng, player, useFlags, activeSlot, customVarData)
 	if not IsHexanow(player) then
 		return
 	end
+	UpdateCostumes(player)
 	if HexanowBlackCollectiblePredicate(itemId) then
 		EternalBroken(player, -4)
 		return {
@@ -2450,7 +2498,7 @@ function HexanowMod.Main:HexanowUseItem(itemId, itemRng, player, useFlags, activ
 		for i=1,2 do
 			if player:GetHearts() < player:GetMaxHearts() and EternalCharges > 1 then
 				player:AddHearts(1)
-				EternalCharges = EternalCharges - 1
+				EternalBroken(player, 1)
 				converted = true
 			end
 		end
@@ -2483,6 +2531,25 @@ function HexanowMod.Main:HexanowUseItem(itemId, itemRng, player, useFlags, activ
 	end
 end
 HexanowMod:AddCallback(ModCallbacks.MC_USE_ITEM, HexanowMod.Main.HexanowUseItem)
+
+-- 使用物品
+function HexanowMod.Main:HexanowPreUseItem(itemId, itemRng, player, useFlags, activeSlot, customVarData)
+	if not IsHexanow(player) then
+		return
+	end
+	if HexanowBlackCollectiblePredicate(itemId) then
+		return true
+	end
+	if itemId == CollectibleType.COLLECTIBLE_GUPPYS_PAW
+	or itemId == CollectibleType.COLLECTIBLE_POTATO_PEELER
+	or itemId == CollectibleType.COLLECTIBLE_MAGIC_SKIN
+	or itemId == CollectibleType.COLLECTIBLE_SUMPTORIUM
+	then
+		RearrangeHearts(player)
+		ApplyEternalCharge(player)
+	end
+end
+HexanowMod:AddCallback(ModCallbacks.MC_PRE_USE_ITEM, HexanowMod.Main.HexanowPreUseItem)
 
 --[[
 -- 使用传送门工具的效果
@@ -3127,6 +3194,8 @@ function HexanowMod.Main:EvaluateCache(player, cacheFlag, tear)
 			-- UpdateCostumes(player)
 		elseif cacheFlag == CacheFlag.CACHE_TEARCOLOR then
 			player.TearColor = Color(1, 1, 1, 1, 0, 0, 0)
+		elseif cacheFlag == CacheFlag.CACHE_WEAPON then
+		elseif cacheFlag == CacheFlag.CACHE_COLOR then
 		end
 
 	end
@@ -3579,10 +3648,10 @@ function HexanowMod.Main:PostRender()
 		return nil
 	end
 
-	local baseOffset = Vector(3,71)
-	local offsetModSel = Vector(20 * Options.HUDOffset, 12 * Options.HUDOffset)
-
 	if PlayerTypeExistInGame(playerTypeHexanow) then
+
+		local baseOffset = Vector(3,71)
+		local offsetModSel = Vector(20 * Options.HUDOffset, 12 * Options.HUDOffset)
 
 		if PlayerTypeExistInGame(Isaac.GetPlayerTypeByName("Lairub")) then
 			offsetModSel = offsetModSel + Vector(0, 48)
@@ -3605,17 +3674,23 @@ function HexanowMod.Main:PostRender()
 		--DrawSimNumbers(EternalCharges, baseOffset + Vector(12, 1) + offsetModStat)
 		]]
 
+		local selPos = baseOffset + Vector(42, -36) + offsetModSel
+
 		local sortNum = 0
 		CallForEveryPlayer(
 			function(player)
 				if IsHexanow(player) then
-					SelManageRander(baseOffset + Vector(42, -36) + offsetModSel, GetPlayerID(player), sortNum)
+					SelManageRander(selPos, GetPlayerID(player), sortNum)
 					sortNum = sortNum + 1
 				end
 			end
 		)
+		Explorite.RenderScaledText(DisplayLabel, selPos.X + 1, selPos.Y + 16*5 + 1, 1, 1, 1, 1, 1, math.min(1, DisplayTime / 60))
+		Explorite.RenderScaledText(DisplayDesc, selPos.X + 0.5, selPos.Y + 16*5 + 13, 0.5, 0.5, 1, 1, 1, math.min(1, DisplayTime / 60))
 
-		--Isaac.RenderScaledText("00", 35, 85, 1, 1, 255, 255, 255, 255)--tostring(00)
+		DisplayTime = math.max(DisplayTime - 1, 0)
+
+		--Explorite.RenderScaledText("00", 35, 85, 1, 1, 255, 255, 255, 255)--tostring(00)
 		--DrawSimNumberSingle(7, Vector(35, 84), true)
 		--DrawSimNumberSingle("s", Vector(35+6, 84), true)
 		--DrawSimNumberSingle(7, Vector(35, 84), false)

@@ -198,3 +198,21 @@ function GetPlayerShotCount(player)
 	end
 	return 1
 end
+
+-- 提交缓存更新请求
+function UpdateCache(player, flags)
+	--player:RemoveCollectible(statTriggerItem)
+	--[[
+	player:AddCacheFlags(CacheFlag.CACHE_DAMAGE)
+	player:AddCacheFlags(CacheFlag.CACHE_SPEED)
+	player:AddCacheFlags(CacheFlag.CACHE_SHOTSPEED)
+	player:AddCacheFlags(CacheFlag.CACHE_FIREDELAY)
+	player:AddCacheFlags(CacheFlag.CACHE_RANGE)
+	player:AddCacheFlags(CacheFlag.CACHE_FLYING)
+	]]
+	if flags == nil then
+		flags = CacheFlag.CACHE_ALL
+	end
+	player:AddCacheFlags(flags)
+	player:EvaluateItems()
+end

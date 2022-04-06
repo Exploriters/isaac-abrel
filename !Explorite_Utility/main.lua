@@ -10,6 +10,7 @@ require("scripts_explorite/completionMarksUtility")
 require("scripts_explorite/simpleTranslate")
 require("scripts_explorite/font")
 require("scripts_explorite/sidebarbox")
+require("scripts_explorite/isaacTranslate")
 require("scripts_explorite/debugwriter")
 
 --Isaac.ConsoleOutput("Init mod Explorite end\n")
