@@ -112,6 +112,8 @@ local roomClearBounsEnabled = false
 
 local EternalCharges = 0
 
+local ItemIDLowlimit = 0
+
 local queuedNextRoomGrid = nil
 
 local DisplayLabel = ""
@@ -285,6 +287,7 @@ end
 
 -- 抹除临时变量
 function HexanowMod.Main.WipeTempVar()
+	ItemIDLowlimit = 0
 	EternalCharges = 0
 	EternalChargesLastRoom = 0
 	roomClearBounsEnabled = false
@@ -591,6 +594,13 @@ local function HexanowOwnedCollectibleNum(player, ID, IgnoreModifiers)
 	if Isaac.GetItemConfig():GetCollectible(ID) == nil then
 		return 0
 	end
+	if ID < 0 then
+		if player:HasCollectible(ID, IgnoreModifiers) then
+			return 1
+		else
+			return 0
+		end
+	end
 	local num = player:GetCollectibleNum(ID, IgnoreModifiers)
 	--[[
 	if ID ~= 0 and HexanowPlayerDatas[GetPlayerID(player)].upcomingItem == ID then
@@ -647,6 +657,7 @@ local function HexanowWhiteCollectiblePredicate(ID, ignoreEnsured)
 		))
 		]]
 		or	ID == CollectibleType.COLLECTIBLE_BIRTHRIGHT
+		or	(ID == CollectibleType.COLLECTIBLE_TMTRAINER and Isaac.GetChallenge() == Challenge.CHALLENGE_DELETE_THIS)
 
 		--or	(item.Quality >= 4 and item.ItemType ~= ItemType.ITEM_FAMILIAR)
 
@@ -1472,7 +1483,14 @@ local function TabItemSelection(player)
 	if slot == 1 or slot == 2 or slot == 3 then
 		local item = Isaac.GetItemConfig():GetCollectible(data.WhiteItem[slot])
 		if item ~= nil then
-			SetHexanowSelDisplay(IsaacTranslate(item.Name), IsaacTranslate(item.Description))
+			if data.WhiteItem[slot] < 0 then
+				SetHexanowSelDisplay(
+					HexanowLang:_("glitched_item", -data.WhiteItem[slot]),
+					HexanowLang:_("glitched_item_desc", (item.Type == ItemType.ITEM_ACTIVE and {HexanowLang:_("active")} or {HexanowLang:_("passive")})[1])
+				)
+			else
+				SetHexanowSelDisplay(IsaacTranslate(item.Name), AppendPeriodMark(IsaacTranslate(item.Description)))
+			end
 		else
 			SetHexanowSelDisplay(HexanowLang:_("empty_slot"), HexanowLang:_("empty_slot_desc"))
 		end
@@ -1796,6 +1814,55 @@ local function TickEventHexanow(player)
 	--local hasWhiteCollectible = false
 	--local hasWhiteTrinket = false
 
+	--if not player:IsHoldingItem() then
+	--if true then
+	local queuedItem = player.QueuedItem.Item
+	if queuedItem ~= nil then
+		local slot = HexanowPlayerDatas[playerID].SelectedWhiteItem
+		if queuedItem:IsCollectible() then
+			--print("SET!")
+			PickupWhiteHexanowCollectible(player, queuedItem.ID)
+			--[[
+			if queuedItem.ID == CollectibleType.COLLECTIBLE_BIRTHRIGHT
+			then
+				player:SetPocketActiveItem(hexanowPortalTool, ActiveSlot.SLOT_POCKET, true)
+			end
+			]]
+		end
+		--[[
+		EternalBroken(player, -math.max(0, queuedItem.AddSoulHearts))
+		EternalBroken(player, -math.max(0, queuedItem.AddBlackHearts))
+		for i=1,math.ceil(queuedItem.AddBlackHearts/2) do
+			player:UseActiveItem(CollectibleType.COLLECTIBLE_NECRONOMICON, UseFlag.USE_NOANIM | UseFlag.USE_NOCOSTUME | UseFlag.USE_NOANNOUNCER)
+		end
+		queuedItem.AddSoulHearts = 0
+		queuedItem.AddBlackHearts = 0
+		player:AddCoins(queuedItem.AddCoins)
+		queuedItem.AddCoins = 0
+		player:AddBombs(queuedItem.AddBombs)
+		queuedItem.AddBombs = 0
+		player:AddKeys(queuedItem.AddKeys)
+		queuedItem.AddKeys = 0
+		player:AddMaxHearts(queuedItem.AddMaxHearts)
+		queuedItem.AddMaxHearts = 0
+		player:AddHearts(queuedItem.AddHearts)
+		queuedItem.AddHearts = 0
+		]]
+		local countSoul = queuedItem.AddSoulHearts
+		local countBlack = queuedItem.AddBlackHearts
+		player:FlushQueueItem()
+		--UpdateCostumes(player)
+		RearrangeHearts(player, {SoulHearts = countSoul + countBlack, BlackHearts = countBlack})
+		if queuedItem:IsCollectible() then
+			if slot == 4 then
+				if player:HasCollectible(queuedItem.ID, true) then
+					player:RemoveCollectible(queuedItem.ID, true)
+					EternalBroken(player, -4)
+				end
+			end
+		end
+	end
+
 	local item1 = data.WhiteItem[1]
 	local item2 = data.WhiteItem[2]
 	local item3 = data.WhiteItem[3]
@@ -1804,164 +1871,120 @@ local function TickEventHexanow(player)
 	local item2Missing = item2 == 0
 	local item3Missing = item3 == 0
 
-	--if not player:IsHoldingItem() then
-	if true then
-		local queuedItem = player.QueuedItem.Item
-		if queuedItem ~= nil then
-			local slot = HexanowPlayerDatas[playerID].SelectedWhiteItem
-			if queuedItem.Type == ItemType.ITEM_PASSIVE or queuedItem.Type == ItemType.ITEM_ACTIVE then
-				--print("SET!")
-				PickupWhiteHexanowCollectible(player, queuedItem.ID, data.SelectedWhiteItem)
-				--[[
-				if queuedItem.ID == CollectibleType.COLLECTIBLE_BIRTHRIGHT
-				then
-					player:SetPocketActiveItem(hexanowPortalTool, ActiveSlot.SLOT_POCKET, true)
-				end
-				]]
-			end
-			--[[
-			EternalBroken(player, -math.max(0, queuedItem.AddSoulHearts))
-			EternalBroken(player, -math.max(0, queuedItem.AddBlackHearts))
-			for i=1,math.ceil(queuedItem.AddBlackHearts/2) do
-				player:UseActiveItem(CollectibleType.COLLECTIBLE_NECRONOMICON, UseFlag.USE_NOANIM | UseFlag.USE_NOCOSTUME | UseFlag.USE_NOANNOUNCER)
-			end
-			queuedItem.AddSoulHearts = 0
-			queuedItem.AddBlackHearts = 0
-			player:AddCoins(queuedItem.AddCoins)
-			queuedItem.AddCoins = 0
-			player:AddBombs(queuedItem.AddBombs)
-			queuedItem.AddBombs = 0
-			player:AddKeys(queuedItem.AddKeys)
-			queuedItem.AddKeys = 0
-			player:AddMaxHearts(queuedItem.AddMaxHearts)
-			queuedItem.AddMaxHearts = 0
-			player:AddHearts(queuedItem.AddHearts)
-			queuedItem.AddHearts = 0
-			]]
-			local countSoul = queuedItem.AddSoulHearts
-			local countBlack = queuedItem.AddBlackHearts
-			player:FlushQueueItem()
-			--UpdateCostumes(player)
-			RearrangeHearts(player, {SoulHearts = countSoul + countBlack, BlackHearts = countBlack})
-			if queuedItem.Type == ItemType.ITEM_PASSIVE or queuedItem.Type == ItemType.ITEM_ACTIVE then
-				if slot == 4 then
-					if player:HasCollectible(queuedItem.ID, true) then
-						player:RemoveCollectible(queuedItem.ID, true)
-						EternalBroken(player, -4)
-					end
-				end
-			end
-		end
-
-		local item1dem = 1
-		local item2dem = 1
-		local item3dem = 1
+	local item1dem = 1
+	local item2dem = 1
+	local item3dem = 1
 
 
-		if item2 == item1 then
-			item2dem = item2dem + 1
-		end
-		if item3 == item1 then
-			item3dem = item3dem + 1
-		end
-		if item3 == item2 then
-			item3dem = item3dem + 1
-		end
-
-		if not item1Missing and HexanowOwnedCollectibleNum(player, item1, true) < item1dem then
-			item1Missing = true
-			SetWhiteHexanowCollectible(player, 0, 1)
-		end
-
-		if not item2Missing and HexanowOwnedCollectibleNum(player, item2, true) < item2dem then
-			item2Missing = true
-			SetWhiteHexanowCollectible(player, 0, 2)
-		end
-
-		if not item3Missing and HexanowOwnedCollectibleNum(player, item3, true) < item3dem then
-			item3Missing = true
-			SetWhiteHexanowCollectible(player, 0, 3)
-		end
-
-		--[[
-		--if WhiteHexanowTrinketID == 0
-		--or not player:HasTrinket(WhiteHexanowTrinketID, true) then
-		--	missingWhiteTrinket = true
-		--end
-
-		--if WhiteHexanowCollectibleID == 0
-		--or not player:HasCollectible(WhiteHexanowCollectibleID, true)
-		--then
-			--missingWhiteCollectible = true
-		--end
-
-		--if player:HasCollectible(WhiteHexanowCollectibleID, true) then
-			--missingWhiteTrinket = false
-			--hasWhiteTrinket = true
-		--end
-		--if player:HasTrinket(WhiteHexanowTrinketID, true) then
-		--	missingWhiteCollectible = false
-		--	hasWhiteCollectible = true
-		--end
-		]]
+	if item2 == item1 then
+		item2dem = item2dem + 1
 	end
+	if item3 == item1 then
+		item3dem = item3dem + 1
+	end
+	if item3 == item2 then
+		item3dem = item3dem + 1
+	end
+
+	if not item1Missing and HexanowOwnedCollectibleNum(player, item1, true) < item1dem then
+		item1Missing = true
+		SetWhiteHexanowCollectible(player, 0, 1)
+	end
+
+	if not item2Missing and HexanowOwnedCollectibleNum(player, item2, true) < item2dem then
+		item2Missing = true
+		SetWhiteHexanowCollectible(player, 0, 2)
+	end
+
+	if not item3Missing and HexanowOwnedCollectibleNum(player, item3, true) < item3dem then
+		item3Missing = true
+		SetWhiteHexanowCollectible(player, 0, 3)
+	end
+
+	--[[
+	--if WhiteHexanowTrinketID == 0
+	--or not player:HasTrinket(WhiteHexanowTrinketID, true) then
+	--	missingWhiteTrinket = true
+	--end
+
+	--if WhiteHexanowCollectibleID == 0
+	--or not player:HasCollectible(WhiteHexanowCollectibleID, true)
+	--then
+		--missingWhiteCollectible = true
+	--end
+
+	--if player:HasCollectible(WhiteHexanowCollectibleID, true) then
+		--missingWhiteTrinket = false
+		--hasWhiteTrinket = true
+	--end
+	--if player:HasTrinket(WhiteHexanowTrinketID, true) then
+	--	missingWhiteCollectible = false
+	--	hasWhiteCollectible = true
+	--end
+	]]
+	--end
 
 	local removedSomething = true
 	local limit = Isaac.GetItemConfig():GetCollectibles().Size - 1
+	while Isaac.GetItemConfig():GetCollectible(ItemIDLowlimit - 1) ~= nil do
+		ItemIDLowlimit = ItemIDLowlimit - 1
+	end
 	while removedSomething do
 		removedSomething = false
 		--for ID = CollectibleType.NUM_COLLECTIBLES - 1, 1, -1 do
-		for ID=1,limit do
-			--ID = ID + 1
-			--[[
-			if ID >= CollectibleType.NUM_COLLECTIBLES and item == nil then
-				break
-			end
-			]]
-			local ownNum = HexanowOwnedCollectibleNum(player, ID, true)
-			local maxNum = HexanowCollectibleMaxAllowed(player, ID)
-			local exceededNum = math.max(0, ownNum - maxNum)
-
-
-			--if not HexanowBlackCollectiblePredicate(ID) and exceededNum >= 1 and missingWhiteCollectible then
-			--	SetWhiteHexanowCollectible(player, ID)
-			--	exceededNum = exceededNum - 1
-			--	--print("MISSING WHITE COLLECTIBLE FIX")
-			--end
-
-			--print("MISSING WHITE COLLECTIBLE FIX")
-
-			local newItemRecieved = false
-
-			if not HexanowBlackCollectiblePredicate(ID) then
-				if item1Missing and exceededNum >= 1 then
-					SetWhiteHexanowCollectible(player, ID, 1)
-					newItemRecieved = true
-					exceededNum = exceededNum - 1
+		for ID=ItemIDLowlimit,limit do
+			if ID ~= 0 then
+				--ID = ID + 1
+				--[[
+				if ID >= CollectibleType.NUM_COLLECTIBLES and item == nil then
+					break
 				end
-				if item2Missing and exceededNum >= 1 then
-					SetWhiteHexanowCollectible(player, ID, 2)
-					newItemRecieved = true
-					exceededNum = exceededNum - 1
-				end
-				if item3Missing and exceededNum >= 1 then
-					SetWhiteHexanowCollectible(player, ID, 3)
-					newItemRecieved = true
-					exceededNum = exceededNum - 1
-				end
-			end
+				]]
+				local ownNum = HexanowOwnedCollectibleNum(player, ID, true)
+				local maxNum = HexanowCollectibleMaxAllowed(player, ID)
+				local exceededNum = math.max(0, ownNum - maxNum)
 
-			if exceededNum > 0 then
-				removedSomething = true
-				for i = 1, exceededNum do
-					player:RemoveCollectible(ID, true)
-					newItemRecieved = true
-					EternalBroken(player, -4) --item.Quality * 2 + 1
-				end
-			end
 
-			if newItemRecieved then
-				UpdateCostumes(player)
+				--if not HexanowBlackCollectiblePredicate(ID) and exceededNum >= 1 and missingWhiteCollectible then
+				--	SetWhiteHexanowCollectible(player, ID)
+				--	exceededNum = exceededNum - 1
+				--	--print("MISSING WHITE COLLECTIBLE FIX")
+				--end
+
+				--print("MISSING WHITE COLLECTIBLE FIX")
+
+				local newItemRecieved = false
+
+				if not HexanowBlackCollectiblePredicate(ID) then
+					if item1Missing and exceededNum >= 1 then
+						SetWhiteHexanowCollectible(player, ID, 1)
+						newItemRecieved = true
+						exceededNum = exceededNum - 1
+					end
+					if item2Missing and exceededNum >= 1 then
+						SetWhiteHexanowCollectible(player, ID, 2)
+						newItemRecieved = true
+						exceededNum = exceededNum - 1
+					end
+					if item3Missing and exceededNum >= 1 then
+						SetWhiteHexanowCollectible(player, ID, 3)
+						newItemRecieved = true
+						exceededNum = exceededNum - 1
+					end
+				end
+
+				if exceededNum > 0 then
+					removedSomething = true
+					for i = 1, exceededNum do
+						player:RemoveCollectible(ID, true)
+						newItemRecieved = true
+						EternalBroken(player, -4) --item.Quality * 2 + 1
+					end
+				end
+
+				if newItemRecieved then
+					UpdateCostumes(player)
+				end
 			end
 		end
 	end
@@ -2042,6 +2065,11 @@ local function InitPlayerHexanow(player)
 			player:AddTrinket(TrinketType.TRINKET_PERFECTION | 32768)
 		else
 			--player:AddTrinket(TrinketType.TRINKET_NO | 32768)
+		end
+		if Isaac.GetChallenge() == Challenge.CHALLENGE_DELETE_THIS
+		and not player:HasCollectible(CollectibleType.COLLECTIBLE_TMTRAINER, true)
+		then
+			player:AddCollectible(CollectibleType.COLLECTIBLE_TMTRAINER, 0, false)
 		end
 		-- player:AddCard(Card.CARD_SUN)
 		-- player:AddTrinket(TrinketType.TRINKET_BIBLE_TRACT)
@@ -2220,7 +2248,7 @@ local function SelManageRander(pos, playerID, sortNum)
 	if data.WhiteItem[1] ~= nil then
 		local item = Isaac.GetItemConfig():GetCollectible(data.WhiteItem[1])
 		if item ~= nil then
-			item1:ReplaceSpritesheet(0,item.GfxFileName)
+			item1:ReplaceSpritesheet(0, (data.WhiteItem[1] > 0 and {item.GfxFileName} or {"gfx/items/collectibles/questionmark.png"})[1])
 			item1:LoadGraphics()
 			item1:Render(pos + Vector(0,16*1), Vector(0,0), Vector(0,0))
 		end
@@ -2228,7 +2256,7 @@ local function SelManageRander(pos, playerID, sortNum)
 	if data.WhiteItem[2] ~= nil then
 	local item = Isaac.GetItemConfig():GetCollectible(data.WhiteItem[2])
 		if item ~= nil then
-			item2:ReplaceSpritesheet(0,item.GfxFileName)
+			item2:ReplaceSpritesheet(0, (data.WhiteItem[2] > 0 and {item.GfxFileName} or {"gfx/items/collectibles/questionmark.png"})[1])
 			item2:LoadGraphics()
 			item2:Render(pos + Vector(0,16*2), Vector(0,0), Vector(0,0))
 		end
@@ -2236,7 +2264,7 @@ local function SelManageRander(pos, playerID, sortNum)
 	if data.WhiteItem[3] ~= nil then
 	local item = Isaac.GetItemConfig():GetCollectible(data.WhiteItem[3])
 		if item ~= nil then
-			item3:ReplaceSpritesheet(0,item.GfxFileName)
+			item3:ReplaceSpritesheet(0, (data.WhiteItem[3] > 0 and {item.GfxFileName} or {"gfx/items/collectibles/questionmark.png"})[1])
 			item3:LoadGraphics()
 			item3:Render(pos + Vector(0,16*3), Vector(0,0), Vector(0,0))
 		end
