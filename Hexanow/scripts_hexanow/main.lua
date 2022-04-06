@@ -368,7 +368,10 @@ local function UpdateCostumes(player)
 		player:ClearCostumes()
 		player:RemoveSkinCostume()
 		local sprite = player:GetSprite()
-		sprite:Load("gfx/characters/HexanowRoot.anm2", true)
+
+		if player:GetSprite():GetFilename() ~= "gfx/characters/HexanowRoot.anm2" then
+			sprite:Load("gfx/characters/HexanowRoot.anm2", true)
+		end
 
 		--player:TryRemoveCollectibleCostume(CollectibleType.COLLECTIBLE_ANALOG_STICK, false)
 		--player:TryRemoveCollectibleCostume(CollectibleType.COLLECTIBLE_URANUS, false)
@@ -1545,6 +1548,10 @@ local function TickEventHexanow(player)
 		UpdateCostumes(player)
 	end
 
+	if player:IsDead() then
+		player:AddBrokenHearts(math.ceil(player:GetHeartLimit() / 2))
+	end
+
 	if game == nil
 	or level == nil
 	or room == nil
@@ -2598,16 +2605,34 @@ function HexanowMod.Main:HexanowPreUseItem(itemId, itemRng, player, useFlags, ac
 			return true
 		end
 	end
-	if HexanowBlackCollectiblePredicate(itemId) then
+	if itemId == CollectibleType.COLLECTIBLE_GUPPYS_PAW
+	then
+		if player:GetHearts() > 0 then
+			if player:GetMaxHearts() > 12 then
+				player:AddMaxHearts(-2)
+				EternalBroken(player, -6)
+			else
+				player:AddHearts(-1)
+				EternalBroken(player, -4)
+			end
+			RearrangeHearts(player)
+			if player:GetHearts() <= 0 then
+				HexanowCriticalHit(player)
+			end
+			SFXManager():Play(SoundEffect.SOUND_VAMP_GULP, 1, 0, false, 1 )
+			if useFlags & UseFlag.USE_NOANIM == 0 then player:AnimateCollectible(itemId, "UseItem") end
+		end
 		return true
 	end
-	if itemId == CollectibleType.COLLECTIBLE_GUPPYS_PAW
-	or itemId == CollectibleType.COLLECTIBLE_POTATO_PEELER
+	if itemId == CollectibleType.COLLECTIBLE_POTATO_PEELER
 	or itemId == CollectibleType.COLLECTIBLE_MAGIC_SKIN
 	or itemId == CollectibleType.COLLECTIBLE_SUMPTORIUM
 	then
 		RearrangeHearts(player)
 		ApplyEternalCharge(player)
+	end
+	if HexanowBlackCollectiblePredicate(itemId) then
+		return true
 	end
 end
 HexanowMod:AddCallback(ModCallbacks.MC_PRE_USE_ITEM, HexanowMod.Main.HexanowPreUseItem)
