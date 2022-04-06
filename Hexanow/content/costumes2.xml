@@ -1,6 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <costumes anm2root="gfx/characters/">
-  <costume anm2path="HexanowHair.anm2" type="none" priority="99" overwriteColor="true"/>
-  <costume anm2path="HexanowBody.anm2" type="none" priority="99" overwriteColor="true"></costume>
-  <costume anm2path="HexanowFlight.anm2" type="none" priority="99" overwriteColor="true" isFlying="true"></costume>
+  <!--<costume anm2path="HexanowHair.anm2" type="none" priority="99" overwriteColor="true"/>
+  <costume anm2path="HexanowBody.anm2" type="none" priority="99" overwriteColor="true"/>
+  <costume anm2path="HexanowFlight.anm2" type="none" priority="99" overwriteColor="true" isFlying="true"/>-->
+  <costume anm2path="HexanowRoot.anm2" type="none" priority="99" overwriteColor="true"/>
 </costumes>

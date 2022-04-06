@@ -66,9 +66,10 @@ end)
 --local hexanowItem = Isaac.GetItemIdByName( "Hexanow's Soul" )
 --local redMap = Isaac.GetItemIdByName("Red Map")
 --local hexanowPortalTool = Isaac.GetItemIdByName("Eternal Portal")
-local hexanowHairCostume = Isaac.GetCostumeIdByPath("gfx/characters/HexanowHair.anm2")
-local hexanowBodyCostume = Isaac.GetCostumeIdByPath("gfx/characters/HexanowBody.anm2")
-local hexanowBodyFlightCostume = Isaac.GetCostumeIdByPath("gfx/characters/HexanowFlight.anm2")
+--local hexanowHairCostume = Isaac.GetCostumeIdByPath("gfx/characters/HexanowHair.anm2")
+--local hexanowBodyCostume = Isaac.GetCostumeIdByPath("gfx/characters/HexanowBody.anm2")
+local hexanowRootCostume = Isaac.GetCostumeIdByPath("gfx/characters/HexanowRoot.anm2")
+--local hexanowBodyFlightCostume = Isaac.GetCostumeIdByPath("gfx/characters/HexanowFlight.anm2")
 
 --local entityVariantHeartsBlender = Isaac.GetEntityVariantByName("Hearts Blender")
 local entityVariantHexanowLaser = Isaac.GetEntityVariantByName("Laser (Hexanow Phaser)")
@@ -366,6 +367,8 @@ local function UpdateCostumes(player)
 	if IsHexanow(player) then
 		player:ClearCostumes()
 		player:RemoveSkinCostume()
+		local sprite = player:GetSprite()
+		sprite:Load("gfx/characters/HexanowRoot.anm2", true)
 
 		--player:TryRemoveCollectibleCostume(CollectibleType.COLLECTIBLE_ANALOG_STICK, false)
 		--player:TryRemoveCollectibleCostume(CollectibleType.COLLECTIBLE_URANUS, false)
@@ -374,9 +377,10 @@ local function UpdateCostumes(player)
 		--player:TryRemoveNullCostume(hexanowBodyFlightCostume)
 		--player:TryRemoveNullCostume(hexanowBodyCostume)
 
-		player:AddNullCostume(hexanowHairCostume)
-		player:AddNullCostume(hexanowBodyFlightCostume)
-		player:AddNullCostume(hexanowBodyCostume)
+		player:AddNullCostume(hexanowRootCostume)
+		--player:AddNullCostume(hexanowHairCostume)
+		--player:AddNullCostume(hexanowBodyFlightCostume)
+		--player:AddNullCostume(hexanowBodyCostume)
 
 		local color = player:GetColor()
 		if color.R < 1.0
@@ -387,9 +391,10 @@ local function UpdateCostumes(player)
 			player:SetColor(Color (1.0, 1.0, 1.0, 1.0), -1, 999999999, false, false)
 		end
 	else
-		player:TryRemoveNullCostume(hexanowHairCostume)
-		player:TryRemoveNullCostume(hexanowBodyCostume)
-		player:TryRemoveNullCostume(hexanowBodyFlightCostume)
+		--player:TryRemoveNullCostume(hexanowHairCostume)
+		--player:TryRemoveNullCostume(hexanowBodyCostume)
+		player:TryRemoveNullCostume(hexanowRootCostume)
+		--player:TryRemoveNullCostume(hexanowBodyFlightCostume)
 	end
 end
 
@@ -613,7 +618,7 @@ end
 -- 物品谓词
 local function HexanowBlackCollectiblePredicate(ID)
 	--local item = Isaac.GetItemConfig():GetCollectible(ID)
-	if ID ~= 0 and (
+	if ID ~= 0 and false--[[(
 		(
 		ID == CollectibleType.COLLECTIBLE_MEGA_MUSH
 		--or ID == CollectibleType.COLLECTIBLE_ANKH
@@ -623,7 +628,7 @@ local function HexanowBlackCollectiblePredicate(ID)
 		--or ID == CollectibleType.COLLECTIBLE_SUMPTORIUM
 		--or ID == CollectibleType.COLLECTIBLE_MAGIC_SKIN
 		--or ID == CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR
-		))
+		))]]
 	then
 		return true
 	else
@@ -1331,31 +1336,21 @@ local function CastHexanowLaser(player, position, degrees, colorType, fromOtherB
 	local offset = Vector(0, 0)
 	local color = GetHexanowPortalColor(player, colorType)
 	local room = Game():GetRoom()
-	local laserCount = 1
+	local laserCount = GetPlayerShotCount(player)
 	local spread = 15
 	local damage = player.Damage
-	local onehit = true
+	local onehit = player:GetCollectibleNum(CollectibleType.COLLECTIBLE_BRIMSTONE) + player:GetEffects():GetCollectibleEffectNum(CollectibleType.COLLECTIBLE_BRIMSTONE) <= 0
 	local tearFlags = player.TearFlags | TearFlags.TEAR_ICE
 	if fromOtherBeam then
 		spread = 1.25
 	end
-	if not player:IsCoopGhost() then
-		laserCount = GetPlayerShotCount(player)
-		onehit = player:GetCollectibleNum(CollectibleType.COLLECTIBLE_BRIMSTONE) + player:GetEffects():GetCollectibleEffectNum(CollectibleType.COLLECTIBLE_BRIMSTONE) <= 0
-	else
-		damage = 0
-		tearFlags = TearFlags.TEAR_NORMAL
-	end
-	if fromOtherBeam then
-		laserCount = 1
+	if player:IsCoopGhost() then
+		laserCount = 0
 	end
 	for i=0,laserCount - 1 do
 		local degreeFactor = (i - (laserCount - 1) / 2)
 		local laser = EntityLaser.ShootAngle(entityVariantHexanowLaser, position, degrees + spread * degreeFactor, 0, offset, player)
 		local sprite = laser:GetSprite()
-		if player:IsCoopGhost() then
-			sprite:SetAnimation("ThinLaser", false)
-		end
 		sprite.Color = color
 		laser.CollisionDamage = damage
 		laser.DepthOffset = -10 --3000
@@ -1366,7 +1361,7 @@ local function CastHexanowLaser(player, position, degrees, colorType, fromOtherB
 		laser:Update()
 		PortalLaserInterval(laser)
 	end
-	if laserCount % 2 == 0 then
+	if laserCount % 2 == 0 or tearFlags & TearFlags.TEAR_BOOMERANG ~= TearFlags.TEAR_NORMAL then
 		local laser = EntityLaser.ShootAngle(entityVariantHexanowLaser, position, degrees, 0, offset, player)
 		local sprite = laser:GetSprite()
 		sprite:SetAnimation("ThinLaser", false)
@@ -1375,13 +1370,19 @@ local function CastHexanowLaser(player, position, degrees, colorType, fromOtherB
 		laser.DepthOffset = -10 --3000
 		laser.Shrink = false
 		laser.DisableFollowParent = true
-		laser.OneHit = onehit
+		laser.OneHit = true
 		laser.TearFlags = TearFlags.TEAR_NORMAL
 		laser:Update()
 		PortalLaserInterval(laser)
 	end
 	if not fromOtherBeam then
 		SFXManager():Play(SoundEffect.SOUND_FREEZE, 1, 0, false, 1 )
+		--[[
+		if player:GetCollectibleNum(CollectibleType.COLLECTIBLE_MOMS_KNIFE) then
+			local knife = player:FireKnife(player, degrees, true, 0, 0 )
+			knife.TearFlags = tearFlags
+		end
+		]]
 		if colorType == 1 or colorType == 2 then
 			local endpoint = EntityLaser.CalculateEndPoint(position + offset, Vector.FromAngle(degrees), Vector(0,0), player, 20)
 			local settedPortal = SetPortal(player, colorType, room, Game():GetLevel():GetCurrentRoomDesc(), endpoint)
@@ -1539,6 +1540,10 @@ local function TickEventHexanow(player)
 	end
 	]]
 	player:GetData().StartedAsHexanow = true
+
+	if player:GetSprite():GetFilename() ~= "gfx/characters/HexanowRoot.anm2" then
+		UpdateCostumes(player)
+	end
 
 	if game == nil
 	or level == nil
@@ -2076,7 +2081,7 @@ local function InitPlayerHexanow(player)
 
 		-- print("PostGameStarted for", player:GetName())
 
-		itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_MEGA_MUSH)
+		--itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_MEGA_MUSH)
 		--itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_GUPPYS_PAW)
 		--itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_POTATO_PEELER)
 		--itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_SUMPTORIUM)
@@ -2565,6 +2570,34 @@ function HexanowMod.Main:HexanowPreUseItem(itemId, itemRng, player, useFlags, ac
 	if not IsHexanow(player) then
 		return
 	end
+	if itemId == CollectibleType.COLLECTIBLE_MEGA_MUSH
+	then
+		--Isaac.Spawn(EntityType.ENTITY_EFFECT, EffectVariant.MAMA_MEGA_EXPLOSION, 0, player.Position, Vector(0,0), nil)
+		--player:UseActiveItem(CollectibleType.COLLECTIBLE_MAMA_MEGA, UseFlag.USE_NOANIM | UseFlag.USE_NOCOSTUME | UseFlag.USE_NOANNOUNCER)
+		--player:GetEffects():RemoveCollectibleEffect(CollectibleType.COLLECTIBLE_MAMA_MEGA, 1)
+		player:UseActiveItem(CollectibleType.COLLECTIBLE_NECRONOMICON, UseFlag.USE_NOANIM | UseFlag.USE_NOCOSTUME | UseFlag.USE_NOANNOUNCER)
+		player:UseActiveItem(CollectibleType.COLLECTIBLE_NECRONOMICON, UseFlag.USE_NOANIM | UseFlag.USE_NOCOSTUME | UseFlag.USE_NOANNOUNCER)
+		player:UseActiveItem(CollectibleType.COLLECTIBLE_NECRONOMICON, UseFlag.USE_NOANIM | UseFlag.USE_NOCOSTUME | UseFlag.USE_NOANNOUNCER)
+		if useFlags & UseFlag.USE_NOANIM == 0 then player:AnimateCollectible(itemId, "UseItem") end
+		return true
+	end
+	if itemId == CollectibleType.COLLECTIBLE_CLICKER
+	or itemId == CollectibleType.COLLECTIBLE_CRYSTAL_BALL
+	then
+		player:UseActiveItem(CollectibleType.COLLECTIBLE_PRAYER_CARD, UseFlag.USE_NOANIM | UseFlag.USE_NOCOSTUME | UseFlag.USE_NOANNOUNCER)
+		if useFlags & UseFlag.USE_NOANIM == 0 then player:AnimateCollectible(itemId, "UseItem") end
+		return true
+	end
+	if itemId == CollectibleType.COLLECTIBLE_PRAYER_CARD
+	then
+		if player:GetBrokenHearts() > 0
+		then
+			player:AddBrokenHearts(-1)
+			RearrangeHearts(player)
+			if useFlags & UseFlag.USE_NOANIM == 0 then player:AnimateCollectible(itemId, "UseItem") end
+			return true
+		end
+	end
 	if HexanowBlackCollectiblePredicate(itemId) then
 		return true
 	end
@@ -2989,7 +3022,7 @@ function HexanowMod.Main:PrePickupCollision(pickup, collider, low)
 					--SFXManager():Play(SoundEffect.SOUND_SUPERHOLY, 1, 0, false, 1 )
 					--player:AddHearts(player:GetMaxHearts())
 					--player:AddBrokenHearts(-player:GetBrokenHearts())
-					player:AddBrokenHearts(-player:GetBrokenHearts())
+					player:AddBrokenHearts(-1)
 					RearrangeHearts(player)
 					--player:AddEternalHearts(200)
 					if player:GetEternalHearts() < 1 then
@@ -3669,6 +3702,31 @@ function HexanowMod.Main:PostPlayerUpdate(player)
 	TryCastFireHexanow(player)
 end
 HexanowMod:AddCallback(ModCallbacks.MC_POST_PLAYER_UPDATE, HexanowMod.Main.PostPlayerUpdate)
+
+-- 玩家刻事件，每一帧执行
+local function PostRenderHexanow(player)
+	if not IsHexanow(player) then
+		return
+	end
+	local sprite = player:GetSprite()
+	if player:GetSprite():GetFilename() ~= "gfx/characters/HexanowRoot.anm2" then
+		UpdateCostumes(player)
+	end
+	--[[
+	if player:IsFlying() then
+		sprite:SetLayerFrame(1, 0)
+	end
+	]]
+
+end
+
+function HexanowMod.Main:PostPlayerRender(player)
+	if not HexanowMod.gameInited then
+		return
+	end
+	PostRenderHexanow(player)
+end
+HexanowMod:AddCallback(ModCallbacks.MC_POST_PLAYER_RENDER, HexanowMod.Main.PostPlayerRender)
 
 -- 渲染器，每一帧执行
 function HexanowMod.Main:PostRender()
