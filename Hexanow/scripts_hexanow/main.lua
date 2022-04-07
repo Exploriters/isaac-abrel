@@ -860,20 +860,20 @@ local function FreezeGridEntity(pos)
 			end
 			if gridEntity:GetType() == GridEntityType.GRID_ROCKB
 			or gridEntity:GetType() == GridEntityType.GRID_PILLAR
-			or gridEntity:GetType() == GridEntityType.GRID_LOCK
 			then
-				if gridEntity.State == 0 then
+				if gridEntity.State ~= 2 then
 					SFXManager():Play(SoundEffect.SOUND_METAL_BLOCKBREAK, 1, 0, false, 1 )
 				end
 				gridEntity.State = 2
 				gridEntity:Init(1)
-				--[[
-				gridEntity:SetType(GridEntityType.GRID_DECORATION)
-				gridEntity:Destroy()
-				room:RemoveGridEntity(gridEntity:GetGridIndex(), gridEntity:GetGridIndex(), true)
-				gridEntity:Update()
-				room:Update()
-				]]
+			end
+			if gridEntity:GetType() == GridEntityType.GRID_LOCK
+			then
+				if gridEntity.State ~= 1 then
+					SFXManager():Play(SoundEffect.SOUND_METAL_BLOCKBREAK, 1, 0, false, 1 )
+				end
+				gridEntity.State = 1
+				gridEntity:Init(1)
 			end
 		end
 
