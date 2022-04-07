@@ -862,7 +862,9 @@ local function FreezeGridEntity(pos)
 			or gridEntity:GetType() == GridEntityType.GRID_PILLAR
 			or gridEntity:GetType() == GridEntityType.GRID_LOCK
 			then
-				SFXManager():Play(SoundEffect.SOUND_METAL_BLOCKBREAK, 1, 0, false, 1 )
+				if gridEntity.State == 0 then
+					SFXManager():Play(SoundEffect.SOUND_METAL_BLOCKBREAK, 1, 0, false, 1 )
+				end
 				gridEntity.State = 2
 				gridEntity:Init(1)
 				--[[
@@ -1256,6 +1258,7 @@ end
 
 local function ExecuteHexanowLaserIntersectionEffect(player, position, color, damage, tearFlags)
 	SFXManager():Play(SoundEffect.SOUND_FREEZE_SHATTER, 1, 0, false, 1 )
+	FreezeGridEntity(position)
 	--[[
 	Game():BombExplosionEffects(
 		position,
@@ -1318,9 +1321,17 @@ local function ExecuteHexanowLaserIntersectionEffect(player, position, color, da
 					local pickup = entity:ToPickup()
 					if pickup ~= nil
 					and entity.Type == EntityType.ENTITY_PICKUP
-					and entity.Variant == PickupVariant.PICKUP_BOMBCHEST
 					then
-						pickup:TryOpenChest(player)
+						if entity.Variant == PickupVariant.PICKUP_BOMBCHEST
+						then
+							pickup:TryOpenChest(player)
+						end
+						if entity.Variant == PickupVariant.PICKUP_COIN
+						and entity.SubType == CoinSubType.COIN_STICKYNICKEL
+						then
+							entity.SubType = CoinSubType.COIN_NICKEL
+							entity:Update()
+						end
 					end
 					local NPC = entity:ToNPC()
 					if NPC ~= nil
@@ -1332,7 +1343,6 @@ local function ExecuteHexanowLaserIntersectionEffect(player, position, color, da
 			end
 		end
 	)
-	FreezeGridEntity(position)
 end
 
 local function CastHexanowLaser(player, position, degrees, colorType, fromOtherBeam)
@@ -1841,6 +1851,11 @@ local function TickEventHexanow(player)
 			end
 			]]
 		end
+		if queuedItem:IsTrinket() then
+			--print(queuedItem.ID)
+			--player.QueuedItem.Item = Isaac.GetItemConfig():GetTrinket(queuedItem.ID | TrinketType.TRINKET_GOLDEN_FLAG)
+			--queuedItem.ID = queuedItem.ID | TrinketType.TRINKET_GOLDEN_FLAG
+		end
 		--[[
 		EternalBroken(player, -math.max(0, queuedItem.AddSoulHearts))
 		EternalBroken(player, -math.max(0, queuedItem.AddBlackHearts))
@@ -2074,9 +2089,9 @@ local function InitPlayerHexanow(player)
 		if HexanowFlags:HasFlag("TAINTED") then
 			player:AddMaxHearts(12)
 			player:AddHearts(13)
-			player:AddTrinket(TrinketType.TRINKET_PERFECTION | 32768)
+			player:AddTrinket(TrinketType.TRINKET_PERFECTION | TrinketType.TRINKET_GOLDEN_FLAG)
 		else
-			--player:AddTrinket(TrinketType.TRINKET_NO | 32768)
+			--player:AddTrinket(TrinketType.TRINKET_NO | TrinketType.TRINKET_GOLDEN_FLAG)
 		end
 		if Isaac.GetChallenge() == Challenge.CHALLENGE_DELETE_THIS
 		and not player:HasCollectible(CollectibleType.COLLECTIBLE_TMTRAINER, true)
@@ -2893,16 +2908,15 @@ function HexanowMod.Main:EntityTakeDmg(TookDamage, DamageAmount, DamageFlags, Da
 			return false
 		end
 		]]
-		if DamageAmount >= player:GetHearts() - player:GetRottenHearts() + player:GetSoulHearts() + player:GetEternalHearts()
+		if DamageAmount >= player:GetHearts() - player:GetRottenHearts() + player:GetSoulHearts() + ((DamageFlags & DamageFlag.DAMAGE_RED_HEARTS ~= 0) and {0} or {player:GetEternalHearts()})[1]
 		and player:GetHeartLimit() > 0
 		then
 			HexanowCriticalHit(player)
 			--if player:GetHeartLimit() > 0 then
 			--	player:UseCard(Card.CARD_HOLY, UseFlag.USE_NOANIM | UseFlag.USE_NOCOSTUME | UseFlag.USE_NOANNOUNCER)
 			--end
-			local flags = DamageFlags
 			--TookDamage:TakeDamage(0, DamageFlag.DAMAGE_FAKE, nil, 0)
-			TookDamage:TakeDamage(0, ~ ( ~flags | DamageFlag.DAMAGE_RED_HEARTS) | DamageFlag.DAMAGE_FAKE, DamageSource, DamageCountdownFrames)
+			TookDamage:TakeDamage(0, ~ ( ~DamageFlags | DamageFlag.DAMAGE_RED_HEARTS) | DamageFlag.DAMAGE_FAKE, DamageSource, DamageCountdownFrames)
 			return false
 		end
 	end
@@ -2930,10 +2944,10 @@ end
 HexanowMod:AddCallback(ModCallbacks.MC_POST_ENTITY_REMOVE , HexanowMod.Main.PostEntityRemove)
 ]]
 
---[[
 -- 干涉掉落物生成
 function HexanowMod.Main:PostPickupSelection(Pickup, Variant, SubType)
 	if PlayerTypeExistInGame(playerTypeHexanow) then
+		--[[
 		if Variant == PickupVariant.PICKUP_HEART and
 		(
 			SubType == HeartSubType.HEART_FULL or
@@ -2946,10 +2960,13 @@ function HexanowMod.Main:PostPickupSelection(Pickup, Variant, SubType)
 		then
 			return {Variant, HeartSubType.HEART_BLENDED}
 		end
+		]]
+		if Variant == PickupVariant.PICKUP_TRINKET then
+			return {Variant, SubType | TrinketType.TRINKET_GOLDEN_FLAG}
+		end
 	end
 end
 HexanowMod:AddCallback(ModCallbacks.MC_POST_PICKUP_SELECTION , HexanowMod.Main.PostPickupSelection)
-s]]
 
 -- 干涉诅咒选择
 function HexanowMod.Main:PostCurseEval(curses)
@@ -3170,9 +3187,9 @@ function HexanowMod.Main:PrePickupCollision(pickup, collider, low)
 		if pickup.Variant == PickupVariant.PICKUP_PILL
 		--or (pickup.Variant == PickupVariant.PICKUP_TRINKET
 		--	and pickup.SubType ~= TrinketType.TRINKET_NO
-		--	and pickup.SubType ~= TrinketType.TRINKET_NO | 32768
+		--	and pickup.SubType ~= TrinketType.TRINKET_NO | TrinketType.TRINKET_GOLDEN_FLAG
 		--	and pickup.SubType ~= TrinketType.TRINKET_PERFECTION
-		--	and pickup.SubType ~= TrinketType.TRINKET_PERFECTION | 32768
+		--	and pickup.SubType ~= TrinketType.TRINKET_PERFECTION | TrinketType.TRINKET_GOLDEN_FLAG
 		--	)
 		--or pickup.Variant == PickupVariant.PICKUP_LIL_BATTERY
 		or ( pickup.Variant == PickupVariant.PICKUP_TAROTCARD
