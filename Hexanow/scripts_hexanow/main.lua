@@ -435,7 +435,7 @@ local function ApplyEternalHearts(player)
 end
 
 -- 给予永恒充能
-local function ApplyEternalCharge(player)
+local function ApplyEternalCharge(player, forced)
 	--[[
 	if player:GetEternalHearts() <= 0 and (EternalCharges > 0 or player:GetHeartLimit() <= 0)then
 		player:AddEternalHearts(1)
@@ -444,7 +444,7 @@ local function ApplyEternalCharge(player)
 	]]
 	if player:GetEternalHearts() <= 0 then
 		player:AddEternalHearts(1)
-		if not EternalChargeForFree then
+		if not EternalChargeForFree or forced == true then
 			EternalBroken(player, 1)
 		end
 	end
@@ -2538,6 +2538,7 @@ function HexanowMod.Main:HexanowUseItem(itemId, itemRng, player, useFlags, activ
 	if not IsHexanow(player) then
 		return
 	end
+	local playerID = GetPlayerID(player)
 	UpdateCostumes(player)
 	if HexanowBlackCollectiblePredicate(itemId) then
 		EternalBroken(player, -4)
@@ -2547,43 +2548,19 @@ function HexanowMod.Main:HexanowUseItem(itemId, itemRng, player, useFlags, activ
 			ShowAnim = false,
 		}
 	end
-	if itemId == CollectibleType.COLLECTIBLE_CONVERTER
+	if itemId == CollectibleType.COLLECTIBLE_DAMOCLES
+	and useFlags & UseFlag.USE_OWNED ~= 0
+	and useFlags & (UseFlag.USE_CARBATTERY | UseFlag.USE_VOID | UseFlag.USE_MIMIC) == 0
 	then
-		local converted = false
-		for i=1,2 do
-			if player:GetHearts() < player:GetMaxHearts() and EternalCharges > 1 then
-				player:AddHearts(1)
-				EternalBroken(player, 1)
-				converted = true
+		for i=1,3 do
+			if HexanowPlayerDatas[playerID].WhiteItem[i] == CollectibleType.COLLECTIBLE_DAMOCLES then
+				HexanowPlayerDatas[playerID].WhiteItem[i] = CollectibleType.COLLECTIBLE_DAMOCLES_PASSIVE
+				break
 			end
 		end
-		if converted then
-			return {
-				Discharge = true,
-				Remove = false,
-				ShowAnim = true,
-			}
-		end
 	end
-	if itemId == CollectibleType.COLLECTIBLE_GUPPYS_PAW
-	or itemId == CollectibleType.COLLECTIBLE_POTATO_PEELER
-	or itemId == CollectibleType.COLLECTIBLE_MAGIC_SKIN
-	then
-		RearrangeHearts(player)
-	end
-	if itemId == CollectibleType.COLLECTIBLE_SUMPTORIUM
-	then
-		if EternalChargeForFree then
-			EternalBroken(player, 1)
-		end
-		--[[
-		if player:GetHearts() - player:GetRottenHearts() + player:GetSoulHearts() <= 0
-		and player:GetHeartLimit() > 0
-		then
-			HexanowCriticalHit(player)
-		end
-		]]
-	end
+	ApplyEternalCharge(player, true)
+	RearrangeHearts(player)
 end
 HexanowMod:AddCallback(ModCallbacks.MC_USE_ITEM, HexanowMod.Main.HexanowUseItem)
 
@@ -2597,16 +2574,28 @@ function HexanowMod.Main:HexanowPreUseItem(itemId, itemRng, player, useFlags, ac
 		--Isaac.Spawn(EntityType.ENTITY_EFFECT, EffectVariant.MAMA_MEGA_EXPLOSION, 0, player.Position, Vector(0,0), nil)
 		--player:UseActiveItem(CollectibleType.COLLECTIBLE_MAMA_MEGA, UseFlag.USE_NOANIM | UseFlag.USE_NOCOSTUME | UseFlag.USE_NOANNOUNCER)
 		--player:GetEffects():RemoveCollectibleEffect(CollectibleType.COLLECTIBLE_MAMA_MEGA, 1)
-		player:UseActiveItem(CollectibleType.COLLECTIBLE_NECRONOMICON, UseFlag.USE_NOANIM | UseFlag.USE_NOCOSTUME | UseFlag.USE_NOANNOUNCER)
-		player:UseActiveItem(CollectibleType.COLLECTIBLE_NECRONOMICON, UseFlag.USE_NOANIM | UseFlag.USE_NOCOSTUME | UseFlag.USE_NOANNOUNCER)
-		player:UseActiveItem(CollectibleType.COLLECTIBLE_NECRONOMICON, UseFlag.USE_NOANIM | UseFlag.USE_NOCOSTUME | UseFlag.USE_NOANNOUNCER)
+		--player:UseActiveItem(CollectibleType.COLLECTIBLE_NECRONOMICON, UseFlag.USE_NOANIM | UseFlag.USE_NOCOSTUME | UseFlag.USE_NOANNOUNCER)
+		--player:UseActiveItem(CollectibleType.COLLECTIBLE_NECRONOMICON, UseFlag.USE_NOANIM | UseFlag.USE_NOCOSTUME | UseFlag.USE_NOANNOUNCER)
+		--player:UseActiveItem(CollectibleType.COLLECTIBLE_NECRONOMICON, UseFlag.USE_NOANIM | UseFlag.USE_NOCOSTUME | UseFlag.USE_NOANNOUNCER)
+		--player:UseCard(Card.CARD_REVERSE_MOON, UseFlag.USE_NOANIM | UseFlag.USE_NOCOSTUME | UseFlag.USE_NOANNOUNCER)
+		--player:UsePill(PillEffect.PILLEFFECT_48HOUR_ENERGY, PillColor.PILL_GOLD | PillColor.PILL_GIANT_FLAG, UseFlag.USE_NOANIM | UseFlag.USE_NOCOSTUME | UseFlag.USE_NOANNOUNCER | UseFlag.USE_MIMIC)
+		local brokenRemove = math.max(0, math.min(6, player:GetBrokenHearts()))
+		player:AddBrokenHearts(-brokenRemove)
+		EternalBroken(player, brokenRemove-6)
 		if useFlags & UseFlag.USE_NOANIM == 0 then player:AnimateCollectible(itemId, "UseItem") end
 		return true
 	end
 	if itemId == CollectibleType.COLLECTIBLE_CLICKER
-	or itemId == CollectibleType.COLLECTIBLE_CRYSTAL_BALL
 	then
-		player:UseActiveItem(CollectibleType.COLLECTIBLE_PRAYER_CARD, UseFlag.USE_NOANIM | UseFlag.USE_NOCOSTUME | UseFlag.USE_NOANNOUNCER)
+		player:UseActiveItem(CollectibleType.COLLECTIBLE_UNDEFINED, UseFlag.USE_NOANIM | UseFlag.USE_NOCOSTUME | UseFlag.USE_NOANNOUNCER)
+		if useFlags & UseFlag.USE_NOANIM == 0 then player:AnimateCollectible(itemId, "UseItem") end
+		return true
+	end
+	if itemId == CollectibleType.COLLECTIBLE_CRYSTAL_BALL
+	then
+		--Isaac.Spawn(EntityType.ENTITY_PICKUP, PickupVariant.PICKUP_TAROTCARD, Card.CARD_CRACKED_KEY, Game():GetRoom():FindFreePickupSpawnPosition(player.Position, 2, false, false), Vector(0,0), nil)
+		--player:QueueItem(Isaac.GetItemConfig():GetCard(Card.CARD_CRACKED_KEY), 0, false, false, 0)
+		player:UseCard(Card.CARD_WHEEL_OF_FORTUNE, UseFlag.USE_NOANIM | UseFlag.USE_NOCOSTUME | UseFlag.USE_NOANNOUNCER)
 		if useFlags & UseFlag.USE_NOANIM == 0 then player:AnimateCollectible(itemId, "UseItem") end
 		return true
 	end
@@ -2639,16 +2628,19 @@ function HexanowMod.Main:HexanowPreUseItem(itemId, itemRng, player, useFlags, ac
 		end
 		return true
 	end
-	if itemId == CollectibleType.COLLECTIBLE_POTATO_PEELER
-	or itemId == CollectibleType.COLLECTIBLE_MAGIC_SKIN
-	or itemId == CollectibleType.COLLECTIBLE_SUMPTORIUM
+	if itemId == CollectibleType.COLLECTIBLE_CONVERTER
 	then
-		RearrangeHearts(player)
-		ApplyEternalCharge(player)
+		player:AddMaxHearts(2)
+		player:AddHearts(2)
+		EternalBroken(player, 2)
+		if useFlags & UseFlag.USE_NOANIM == 0 then player:AnimateCollectible(itemId, "UseItem") end
+		return true
 	end
 	if HexanowBlackCollectiblePredicate(itemId) then
 		return true
 	end
+	RearrangeHearts(player)
+	ApplyEternalCharge(player)
 end
 HexanowMod:AddCallback(ModCallbacks.MC_PRE_USE_ITEM, HexanowMod.Main.HexanowPreUseItem)
 
