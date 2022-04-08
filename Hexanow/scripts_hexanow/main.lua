@@ -68,8 +68,8 @@ end)
 --local hexanowPortalTool = Isaac.GetItemIdByName("Eternal Portal")
 --local hexanowHairCostume = Isaac.GetCostumeIdByPath("gfx/characters/HexanowHair.anm2")
 --local hexanowBodyCostume = Isaac.GetCostumeIdByPath("gfx/characters/HexanowBody.anm2")
-local hexanowRootCostume = Isaac.GetCostumeIdByPath("gfx/characters/HexanowRoot.anm2")
 --local hexanowBodyFlightCostume = Isaac.GetCostumeIdByPath("gfx/characters/HexanowFlight.anm2")
+local hexanowRootCostume = Isaac.GetCostumeIdByPath("gfx/characters/HexanowRoot.anm2")
 
 --local entityVariantHeartsBlender = Isaac.GetEntityVariantByName("Hearts Blender")
 local entityVariantHexanowLaser = Isaac.GetEntityVariantByName("Laser (Hexanow Phaser)")
@@ -372,6 +372,7 @@ local function UpdateCostumes(player)
 		if player:GetSprite():GetFilename() ~= "gfx/characters/HexanowRoot.anm2" then
 			sprite:Load("gfx/characters/HexanowRoot.anm2", true)
 		end
+		--player:ReplaceCostumeSprite(Isaac.GetItemConfig():GetCollectible(CollectibleType.COLLECTIBLE_MEGA_MUSH), "gfx/characters/costumes/character_Hexanow.png", 0)
 
 		--player:TryRemoveCollectibleCostume(CollectibleType.COLLECTIBLE_ANALOG_STICK, false)
 		--player:TryRemoveCollectibleCostume(CollectibleType.COLLECTIBLE_URANUS, false)
@@ -426,6 +427,17 @@ local function EternalBroken(player, count)
 		end
 	end)
 end
+
+local function EternalHeartApply(player)
+	local brokenRemove = math.max(0, math.min(6, player:GetBrokenHearts()))
+	player:AddBrokenHearts(-brokenRemove)
+	EternalBroken(player, brokenRemove-6)
+	if EternalCharges > 0 and player:GetHearts() < player:GetHeartLimit() then
+		player:AddEternalHearts(2)
+		EternalBroken(player, 1)
+	end
+end
+
 
 -- 给予永恒之心
 local function ApplyEternalHearts(player)
@@ -2539,7 +2551,6 @@ function HexanowMod.Main:HexanowUseItem(itemId, itemRng, player, useFlags, activ
 		return
 	end
 	local playerID = GetPlayerID(player)
-	UpdateCostumes(player)
 	if HexanowBlackCollectiblePredicate(itemId) then
 		EternalBroken(player, -4)
 		return {
@@ -2548,6 +2559,7 @@ function HexanowMod.Main:HexanowUseItem(itemId, itemRng, player, useFlags, activ
 			ShowAnim = false,
 		}
 	end
+	UpdateCostumes(player)
 	if itemId == CollectibleType.COLLECTIBLE_DAMOCLES
 	and useFlags & UseFlag.USE_OWNED ~= 0
 	and useFlags & (UseFlag.USE_CARBATTERY | UseFlag.USE_VOID | UseFlag.USE_MIMIC) == 0
@@ -2571,19 +2583,12 @@ function HexanowMod.Main:HexanowPreUseItem(itemId, itemRng, player, useFlags, ac
 	end
 	if itemId == CollectibleType.COLLECTIBLE_MEGA_MUSH
 	then
-		--Isaac.Spawn(EntityType.ENTITY_EFFECT, EffectVariant.MAMA_MEGA_EXPLOSION, 0, player.Position, Vector(0,0), nil)
-		--player:UseActiveItem(CollectibleType.COLLECTIBLE_MAMA_MEGA, UseFlag.USE_NOANIM | UseFlag.USE_NOCOSTUME | UseFlag.USE_NOANNOUNCER)
-		--player:GetEffects():RemoveCollectibleEffect(CollectibleType.COLLECTIBLE_MAMA_MEGA, 1)
-		--player:UseActiveItem(CollectibleType.COLLECTIBLE_NECRONOMICON, UseFlag.USE_NOANIM | UseFlag.USE_NOCOSTUME | UseFlag.USE_NOANNOUNCER)
-		--player:UseActiveItem(CollectibleType.COLLECTIBLE_NECRONOMICON, UseFlag.USE_NOANIM | UseFlag.USE_NOCOSTUME | UseFlag.USE_NOANNOUNCER)
-		--player:UseActiveItem(CollectibleType.COLLECTIBLE_NECRONOMICON, UseFlag.USE_NOANIM | UseFlag.USE_NOCOSTUME | UseFlag.USE_NOANNOUNCER)
-		--player:UseCard(Card.CARD_REVERSE_MOON, UseFlag.USE_NOANIM | UseFlag.USE_NOCOSTUME | UseFlag.USE_NOANNOUNCER)
-		--player:UsePill(PillEffect.PILLEFFECT_48HOUR_ENERGY, PillColor.PILL_GOLD | PillColor.PILL_GIANT_FLAG, UseFlag.USE_NOANIM | UseFlag.USE_NOCOSTUME | UseFlag.USE_NOANNOUNCER | UseFlag.USE_MIMIC)
-		local brokenRemove = math.max(0, math.min(6, player:GetBrokenHearts()))
-		player:AddBrokenHearts(-brokenRemove)
-		EternalBroken(player, brokenRemove-6)
+		player:GetEffects():AddCollectibleEffect(CollectibleType.COLLECTIBLE_MEGA_MUSH, false, 1)
 		if useFlags & UseFlag.USE_NOANIM == 0 then player:AnimateCollectible(itemId, "UseItem") end
 		return true
+	end
+	if itemId == CollectibleType.COLLECTIBLE_BOOK_OF_SECRETS
+	then
 	end
 	if itemId == CollectibleType.COLLECTIBLE_CLICKER
 	then
@@ -2591,11 +2596,12 @@ function HexanowMod.Main:HexanowPreUseItem(itemId, itemRng, player, useFlags, ac
 		if useFlags & UseFlag.USE_NOANIM == 0 then player:AnimateCollectible(itemId, "UseItem") end
 		return true
 	end
+	--[[
 	if itemId == CollectibleType.COLLECTIBLE_CRYSTAL_BALL
 	then
 		--Isaac.Spawn(EntityType.ENTITY_PICKUP, PickupVariant.PICKUP_TAROTCARD, Card.CARD_CRACKED_KEY, Game():GetRoom():FindFreePickupSpawnPosition(player.Position, 2, false, false), Vector(0,0), nil)
 		--player:QueueItem(Isaac.GetItemConfig():GetCard(Card.CARD_CRACKED_KEY), 0, false, false, 0)
-		player:UseCard(Card.CARD_WHEEL_OF_FORTUNE, UseFlag.USE_NOANIM | UseFlag.USE_NOCOSTUME | UseFlag.USE_NOANNOUNCER)
+		--player:UseCard(Card.CARD_WHEEL_OF_FORTUNE, UseFlag.USE_NOANIM | UseFlag.USE_NOCOSTUME | UseFlag.USE_NOANNOUNCER)
 		if useFlags & UseFlag.USE_NOANIM == 0 then player:AnimateCollectible(itemId, "UseItem") end
 		return true
 	end
@@ -2608,6 +2614,14 @@ function HexanowMod.Main:HexanowPreUseItem(itemId, itemRng, player, useFlags, ac
 			if useFlags & UseFlag.USE_NOANIM == 0 then player:AnimateCollectible(itemId, "UseItem") end
 			return true
 		end
+	end
+	]]
+	if itemId == CollectibleType.COLLECTIBLE_PRAYER_CARD
+	or itemId == CollectibleType.COLLECCOLLECTIBLE_CRYSTAL_BALLTIBLE_CRYSTAL_BALL
+	then
+		EternalHeartApply(player)
+		if useFlags & UseFlag.USE_NOANIM == 0 then player:AnimateCollectible(itemId, "UseItem") end
+		return true
 	end
 	if itemId == CollectibleType.COLLECTIBLE_GUPPYS_PAW
 	then
@@ -2777,7 +2791,7 @@ function HexanowMod.Main:PostNewRoom()
 		and not HexanowFlags:HasFlag("ROOM_ANGEL_REWARD")
 		then
 			HexanowFlags:AddFlag("ROOM_ANGEL_REWARD")
-			local eheart = Isaac.Spawn(EntityType.ENTITY_PICKUP, PickupVariant.PICKUP_HEART, HeartSubType.HEART_ETERNAL, room:GetCenterPos(), Vector(0,0), nil)
+			local eheart = Isaac.Spawn(EntityType.ENTITY_PICKUP, PickupVariant.PICKUP_HEART, HeartSubType.HEART_ETERNAL, room:FindFreePickupSpawnPosition(room:GetCenterPos()), Vector(0,0), nil)
 			--eheart:GetSprite():Play("Loop", true)
 		end
 		if room:GetType() == RoomType.ROOM_PLANETARIUM
@@ -3050,18 +3064,16 @@ function HexanowMod.Main:PrePickupCollision(pickup, collider, low)
 			--and player:GetMaxHearts() >= player:GetHeartLimit()
 			--and player:GetHearts() < player:GetMaxHearts()
 			--and player:GetEternalHearts() >= 1
-			and player:GetBrokenHearts() > 0
+			--and player:GetBrokenHearts() > 0
 			then
 				return ExecutePickup(player, pickup, function()
 					--SFXManager():Play(SoundEffect.SOUND_SUPERHOLY, 1, 0, false, 1 )
 					--player:AddHearts(player:GetMaxHearts())
 					--player:AddBrokenHearts(-player:GetBrokenHearts())
-					player:AddBrokenHearts(-1)
-					RearrangeHearts(player)
+					--player:AddBrokenHearts(-1)
+					--RearrangeHearts(player)
 					--player:AddEternalHearts(200)
-					if player:GetEternalHearts() < 1 then
-						player:AddEternalHearts(1)
-					end
+					EternalHeartApply(player)
 				end)
 			elseif pickup.SubType == HeartSubType.HEART_ROTTEN
 			and player:GetHearts() >= player:GetMaxHearts()
