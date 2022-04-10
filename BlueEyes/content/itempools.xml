@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ItemPools>
+	<Pool Name="treasure">
+		<Item Name="Blue Eyes" Weight="1" DecreaseBy="1" RemoveOn="0.1"/>
+	</Pool>
+	<Pool Name="angel">
+		<Item Name="Blue Eyes" Weight="1" DecreaseBy="1" RemoveOn="0.1"/>
+	</Pool>
+	<Pool Name="greedTreasure">
+		<Item Name="Blue Eyes" Weight="1" DecreaseBy="1" RemoveOn="0.1"/>
+	</Pool>
+	<Pool Name="greedAngel">
+		<Item Name="Blue Eyes" Weight="1" DecreaseBy="1" RemoveOn="0.1"/>
+	</Pool>
+</ItemPools>

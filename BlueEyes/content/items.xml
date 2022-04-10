@@ -1,0 +1,3 @@
+<items gfxroot="gfx/items/" version="1">
+	<passive description="Damper Field" gfx="BlueEyes.png" name="Blue Eyes" devilprice="1" quality="3" tags="summonable offensive"/>
+</items>
