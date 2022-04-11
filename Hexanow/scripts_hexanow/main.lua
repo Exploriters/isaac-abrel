@@ -3145,8 +3145,8 @@ function HexanowMod.Main:EntityTakeDmg(TookDamage, DamageAmount, DamageFlags, Da
 		--print(DamageAmount, DamageFlags, DamageCountdownFrames)
 		local room = Game():GetRoom()
 		if (DamageFlags & DamageFlag.DAMAGE_SPIKES ~= 0 and room:GetType() ~= RoomType.ROOM_SACRIFICE and room:GetType() ~= RoomType.ROOM_DEVIL)
-		or (DamageSource.Entity ~= nil and DamageSource.Entity.Parent ~= nil and DamageSource.Entity.Parent:ToPlayer() ~= nil and GetPtrHash(player) == GetPtrHash(DamageSource.Entity.Parent:ToPlayer()))
-		or (DamageSource.Entity ~= nil and DamageSource.Entity.SpawnerEntity ~= nil and DamageSource.Entity.SpawnerEntity:ToPlayer() ~= nil and GetPtrHash(player) == GetPtrHash(DamageSource.Entity.SpawnerEntity:ToPlayer()))
+		or (DamageSource.Entity ~= nil and DamageSource.Entity.Parent ~= nil and DamageSource.Entity.Parent:ToPlayer() ~= nil)
+		or (DamageSource.Entity ~= nil and DamageSource.Entity.SpawnerEntity ~= nil and DamageSource.Entity.SpawnerEntity:ToPlayer() ~= nil)
 		or DamageFlags & DamageFlag.DAMAGE_CURSED_DOOR ~= 0
 		or DamageFlags & DamageFlag.DAMAGE_POOP ~= 0
 		or DamageFlags & DamageFlag.DAMAGE_CHEST ~= 0

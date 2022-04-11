@@ -25,17 +25,20 @@ Hexanow has some unique abilities that can be enabled by pressing a key:[list]
 [*][b]Select inventory slot (Alt/Hold LT): [/b]Change the slot that store incoming item.[/list]
 [hr][/hr][h1]Exclusive mechanics:[/h1][list]
 [*]Hexanow's costume are locked and cannot be changed. It is not affected by abandoned mine effect too!
-[*]Hexanow immune to any kind of character type change effect.
+[*]Hexanow is not affected by any kind of character type change effect.
 [*]Hexanow can identify effects of pills.
 [*]Hexanow can reveal all rooms in a floor, including Ultra Secret Room.
 [*]Hexanow can clear all curses, except for curse of labyrinth.
+[*]Hexanow convert all trinkets into their golden version.
 [*]Hexanow's thick hooves can help her stab on spikes or red poops without taking damage.
-[*]Hexanow cannot have her heart containers below 6, unless the space is occupied by broken hearts. Several effects that consume heart container will add broken hearts instead.[/list]
+[*]Hexanow is immune to damage from players.
+[*]Several effects that consume heart container that Hexanow has will add broken hearts instead.[/list]
 [b]Phaser: [/b][list]
 [*]A powerful wide beam attack known as phase beam, that hits multiple enemies, and create portal when it hit a wall surface.
 [*]The beam only dealt damage once upon fire and dealt no damage while dissipating, unless she have Brimstone.
 [*]Phase beam will pass through the portal and shoot out from another portal.
 [*]When two phase beam crossing, it creates an explosion, that destroy tiles and fill pits, even metal blocks and grimaces. With Dr. Fetus or Epic Fetus, this explosion will be even more deadly.
+[*]Explosion caused by crossing beams will Immediately detonate all bombs she deployed at the intersection point.
 [*]Try to make enemies being hit by both beams and the explosion, will triple her damage.
 [*]Since the fire of phase beam will result the portal with the same color being canceled, Hexanow can place bombs to dealt damage, if necessary.[/list]
 [b]Bindinged inventory: [/b][list]
@@ -48,7 +51,9 @@ Hexanow has some unique abilities that can be enabled by pressing a key:[list]
 [*]Hexanow gains eternal heart at the cost of one eternal charge, which can absorb 1 damage from each hit.
 [*]Once eternal charges are depleted to 0, further uses of eternal charges will cause Hexanow gains broken hearts.
 [*]If the room is cleared, Hexanow gains eternal hearts for free.
-[*]Eternal charges can clear broken hearts, but cannot reduce it to below 6 if she has 6 or more broken hearts.[/list]
+[*]Hexanow uses eternal charges to get heart containers if the amount of it is below 6, unless the space is occupied by broken hearts. 
+[*]Eternal charges can clear broken hearts, but cannot reduce it to below 6 if she has 6 or more broken hearts.
+[*]Recieve eternal hearts will give her 6 eternal charges, and this can clear broken hearts even if the amount of it is reached 6.[/list]
 [b]Eternal portal: [/b][list]
 [*]When phase beam hit a valid wall surface, a portal with matching color is created.
 [*]Players and their tears can pass through portals.
@@ -57,7 +62,7 @@ Hexanow has some unique abilities that can be enabled by pressing a key:[list]
 [*]Attempting to build a portal on the other portal of Hexanow will overlap and cancel it.
 [*]Surface that occupied by portal of other players are invalid for placing portals.
 [*]Hexanow cannot create portals in crawl space.[/list]
-[b]Fall safe: [/b][list]
+[b]Broken fail safe: [/b][list]
 [*]Taking fatal damage result heart break which immediately heal Hexanow to 11 hearts plus an eternal heart, but also add 6 broken hearts.
 [*]If Hexanow have 12 broken hearts, she will die.[/list]
 [hr][/hr][h1]Multiplayer support:[/h1]
@@ -65,7 +70,7 @@ Hexanow is fully implemented for multiplayer and supports controller.
 With more than one Hexanow in same game, they share eternal charges, and have different beam colors and portal colors too. 
 [hr][/hr]Hexanow is currently not completely finished, glitches and malfunctions can occurred. Feel free to send feedback to us!
 Thanks to all supporters and developers of Hexanow!</description>
-    <version>1.48</version>
+    <version>1.49</version>
     <visibility>Public</visibility>
     <tag id="Lua"/>
     <tag id="Player Characters"/>
