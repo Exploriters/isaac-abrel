@@ -28,13 +28,58 @@ function ApplyTears2TearDelay(TearDelay, Tears)
 end
 
 function GetPlayerID(player)
+	if player == nil then
+		return
+	end
 	local numPlayers = Game():GetNumPlayers()
 	for i=0,numPlayers-1,1 do
-		if Isaac.GetPlayer(i).Index == player.Index then
+		if GetPtrHash(Isaac.GetPlayer(i)) == GetPtrHash(player) then
 			return i + 1
 		end
 	end
-	return nil
+end
+
+function GetParentPlayer(player)
+	if player == nil then
+		return
+	end
+	if player.Parent ~= nil then
+		return player.Parent
+	end
+	if  GetPtrHash(player:GetMainTwin()) ~= GetPtrHash(player) then
+		return player:GetMainTwin()
+	end
+end
+
+function GetMainPlayer(player)
+	local parent = GetParentPlayer(player)
+	if parent ~= nil then
+		return parent
+	end
+	return player
+end
+
+function GetGamePlayerID(player)
+	if player == nil then
+		return
+	end
+	local parent = GetParentPlayer(player)
+	if parent ~= nil then
+		player = parent
+	end
+
+	local pNumber = 0
+	local numPlayers = Game():GetNumPlayers()
+	for i=0,numPlayers-1,1 do
+		local p = Isaac.GetPlayer(i)
+		if GetParentPlayer(p) == nil
+		then
+			pNumber = pNumber + 1
+			if GetPtrHash(p) == GetPtrHash(player) then
+				return pNumber
+			end
+		end
+	end
 end
 
 function GetPlayerSameTryeID(player)
@@ -42,11 +87,35 @@ function GetPlayerSameTryeID(player)
 	local sameType = 1
 	for i=0,numPlayers-1,1 do
 		local p = Isaac.GetPlayer(i)
-		if p.Index == player.Index then
+		if GetPtrHash(p) == GetPtrHash(player) then
 			return sameType
 		end
 		if p:GetPlayerType() == player:GetPlayerType() then
 			sameType = sameType + 1
+		end
+	end
+	return nil
+end
+
+function GetGamePlayerSameTryeID(player)
+	local playerID = GetGamePlayerID(player)
+	local numPlayers = Game():GetNumPlayers()
+	local sameType = 1
+	local foundId = {}
+	for i=0,numPlayers-1,1 do
+		local p = Isaac.GetPlayer(i)
+		if GetPtrHash(p) == GetPtrHash(player) then
+			return sameType
+		end
+		if p:GetPlayerType() == player:GetPlayerType()
+		then
+			local pId = GetGamePlayerID(p)
+			if pId ~= playerID
+			and not foundId[pId]
+			then
+				foundId[pId] = true
+				sameType = sameType + 1
+			end
 		end
 	end
 	return nil
@@ -95,6 +164,10 @@ function PlayerFindFirst(predicate)
 	return nil
 end
 
+function GetPlayerByGamePlayerID(ID)
+	return PlayerFindFirst(function (player) return GetGamePlayerID(player) == ID end)
+end
+
 -- 查找游戏中第一个目标玩家类型的玩家
 function PlayerTypeFirstOneInGame(playerType)
 	return PlayerFindFirst(function (player) return player:GetPlayerType() == playerType end)
@@ -117,6 +190,11 @@ function PlayerTypeUniqueInGame(playerType)
 		end
 	end
 	return atLeastOne
+end
+
+-- 检测游戏中是否存在指定的玩家类型以外的玩家类型
+function PlayerTypeExistButNotUniqueInGame(playerType)
+	return PlayerTypeExistInGame(playerType) and not PlayerTypeUniqueInGame(playerType)
 end
 
 function StringConvertToBoolean(str)
@@ -215,4 +293,58 @@ function UpdateCache(player, flags)
 	end
 	player:AddCacheFlags(flags)
 	player:EvaluateItems()
+end
+
+function ShouldDisplayHUD()
+	return Game():GetHUD():IsVisible() and not Game():GetSeeds():HasSeedEffect(SeedEffect.SEED_NO_HUD)
+end
+
+function ShouldDisplayFoundHUD()
+	return Options.FoundHUD and ShouldDisplayHUD() and not (Game():GetLevel():GetAbsoluteStage() == LevelStage.STAGE8 and Game():GetRoom():GetType() == RoomType.ROOM_DUNGEON)
+end
+
+function ExecutePickup(player, pickup, func)
+	if pickup:IsShopItem() then
+		if player:GetNumCoins() >= pickup.Price and not player:IsHoldingItem() then
+			player:AddCoins(-pickup.Price)
+			player:AnimatePickup(pickup:GetSprite())
+		else
+			return true
+		end
+	end
+	if func ~= nil then
+		func()
+	end
+	pickup:PlayPickupSound()
+	--print("DESTROYING")
+	if pickup:IsShopItem() then
+	--	--pickup:Morph(pickup.Type, pickup.Variant, 0, true)
+	--	pickup.SubType = 0
+		pickup:Remove()
+		player:TryRemoveTrinket(TrinketType.TRINKET_STORE_CREDIT)
+		--[[
+		if player:HasCollectible(CollectibleType.COLLECTIBLE_RESTOCK) then
+		end
+		]]
+	else
+		pickup:GetSprite():Play("Collect", true)
+		--pickup:Remove()
+		pickup:Die()
+	end
+	return true --pickup:IsShopItem()
+end
+
+function Room2GridIndex(room)
+	if room == nil then return nil end
+	if room.GridIndex < 0 then
+		return room.GridIndex
+	else
+		return room.SafeGridIndex
+	end
+end
+
+function ListIndex2GridIndex(listIndex)
+	local room = Game():GetLevel():GetRooms():Get(listIndex)
+	if room == nil then return nil end
+	return Room2GridIndex(room)
 end

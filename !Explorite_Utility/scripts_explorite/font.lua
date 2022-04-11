@@ -11,8 +11,9 @@ end
 
 function Explorite.RenderScaledText(str, X, Y, ScaleX, ScaleY, R, G, B, A, boxWidth, center)
 	local lines = BreakStringByLine(str)
+	local shake = Game().ScreenShakeOffset
 	for i,line in ipairs(lines) do
-		Explorite.font.cjk:DrawStringScaledUTF8(line, X, Y + 10 * (i - 1) * ScaleY, ScaleX, ScaleY, KColor(R, G, B, A), boxWidth, center)
+		Explorite.font.cjk:DrawStringScaledUTF8(line, X + shake.X, Y + shake.Y + 10 * (i - 1) * ScaleY, ScaleX, ScaleY, KColor(R, G, B, A), boxWidth, center)
 	end
 end
 
@@ -21,5 +22,6 @@ function Explorite.RenderText(str, X, Y, R, G, B, A, boxWidth, center)
 end
 
 function Explorite.RenderTextB(str, X, Y, R, G, B, A, boxWidth, center)
-	Explorite.font["PF Tempesta Seven Condensed"]:DrawString(str, X, Y, KColor(R, G, B, A), boxWidth, center)
+	local shake = Game().ScreenShakeOffset
+	Explorite.font["PF Tempesta Seven Condensed"]:DrawString(str, X + shake.X, Y + shake.Y, KColor(R, G, B, A), boxWidth, center)
 end

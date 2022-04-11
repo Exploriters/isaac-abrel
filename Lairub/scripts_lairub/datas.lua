@@ -81,7 +81,7 @@ LairubDialogueDatas.InHome.steps[5].text = {"inhome_dialogue_5_1"}
 LairubDialogueDatas.HuntDown = {}
 LairubDialogueDatas.HuntDown.flag = "DIALOGUE_OVER_HUNTDOWN"
 LairubDialogueDatas.HuntDown.shouldFire = function ()
-	return LairubFlags:HasFlag("HUNTED_DOWN")
+	return LairubFlags:HasFlag("FIRE_HUNTDOWN_DIALOGUE")
 end
 LairubDialogueDatas.HuntDown.steps = {}
 LairubDialogueDatas.HuntDown.steps[1] = {}

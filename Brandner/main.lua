@@ -557,7 +557,7 @@ function brandner:TaintedPostPlayerInit(player)
 end
 brandner:AddCallback( ModCallbacks.MC_POST_PLAYER_INIT, brandner.TaintedPostPlayerInit)
 
-function brandner:EvaluateCache(player, cacheFlag)
+function brandner:EvaluateCache2(player, cacheFlag)
 	if player:GetPlayerType() == playerType_TaintedBrandner then
 		if cacheFlag == CacheFlag.CACHE_SPEED then
 			player.MoveSpeed = player.MoveSpeed - 0.2
@@ -610,7 +610,7 @@ function brandner:EvaluateCache(player, cacheFlag)
 		end
 	end
 end
-brandner:AddCallback( ModCallbacks.MC_EVALUATE_CACHE, brandner.EvaluateCache)
+brandner:AddCallback( ModCallbacks.MC_EVALUATE_CACHE, brandner.EvaluateCache2)
 
 local Fireworks = {}
 
@@ -766,7 +766,7 @@ function brandner:CharacterInteraction(cmd, params)
 					print "Brandner:Gruuuuuuuu! Fine!"
 				end
 			end
-			if not player:HasFullHearts() and player:GetHearts() >= 1then
+			if not player:HasFullHearts() and player:GetHearts() >= 1 then
 				local RandomNum = math.random(3)
 				if RandomNum == 1 then
 					print "Brandner:Fine, thank you!"

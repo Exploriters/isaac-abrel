@@ -52,6 +52,21 @@ APIOverride.OverrideClassFunction(EntityPlayer, "QueueItem", function(interval, 
 	end
 	return result
 end)
+local baseEntityPlayerGetTrinketMultiplier = APIOverride.GetCurrentClassFunction(EntityPlayer, "GetTrinketMultiplier")
+APIOverride.OverrideClassFunction(EntityPlayer, "GetTrinketMultiplier", function(interval, Type)
+    local result = baseEntityPlayerGetTrinketMultiplier(interval, Type)
+	if IsHexanow(interval) then
+		result = result + 1
+	end
+	return result
+end)
+local baseEntityPlayerDropTrinket = APIOverride.GetCurrentClassFunction(EntityPlayer, "DropTrinket")
+APIOverride.OverrideClassFunction(EntityPlayer, "DropTrinket", function(interval, DropPos, ReplaceTick)
+    baseEntityPlayerDropTrinket(interval, DropPos, ReplaceTick)
+	if IsHexanow(interval) then
+		print("DROP!")
+	end
+end)
 ]]--
 
 --require("hexanowObjectives")
@@ -73,6 +88,7 @@ local hexanowRootCostume = Isaac.GetCostumeIdByPath("gfx/characters/HexanowRoot.
 
 --local entityVariantHeartsBlender = Isaac.GetEntityVariantByName("Hearts Blender")
 local entityVariantHexanowLaser = Isaac.GetEntityVariantByName("Laser (Hexanow Phaser)")
+local entityVariantHexanowPhaserWisp = Isaac.GetEntityVariantByName("Hexanow Phaser Wisp")
 local entityVariantHexanowPortalDoor = Isaac.GetEntityVariantByName("Hexanow Portal Door")
 local entityVariantHexanowPortalCreation = Isaac.GetEntityVariantByName("Hexanow Portal Creation")
 local entityVariantHexanowLaserEndpoint = Isaac.GetEntityVariantByName("Hexanow Portal Endpoint")
@@ -232,6 +248,9 @@ local function HexanowPlayerData()
 	cted.PhaseBeamCooldown = {}
 	cted.PhaseBeamCooldown[1] = 0
 	cted.PhaseBeamCooldown[2] = 0
+	cted.PhaseBeamCooldownPercentage = {}
+	cted.PhaseBeamCooldownPercentage[1] = 1
+	cted.PhaseBeamCooldownPercentage[2] = 1
 	cted.CreatedPortals = {}
 	cted.CreatedPortals[0] = {}
 	cted.CreatedPortals[0][1] = nil
@@ -244,12 +263,11 @@ local function HexanowPlayerData()
 	cted.CreatedPortals[2][2] = nil
 
 	cted:UpdateLastRoomVar()
-	
+
 	cted.InRoomCreatedPortals = {}
 	cted.InRoomCreatedPortals[1] = nil
 	cted.InRoomCreatedPortals[2] = nil
 	cted.onceHoldingItem = 0
-	cted.lastCanFly = nil
 	cted.WhiteItemSelectPressed = -1
 	cted.WhiteItemSelectTriggered = true
 
@@ -258,12 +276,38 @@ local function HexanowPlayerData()
 end
 
 local HexanowPlayerDatas = {}
-HexanowPlayerDatas[1] = HexanowPlayerData()
-HexanowPlayerDatas[2] = HexanowPlayerData()
-HexanowPlayerDatas[3] = HexanowPlayerData()
-HexanowPlayerDatas[4] = HexanowPlayerData()
+
+local function GenHexanowPlayerData()
+	HexanowPlayerDatas = {}
+	for i=1,4 do
+		HexanowPlayerDatas[i] = HexanowPlayerData()
+	end
+end
+GenHexanowPlayerData()
 
 local portalOverlaySprites = {}
+
+local function GetHexanowPortalColor(playerID, num)
+	local overlay = portalOverlaySprites[playerID * 2 + num - 2]
+	if overlay ~= nil then
+		return overlay.Color
+	end
+	local p = portalColor[GetGamePlayerSameTryeID(GetPlayerByGamePlayerID(playerID))]
+	if p ~= nil then
+		return p[num]
+	end
+	return portalColor[1][num]
+end
+
+local function GetPortalOverlaySprite(type)
+	local overlay = portalOverlaySprites[type]
+	if overlay == nil then
+		overlay = Sprite()
+		overlay.Color = GetHexanowPortalColor(math.ceil(type/2), (type+1)%2+1)
+		portalOverlaySprites[type] = overlay
+	end
+	return overlay
+end
 
 local LastRoom = {}
 
@@ -301,11 +345,7 @@ function HexanowMod.Main.WipeTempVar()
 	DisplayDesc = ""
 	DisplayTime = 0
 
-	HexanowPlayerDatas = {}
-	HexanowPlayerDatas[1] = HexanowPlayerData()
-	HexanowPlayerDatas[2] = HexanowPlayerData()
-	HexanowPlayerDatas[3] = HexanowPlayerData()
-	HexanowPlayerDatas[4] = HexanowPlayerData()
+	GenHexanowPlayerData()
 end
 
 function HexanowMod.Main.ApplyVar(objective)
@@ -357,10 +397,6 @@ end
 ------------------------------------------------------------
 ---------- 游戏功能
 ----------
-
-local function GetHexanowPortalColor(player, num)
-	return portalColor[GetPlayerSameTryeID(player)][num]
-end
 
 -- 更新玩家外观，按需执行
 local function UpdateCostumes(player)
@@ -623,7 +659,7 @@ local function HexanowOwnedCollectibleNum(player, ID, IgnoreModifiers)
 	end
 	local num = player:GetCollectibleNum(ID, IgnoreModifiers)
 	--[[
-	if ID ~= 0 and HexanowPlayerDatas[GetPlayerID(player)].upcomingItem == ID then
+	if ID ~= 0 and HexanowPlayerDatas[GetGamePlayerID(player)].upcomingItem == ID then
 		num = num + 1
 	end
 	]]
@@ -691,8 +727,7 @@ local function HexanowWhiteCollectiblePredicate(ID, ignoreEnsured)
 end
 
 -- 返回物品持有数量上限
-local function HexanowCollectibleMaxAllowed(player, ID)
-	local playerID = GetPlayerID(player)
+local function HexanowCollectibleExtraDim(player, ID)
 	local num = 0
 
 	if HexanowBlackCollectiblePredicate(ID)
@@ -713,18 +748,39 @@ local function HexanowCollectibleMaxAllowed(player, ID)
 	end
 	]]
 
-	for i=1,3 do
-		if HexanowPlayerDatas[playerID].WhiteItem[i] == ID then
-			num = num + 1
+	if player:HasCollectible(CollectibleType.COLLECTIBLE_BINGE_EATER, true) then
+		local item = Isaac.GetItemConfig():GetCollectible(ID)
+		if item ~= nil and item:HasTags(ItemConfig.TAG_FOOD) then
+			num = num + 1e1000
 		end
 	end
 
 	return num
 end
 
+-- 返回物品持有数量上限
+local function HexanowCollectibleMaxAllowed(player, ID)
+	local playerID = GetGamePlayerID(player)
+	local num = 0
+
+	if HexanowBlackCollectiblePredicate(ID)
+	or ID == 0
+	then
+		return num
+	end
+
+	for i=1,3 do
+		if HexanowPlayerDatas[playerID].WhiteItem[i] == ID then
+			num = num + 1
+		end
+	end
+
+	return num + HexanowCollectibleExtraDim(player, ID)
+end
+
 --[[
 local function IsWhiteHexanowCollectible(player, ID)
-	local playerID = GetPlayerID(player)
+	local playerID = GetGamePlayerID(player)
 
 	if HexanowBlackCollectiblePredicate(ID) or ID == 0 then
 		return false
@@ -740,7 +796,7 @@ end
 
 local function SetWhiteHexanowCollectible(player, ID, slot)
 	--print("White Collectible",slot,"Now",ID)
-	local playerID = GetPlayerID(player)
+	local playerID = GetGamePlayerID(player)
 
 	if ID ~= 0 then
 		if HexanowBlackCollectiblePredicate(ID)
@@ -768,7 +824,7 @@ local function SetWhiteHexanowCollectible(player, ID, slot)
 end
 
 local function PickupWhiteHexanowCollectible(player, ID, slot)
-	local playerID = GetPlayerID(player)
+	local playerID = GetGamePlayerID(player)
 	local item = Isaac.GetItemConfig():GetCollectible(ID)
 
 	if HexanowBlackCollectiblePredicate(ID) then
@@ -934,11 +990,10 @@ end
 local function TeleportToLevelLocation(player, RoomInLevelListIndex, InRoomGridIndex)
 	local roomDesc = Game():GetLevel():GetRooms():Get(RoomInLevelListIndex)
 	if roomDesc == nil
-	or roomDesc.SafeGridIndex < 0
 	then
 		return false
 	end
-	return TeleportToRoomDescLocation(player, roomDesc.SafeGridIndex, GetDimensionOfRoomDesc(roomDesc), InRoomGridIndex)
+	return TeleportToRoomDescLocation(player, Room2GridIndex(roomDesc), GetDimensionOfRoomDesc(roomDesc), InRoomGridIndex)
 end
 
 local function IsPortalInSameRoom(portalOwnerPlayerID, portalColorType)
@@ -988,7 +1043,8 @@ local function HasValidCreatedPortal(portalOwnerPlayerID, portalColorType)
 		return false
 	end
 	local portalRoomDesc = level:GetRooms():Get(levelPosition.RoomInLevelListIndex)
-	if (portalRoomDesc == nil or portalRoomDesc.SafeGridIndex < 0) and not IsPortalInSameRoom(portalOwnerPlayerID, portalColorType) then
+	if portalRoomDesc == nil and not IsPortalInSameRoom(portalOwnerPlayerID, portalColorType) then
+		print(portalRoomDesc == nil)
 		return false
 	end
 	return true
@@ -1099,6 +1155,17 @@ function HexanowMod.Main:PortalCreationEffectUpdate(entity)
 end
 HexanowMod:AddCallback(ModCallbacks.MC_POST_EFFECT_UPDATE, HexanowMod.Main.PortalCreationEffectUpdate, entityVariantHexanowPortalCreation)
 
+function HexanowMod.Main:PhaserWispEffectUpdate(entity)
+	entity:GetSprite():Play("Default", false)
+	if entity:GetSprite():WasEventTriggered("End") then
+		entity:Remove()
+	end
+	local factor = (entity.FrameCount / 15)^2 * 3
+	entity:AddVelocity(RandomVector() * factor)
+	--entity.Position = entity.Position + RandomVector() * factor
+end
+HexanowMod:AddCallback(ModCallbacks.MC_POST_EFFECT_UPDATE, HexanowMod.Main.PhaserWispEffectUpdate, entityVariantHexanowPhaserWisp)
+
 function HexanowMod.Main:PortalDoorUpdate(portal)
 	if portal.SubType < 1 or portal.SubType > 8 then
 		portal:Remove()
@@ -1111,34 +1178,51 @@ function HexanowMod.Main:PortalDoorUpdate(portal)
 			function(entity)
 				if entity:ToPlayer() ~= nil
 				or entity:ToTear() ~= nil
+				or (entity:ToBomb() ~= nil and entity.SpawnerEntity ~= nil and entity.SpawnerEntity:ToPlayer() ~= nil)
 				--or entity.Type == EntityType.ENTITY_FROZEN_ENEMY
 				then
 					local dist = entity.Position:Distance(portal.Position)
 					local player = entity:ToPlayer()
 					if dist < 40 --28.284271247461900976033774484194
-					and (player == nil or (
-						player:GetMovementDirection() ~= Direction.NO_DIRECTION
-						and math.abs((player:GetMovementDirection()*90 - 90 - portal.SpriteRotation)%360) <= 30
-					))
+					and(
+						player == nil or (
+							player:GetMovementDirection() ~= Direction.NO_DIRECTION
+							and math.abs((player:GetMovementDirection()*90 - 90 - portal.SpriteRotation)%360) <= 30
+						)
+						--[[
+						or(
+							not (entity.Velocity.X == 0 and entity.Velocity.Y == 0)
+							and math.abs((entity.Velocity:GetAngleDegrees() + 90 - portal.SpriteRotation)%360) <= 30
+						)
+						]]
+					)
 					then
 						TeleportToPortalLocation(entity, ownerId, otherType, (portal.SpriteRotation + 90) % 360)
 					end
 				end
 			end
 		)
+		local wispColor = GetPortalOverlaySprite(portal.SubType).Color
+
+		local rng = RNG()
+		rng:SetSeed(Random() + 1, 1)
+		for i=1,3 do
+			local wisp = Isaac.Spawn(EntityType.ENTITY_EFFECT, entityVariantHexanowPhaserWisp, 0, portal.Position, Vector(0,0), nil)
+			wisp.DepthOffset = portal.DepthOffset + 1 --3 + rng:RandomInt(9)
+			wisp.Position = wisp.Position + RandomVector() * 6
+			local wispSprite = wisp:GetSprite()
+			wispSprite.Color = wispColor
+			--wispSprite.Scale = Vector(1,1)*(rng:RandomInt(3) + 1)
+		end
 	end
 end
 HexanowMod:AddCallback(ModCallbacks.MC_POST_EFFECT_UPDATE, HexanowMod.Main.PortalDoorUpdate, entityVariantHexanowPortalDoor)
 
 function HexanowMod.Main:PortalDoorRender(entity)
 	local sprite = entity:GetSprite()
-	local overlay = portalOverlaySprites[entity.SubType]
-	--entity:GetData().OverlaySprite
-	if overlay == nil then
-		overlay = Sprite()
+	local overlay = GetPortalOverlaySprite(entity.SubType)
+	if not overlay:IsLoaded() then
 		overlay:Load(sprite:GetFilename(), true)
-		overlay.Color = GetHexanowPortalColor(Game():GetPlayer(math.ceil(entity.SubType/2) - 1), (entity.SubType+1)%2+1)
-		portalOverlaySprites[entity.SubType] = overlay
 	end
 	overlay.Rotation = sprite.Rotation
 	overlay:SetFrame("Glow", sprite:GetFrame())
@@ -1151,11 +1235,14 @@ local function PortalLaserInterval(laser)
 		laser.CollisionDamage = 0
 		laser.TearFlags = TearFlags.TEAR_NORMAL
 	end
-	if laser.FrameCount >= 20 then
+	if laser.FrameCount > 20 then
 		laser:Remove()
 	elseif not laser:IsDead() then
+		local thin = laser:GetSprite():GetAnimation() ~= "BeamLaser"
 		local laserSprite = laser:GetSprite()
-		laserSprite.Color = Color(laserSprite.Color.R, laserSprite.Color.G, laserSprite.Color.B, 1 - laser.FrameCount / 20)
+		local alpha = 1 - (laser.FrameCount - 1) / 20
+		laserSprite.Color = Color(laserSprite.Color.R, laserSprite.Color.G, laserSprite.Color.B, 0)
+		--[[
 		if laser:GetSprite():GetAnimation() == "BeamLaser" then
 			local endpointeffect = Isaac.Spawn(EntityType.ENTITY_EFFECT, entityVariantHexanowLaserEndpoint, 0, laser.EndPoint, Vector(0,0), nil)
 			endpointeffect.DepthOffset = 3000
@@ -1163,6 +1250,39 @@ local function PortalLaserInterval(laser)
 			impactSprite:SetFrame("Loop", laser.FrameCount % 4)
 			impactSprite.Color = Color(laserSprite.Color.R, laserSprite.Color.G, laserSprite.Color.B, 1)
 		end
+		]]
+		if not laser:GetData().wispCreated then
+			laser:GetData().wispCreated = true
+			local rng = RNG()
+			rng:SetSeed(Random() + 1, 1)
+			local samples = laser:GetNonOptimizedSamples()
+			for j=0,2 do
+				if not thin and j == 0 then
+					j = 2
+				end
+				for i=0,#samples-1 do
+					for k=1,1 do
+						local sample = samples:Get(i)
+						local wisp = Isaac.Spawn(EntityType.ENTITY_EFFECT, entityVariantHexanowPhaserWisp, 0, sample, Vector(0,0), nil)
+						local wispSprite = wisp:GetSprite()
+						wispSprite.Color = Color(laserSprite.Color.R, laserSprite.Color.G, laserSprite.Color.B, 1)
+						wisp.DepthOffset = wisp.DepthOffset + 1 + rng:RandomInt(9)
+						if j > 0 then
+							wisp.Position = wisp.Position + RandomVector() * (j * 12.5 - 5)
+							wispSprite.Scale = Vector(1,1)*((rng:RandomInt(3) + 1)/3)
+						else
+							break
+						end
+					end
+				end
+				if thin then
+					break
+				end
+			end
+		end
+	end
+	if laser.OneHit then
+		laser:Remove()
 	end
 end
 
@@ -1179,7 +1299,7 @@ HexanowMod:AddCallback(ModCallbacks.MC_POST_EFFECT_UPDATE, HexanowMod.Main.Laser
 local function SetPortal(player, typeNum, room, roomDesc, pos)
 	pos.X = math.floor((pos.X + 20)/40.0)*40
 	pos.Y = math.floor((pos.Y+ 20)/40.0)*40
-	local playerID = GetPlayerID(player)
+	local playerID = GetGamePlayerID(player)
 	local dimension = GetCurrentDimension()
 	local inInRoomGridIndex, direction = ValidHexanowPortalWall(room:GetRoomShape(), room:GetGridIndex(pos))
 	if inInRoomGridIndex == nil or direction == nil then
@@ -1234,7 +1354,7 @@ local function SetPortal(player, typeNum, room, roomDesc, pos)
 end
 
 local function HexanowLaserOverPortalLocation(player, degrees, colorType)
-	local playerID = GetPlayerID(player)
+	local playerID = GetGamePlayerID(player)
 	local room = Game():GetRoom()
 	local dimension = GetCurrentDimension()
 	--local thisPortal = HexanowPlayerDatas[playerID].InRoomCreatedPortals[colorType]
@@ -1344,6 +1464,17 @@ local function ExecuteHexanowLaserIntersectionEffect(player, position, color, da
 							entity.SubType = CoinSubType.COIN_NICKEL
 							entity:Update()
 						end
+						if entity.Variant == PickupVariant.PICKUP_HEART
+						and entity.SubType == HeartSubType.HEART_SCARED
+						then
+							local anim = entity:GetSprite():GetAnimation()
+							local frame = entity:GetSprite():GetFrame()
+							entity.SubType = HeartSubType.HEART_ROTTEN
+							entity:GetSprite():Load("gfx/005.01b_rotten heart.anm2", true)
+							entity:GetSprite():Play(anim, true)
+							entity:GetSprite():SetFrame(frame)
+							entity:Update()
+						end
 					end
 					local NPC = entity:ToNPC()
 					if NPC ~= nil
@@ -1353,21 +1484,59 @@ local function ExecuteHexanowLaserIntersectionEffect(player, position, color, da
 					end
 				end
 			end
+
+			local bomb = entity:ToBomb()
+			if bomb ~= nil
+			and GetPtrHash(bomb.SpawnerEntity) == GetPtrHash(player)
+			then
+				bomb.Position = position
+				bomb.Visible = false
+				bomb:AddTearFlags(TearFlags.TEAR_ICE)
+				bomb:SetExplosionCountdown(0)
+			end
+
+			if entity.Type == EntityType.ENTITY_EFFECT
+			and entity.Variant == EffectVariant.BROKEN_SHOVEL_SHADOW
+			and entity:GetSprite():GetAnimation() ~= "Fall"
+			and position:Distance(entity.Position) <= 20
+			then
+				Game():BombExplosionEffects(
+					entity.Position,
+					0,
+					TearFlags.TEAR_NORMAL,
+					Color(color.R,color.G,color.B,0),
+					player,
+					0,
+					false,
+					false,
+					DamageFlag.DAMAGE_EXPLOSION
+				)
+			end
 		end
 	)
 end
 
 local function CastHexanowLaser(player, position, degrees, colorType, fromOtherBeam)
 	local offset = Vector(0, 0)
-	local color = GetHexanowPortalColor(player, colorType)
+	local color = GetHexanowPortalColor(GetGamePlayerID(player), colorType)
 	local room = Game():GetRoom()
-	local laserCount = GetPlayerShotCount(player)
+	local laserCount
 	local spread = 15
 	local damage = player.Damage
 	local onehit = player:GetCollectibleNum(CollectibleType.COLLECTIBLE_BRIMSTONE) + player:GetEffects():GetCollectibleEffectNum(CollectibleType.COLLECTIBLE_BRIMSTONE) <= 0
 	local tearFlags = player.TearFlags | TearFlags.TEAR_ICE
+	local entitiesTempNoLaserKnockback = {}
 	if fromOtherBeam then
-		spread = 1.25
+		laserCount = 1
+	else
+		laserCount = GetPlayerShotCount(player)
+		if onehit then
+			CallForEveryEntity(
+				function(entity)
+					entitiesTempNoLaserKnockback[entity.Index] = Vector(entity.Velocity.X, entity.Velocity.Y)
+				end
+			)
+		end
 	end
 	if player:IsCoopGhost() then
 		laserCount = 0
@@ -1423,8 +1592,20 @@ local function CastHexanowLaser(player, position, degrees, colorType, fromOtherB
 				end
 			end
 		end
+		if onehit then
+			CallForEveryEntity(
+				function(entity)
+					if entitiesTempNoLaserKnockback[entity.Index] ~= nil then
+						local v1 = entitiesTempNoLaserKnockback[entity.Index]
+						local v2 = entity.Velocity
+						if v1.X ~= v2.X or v1.Y ~= v2.Y then
+							entity.Velocity = v1
+						end
+					end
+				end
+			)
+		end
 	end
-	return laser
 end
 
 local function TaintedHexanowRoomOverride()
@@ -1491,7 +1672,7 @@ local function TaintedHexanowRoomOverride()
 end
 
 local function TabItemSelection(player)
-	local playerID = GetPlayerID(player)
+	local playerID = GetGamePlayerID(player)
 	local data = HexanowPlayerDatas[playerID]
 	local slot = data.SelectedWhiteItem
 
@@ -1532,7 +1713,7 @@ local function TabItemSelection(player)
 end
 
 local function TabPortalSelection(player)
-	local playerID = GetPlayerID(player)
+	local playerID = GetGamePlayerID(player)
 	local data = HexanowPlayerDatas[playerID]
 	if data.portalToolColor == 1 then
 		data.portalToolColor = 2
@@ -1556,7 +1737,7 @@ local function TickEventHexanow(player)
 	local level = game:GetLevel()
 	local room = game:GetRoom()
 	local roomEntities = Isaac.GetRoomEntities()
-	local playerID = GetPlayerID(player)
+	local playerID = GetGamePlayerID(player)
 	local data = HexanowPlayerDatas[playerID]
 
 	--[[
@@ -1893,7 +2074,7 @@ local function TickEventHexanow(player)
 		--UpdateCostumes(player)
 		RearrangeHearts(player, {SoulHearts = countSoul + countBlack, BlackHearts = countBlack})
 		if queuedItem:IsCollectible() then
-			if slot == 4 then
+			if slot == 4 and HexanowCollectibleExtraDim(player, queuedItem.ID) < HexanowOwnedCollectibleNum(player, queuedItem.ID, true) then
 				if player:HasCollectible(queuedItem.ID, true) then
 					player:RemoveCollectible(queuedItem.ID, true)
 					EternalBroken(player, -4)
@@ -1925,17 +2106,17 @@ local function TickEventHexanow(player)
 		item3dem = item3dem + 1
 	end
 
-	if not item1Missing and HexanowOwnedCollectibleNum(player, item1, true) < item1dem then
+	if not item1Missing and HexanowOwnedCollectibleNum(player, item1, true) < item1dem + HexanowCollectibleExtraDim(player, item1) then
 		item1Missing = true
 		SetWhiteHexanowCollectible(player, 0, 1)
 	end
 
-	if not item2Missing and HexanowOwnedCollectibleNum(player, item2, true) < item2dem then
+	if not item2Missing and HexanowOwnedCollectibleNum(player, item2, true) < item2dem + HexanowCollectibleExtraDim(player, item2) then
 		item2Missing = true
 		SetWhiteHexanowCollectible(player, 0, 2)
 	end
 
-	if not item3Missing and HexanowOwnedCollectibleNum(player, item3, true) < item3dem then
+	if not item3Missing and HexanowOwnedCollectibleNum(player, item3, true) < item3dem + HexanowCollectibleExtraDim(player, item3) then
 		item3Missing = true
 		SetWhiteHexanowCollectible(player, 0, 3)
 	end
@@ -2040,7 +2221,7 @@ end
 -- 玩家攻击，每一帧执行
 local function TryCastFireHexanow(player)
 	if IsHexanow(player) then
-		local playerID = GetPlayerID(player)
+		local playerID = GetGamePlayerID(player)
 		local aimDirection = player:GetAimDirection()
 		local maxFireDelay = player.MaxFireDelay
 		local data = HexanowPlayerDatas[playerID]
@@ -2059,6 +2240,9 @@ local function TryCastFireHexanow(player)
 			data.PhaseBeamCooldown[portalColor] = data.PhaseBeamCooldown[portalColor] - 1
 		elseif data.PhaseBeamCooldown[portalColor%2+1] > 0 then
 			data.PhaseBeamCooldown[portalColor%2+1] = data.PhaseBeamCooldown[portalColor%2+1] - 1
+		end
+		for i=1,2 do
+			data.PhaseBeamCooldownPercentage[i] = data.PhaseBeamCooldown[i] / (maxFireDelay * 6)
 		end
 		if data.PhaseBeamCooldown[portalColor] <=0
 		--and player.FireDelay <= 0
@@ -2083,7 +2267,7 @@ local function InitPlayerHexanow(player)
 	if IsHexanow(player) then
 		player:GetData().StartedAsHexanow = true
 
-		local itemPool = Game():GetItemPool()
+		--local itemPool = Game():GetItemPool()
 
 		player:AddHearts(-player:GetHearts())
 		player:AddMaxHearts(-player:GetMaxHearts())
@@ -2103,6 +2287,8 @@ local function InitPlayerHexanow(player)
 			player:AddHearts(13)
 			player:AddTrinket(TrinketType.TRINKET_PERFECTION | TrinketType.TRINKET_GOLDEN_FLAG)
 		else
+			--player:AddGoldenKey()
+			--player:AddGoldenBomb()
 			--player:AddTrinket(TrinketType.TRINKET_NO | TrinketType.TRINKET_GOLDEN_FLAG)
 		end
 		if Isaac.GetChallenge() == Challenge.CHALLENGE_DELETE_THIS
@@ -2127,10 +2313,6 @@ local function InitPlayerHexanow(player)
 		--itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_SOL)
 		--itemPool:RemoveCollectible(CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR)
 		--itemPool:RemoveTrinket(TrinketType.TRINKET_NO)
-
-		for i=0, PillColor.NUM_PILLS - 1, 1 do
-			itemPool:IdentifyPill(i)
-		end
 
 		--[[
 		if player:GetActiveItem(ActiveSlot.SLOT_POCKET) ~= hexanowPortalTool -- CollectibleType.COLLECTIBLE_VENTRICLE_RAZOR
@@ -2195,7 +2377,6 @@ local function SelManageRander(pos, playerID, sortNum)
 		FrameAnm = "Frame2"
 	end
 	local data = HexanowPlayerDatas[playerID]
-	local player = Game():GetPlayer(playerID - 1)
 
 	pos = pos + Vector(sortNum*16, 0)
 
@@ -2216,8 +2397,8 @@ local function SelManageRander(pos, playerID, sortNum)
 	local pahserCooldown1 = data.sprites.pahserCooldown1
 	local pahserCooldown2 = data.sprites.pahserCooldown2
 
-	local portalColor1 = GetHexanowPortalColor(Game():GetPlayer(playerID-1), 1)
-	local portalColor2 = GetHexanowPortalColor(Game():GetPlayer(playerID-1), 2)
+	local portalColor1 = GetHexanowPortalColor(playerID, 1)
+	local portalColor2 = GetHexanowPortalColor(playerID, 2)
 
 
 	--item3:ReplaceSpritesheet(0,"gfx/items/collectibles/".."Collectibles_118_Brimstone.png")
@@ -2281,8 +2462,8 @@ local function SelManageRander(pos, playerID, sortNum)
 	local cdanm1, cdanm2 = "PhaseBeamCooldown", "PhaseBeamCooldown"
 	if portal1created then cdanm1 = "PhaseBeamCooldownCreated" end
 	if portal2created then cdanm2 = "PhaseBeamCooldownCreated" end
-	pahserCooldown1:SetFrame(cdanm1, math.max(0, math.min(13, math.ceil(data.PhaseBeamCooldown[1] / (player.MaxFireDelay * 6) * 13))))
-	pahserCooldown2:SetFrame(cdanm2, math.max(0, math.min(13, math.ceil(data.PhaseBeamCooldown[2] / (player.MaxFireDelay * 6) * 13))))
+	pahserCooldown1:SetFrame(cdanm1, math.max(0, math.min(13, math.ceil(data.PhaseBeamCooldownPercentage[1] * 13))))
+	pahserCooldown2:SetFrame(cdanm2, math.max(0, math.min(13, math.ceil(data.PhaseBeamCooldownPercentage[2] * 13))))
 
 	if data.WhiteItem[1] ~= nil then
 		local item = Isaac.GetItemConfig():GetCollectible(data.WhiteItem[1])
@@ -2360,9 +2541,26 @@ function HexanowMod.Main:ExecuteCmd(cmd, params)
 			Isaac.ConsoleOutput("Invalid args")
 		end
 	end
+	if cmd == "allhexanow" then
+		CallForEveryEntity(function(entity)
+			local player = entity:ToPlayer()
+			if player ~= nil and GetPlayerID(player) ~= 1 then
+				while player:GetCollectibleCount() ~= 0 do
+					for m = 1, CollectibleType.NUM_COLLECTIBLES - 1 do
+						if player:HasCollectible(m, true) then
+							player:RemoveCollectible(m, true)
+						end
+					end
+				end
+				player:ChangePlayerType(playerTypeHexanow)
+	
+				InitPlayerHexanow(player)
+			end
+		end)
+	end
 	if cmd == "hexanow" then
 		local pnum = tonumber(params)
-		if pnum ~= nil and pnum >= 1 and pnum <= 4 then
+		if pnum ~= nil and pnum >= 1 then
 			local player = Game():GetPlayer(pnum - 1)
 			if player ~= nil then
 				while player:GetCollectibleCount() ~= 0 do
@@ -2423,7 +2621,12 @@ function HexanowMod.Main:ExecuteCmd(cmd, params)
 
 	end
 	if cmd == "toportal" then
-		TeleportToPortalLocation(Game():GetPlayer(0), 1, tonumber(params))
+		local pnum = tonumber(params)
+		if pnum ~= nil and pnum >= 1 then
+			TeleportToPortalLocation(Game():GetPlayer(0), 1, tonumber(pnum), 0)
+		else
+			Isaac.ConsoleOutput("Invalid args")
+		end
 	end
 	if cmd == "ffsp" then
 		SuperPower = not SuperPower
@@ -2537,6 +2740,12 @@ HexanowMod:AddCallback(ModCallbacks.MC_POST_PLAYER_INIT, HexanowMod.Main.PostPla
 
 -- 使用口袋物品
 function HexanowMod.Main:HexanowUseCardPill(id, player, useFlags)
+	if PlayerTypeExistInGame(playerTypeHexanow) then
+		local itemPool = Game():GetItemPool()
+		for i=0, PillColor.NUM_PILLS - 1, 1 do
+			itemPool:IdentifyPill(i)
+		end
+	end
 	if not IsHexanow(player) then
 		return
 	end
@@ -2550,7 +2759,7 @@ function HexanowMod.Main:HexanowUseItem(itemId, itemRng, player, useFlags, activ
 	if not IsHexanow(player) then
 		return
 	end
-	local playerID = GetPlayerID(player)
+	local playerID = GetGamePlayerID(player)
 	if HexanowBlackCollectiblePredicate(itemId) then
 		EternalBroken(player, -4)
 		return {
@@ -2666,7 +2875,7 @@ function HexanowMod.Main:UsePortalTool(itemId, itemRng, player, useFlags, active
 		Remove = false,
 		ShowAnim = false,
 	}
-	local playerID = GetPlayerID(player)
+	local playerID = GetGamePlayerID(player)
 	if HexanowPlayerDatas[playerID].portalToolColor == 1 then
 		HexanowPlayerDatas[playerID].portalToolColor = 2
 	else
@@ -2754,8 +2963,8 @@ function HexanowMod.Main:PostNewRoom()
 		for playerID=1,4 do
 			for i=1,2 do
 				if HexanowPlayerDatas[playerID].CreatedPortals[0][i] ~= nil then
-					local gridIndex = level:GetRooms():Get(HexanowPlayerDatas[playerID].CreatedPortals[0][i].RoomInLevelListIndex).SafeGridIndex
-					if gridIndex >= 0 then
+					local gridIndex = ListIndex2GridIndex(HexanowPlayerDatas[playerID].CreatedPortals[0][i].RoomInLevelListIndex)
+					if gridIndex ~= nil then
 						local listIndex = level:GetRoomByIdx(gridIndex, 1).ListIndex
 						HexanowPlayerDatas[playerID].CreatedPortals[1][i] = LevelPosition(listIndex, HexanowPlayerDatas[playerID].CreatedPortals[0][i].InRoomGridIndex)
 					end
@@ -2787,6 +2996,11 @@ function HexanowMod.Main:PostNewRoom()
 	)
 
 	if PlayerTypeExistInGame(playerTypeHexanow) then
+		local itemPool = Game():GetItemPool()
+		for i=0, PillColor.NUM_PILLS - 1, 1 do
+			itemPool:IdentifyPill(i)
+		end
+
 		if room:GetType() == RoomType.ROOM_ANGEL
 		and not HexanowFlags:HasFlag("ROOM_ANGEL_REWARD")
 		then
@@ -2794,6 +3008,7 @@ function HexanowMod.Main:PostNewRoom()
 			local eheart = Isaac.Spawn(EntityType.ENTITY_PICKUP, PickupVariant.PICKUP_HEART, HeartSubType.HEART_ETERNAL, room:FindFreePickupSpawnPosition(room:GetCenterPos()), Vector(0,0), nil)
 			--eheart:GetSprite():Play("Loop", true)
 		end
+		--[[
 		if room:GetType() == RoomType.ROOM_PLANETARIUM
 		and not HexanowFlags:HasFlag("ROOM_PLANETARIUM_REWARD")
 		then
@@ -2805,6 +3020,19 @@ function HexanowMod.Main:PostNewRoom()
 				door:SetLocked(false)
 			end
 		end
+		if level:GetStage() == LevelStage.STAGE1_1
+		and level:GetStageType() ~= StageType.STAGETYPE_GREEDMODE
+		and level:GetStageType() ~= StageType.STAGETYPE_REPENTANCE
+		and level:GetStageType() ~= StageType.STAGETYPE_REPENTANCE_B
+		then
+			for i = 0, DoorSlot.NUM_DOOR_SLOTS - 1 do
+				local door = room:GetDoor(i)
+				if door ~= nil and door:IsLocked() then
+					door:SetLocked(false)
+				end
+			end
+		end
+		]]
 		--[[
 		level:ApplyBlueMapEffect()
 		level:ApplyCompassEffect()
@@ -2866,6 +3094,22 @@ function HexanowMod.Main:PreSpawnCleanAward(Rng, SpawnPos)
 			end
 		end
 	)
+	--[[
+	if PlayerTypeExistInGame(playerTypeHexanow) then
+		if Game():GetLevel():GetStage() == LevelStage.STAGE1_1
+		and Game():GetLevel():GetStageType() ~= StageType.STAGETYPE_GREEDMODE
+		and Game():GetLevel():GetStageType() ~= StageType.STAGETYPE_REPENTANCE
+		and Game():GetLevel():GetStageType() ~= StageType.STAGETYPE_REPENTANCE_B
+		then
+			for i = 0, DoorSlot.NUM_DOOR_SLOTS - 1 do
+				local door = Game():GetRoom():GetDoor(i)
+				if door ~= nil and door:IsLocked() then
+					door:SetLocked(false)
+				end
+			end
+		end
+	end
+	]]
 end
 HexanowMod:AddCallback(ModCallbacks.MC_PRE_SPAWN_CLEAN_AWARD, HexanowMod.Main.PreSpawnCleanAward)
 
@@ -2901,7 +3145,8 @@ function HexanowMod.Main:EntityTakeDmg(TookDamage, DamageAmount, DamageFlags, Da
 		--print(DamageAmount, DamageFlags, DamageCountdownFrames)
 		local room = Game():GetRoom()
 		if (DamageFlags & DamageFlag.DAMAGE_SPIKES ~= 0 and room:GetType() ~= RoomType.ROOM_SACRIFICE and room:GetType() ~= RoomType.ROOM_DEVIL)
-		--or (DamageSource.Entity ~= nil and DamageSource.Entity.Parent ~= nil and player == DamageSource.Entity.Parent:ToPlayer())
+		or (DamageSource.Entity ~= nil and DamageSource.Entity.Parent ~= nil and DamageSource.Entity.Parent:ToPlayer() ~= nil and GetPtrHash(player) == GetPtrHash(DamageSource.Entity.Parent:ToPlayer()))
+		or (DamageSource.Entity ~= nil and DamageSource.Entity.SpawnerEntity ~= nil and DamageSource.Entity.SpawnerEntity:ToPlayer() ~= nil and GetPtrHash(player) == GetPtrHash(DamageSource.Entity.SpawnerEntity:ToPlayer()))
 		or DamageFlags & DamageFlag.DAMAGE_CURSED_DOOR ~= 0
 		or DamageFlags & DamageFlag.DAMAGE_POOP ~= 0
 		or DamageFlags & DamageFlag.DAMAGE_CHEST ~= 0
@@ -3005,37 +3250,6 @@ function HexanowMod.Main:PreTearCollision(tear, collider, low)
 	end
 end
 HexanowMod:AddCallback(ModCallbacks.MC_PRE_TEAR_COLLISION , HexanowMod.Main.PreTearCollision)
-
-local function ExecutePickup(player, pickup, func)
-	if pickup:IsShopItem() then
-		if player:GetNumCoins() >= pickup.Price and not player:IsHoldingItem() then
-			player:AddCoins(-pickup.Price)
-			player:AnimatePickup(pickup:GetSprite())
-		else
-			return true
-		end
-	end
-	if func ~= nil then
-		func()
-	end
-	pickup:PlayPickupSound()
-	--print("DESTROYING")
-	if pickup:IsShopItem() then
-	--	--pickup:Morph(pickup.Type, pickup.Variant, 0, true)
-	--	pickup.SubType = 0
-		pickup:Remove()
-		player:TryRemoveTrinket(TrinketType.TRINKET_STORE_CREDIT)
-		--[[
-		if player:HasCollectible(CollectibleType.COLLECTIBLE_RESTOCK) then
-		end
-		]]
-	else
-		pickup:GetSprite():Play("Collect", true)
-		--pickup:Remove()
-		pickup:Die()
-	end
-	return true --pickup:IsShopItem()
-end
 
 -- 改变掉落物拾取行为
 function HexanowMod.Main:PrePickupCollision(pickup, collider, low)
@@ -3776,8 +3990,10 @@ HexanowMod:AddCallback(ModCallbacks.MC_POST_PLAYER_RENDER, HexanowMod.Main.PostP
 
 -- 渲染器，每一帧执行
 function HexanowMod.Main:PostRender()
-	if not Game():GetHUD():IsVisible() then
-		return nil
+	if not HexanowMod.gameInited
+	or not ShouldDisplayHUD()
+	then
+		return
 	end
 
 	if PlayerTypeExistInGame(playerTypeHexanow) then
@@ -3809,11 +4025,16 @@ function HexanowMod.Main:PostRender()
 		local selPos = baseOffset + Vector(42, -36) + offsetModSel
 
 		local sortNum = 0
+		local printedIDs = {}
 		CallForEveryPlayer(
 			function(player)
 				if IsHexanow(player) then
-					SelManageRander(selPos, GetPlayerID(player), sortNum)
-					sortNum = sortNum + 1
+					local id = GetGamePlayerID(player)
+					if not printedIDs[id] then
+						printedIDs[id] = true
+						SelManageRander(selPos, id, sortNum)
+						sortNum = sortNum + 1
+					end
 				end
 			end
 		)

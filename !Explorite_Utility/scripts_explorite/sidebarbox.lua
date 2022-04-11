@@ -10,10 +10,26 @@ function Explorite.RegistSideBar(name, func)
 	RegistedSideBars[name] = func
 end
 
-local function SidebarResourceBoxRendering(_)
-	if not Game():GetHUD():IsVisible() then
-		return nil
+local function SidebarResourceBoxRendering(_, shaderName)
+	if not Explorite.gameInited
+	or not ShouldDisplayHUD()
+	then
+		return
 	end
+
+	--[[
+	local shouldRend = false
+	if shaderName == "SideBarBoxShader" then
+		shouldRend = not shouldRend
+	end
+	if Game():IsPaused() then
+		shouldRend = not shouldRend
+	end
+	if not shouldRend then
+		return
+	end
+	--print("REND",shaderName == "SideBarBoxShader",Game():IsPaused())
+	]]
 
 	local offsetModStat = Vector(20 * Options.HUDOffset, 12 * Options.HUDOffset)
 	local baseOffset = Vector(3,35)
@@ -22,7 +38,7 @@ local function SidebarResourceBoxRendering(_)
 
 	if PlayerTypeExistInGame(PlayerType.PLAYER_BETHANY) then lineNum = lineNum + 1 end
 	if PlayerTypeExistInGame(PlayerType.PLAYER_BETHANY_B) then lineNum = lineNum + 1 end
-	if PlayerTypeUniqueInGame(PlayerType.PLAYER_BLUEBABY_B) then lineNum = lineNum + 1 end
+	if PlayerTypeExistButNotUniqueInGame(PlayerType.PLAYER_BLUEBABY_B) then lineNum = lineNum + 1 end
 
 	local lineRange = 12
 	if lineNum > 3 then
