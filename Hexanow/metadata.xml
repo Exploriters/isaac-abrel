@@ -9,12 +9,12 @@ Reqiures [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2780875807]
 [b]This mod is WIP. [/b]As it changed how player attack, most items that change attack will not work. We will support them in the future development.
 [hr][/hr][h1]Stats:[/h1]
 Initially, Hexanow has the following stats :[list]
-[*][b]Hearts: [/b]12 max hearts, 11 hearts, 1 eternal heart.
+[*][b]Hearts: [/b]12 max hearts, 11 hearts, 1 eternal heart, 1 broken heart.
 [*][b]Speed: [/b]0.85, +0.3 when room is cleared
 [*][b]Tears: [/b]1.43 (-0.66 Tears down)
 [*][b]Damage: [/b]10.5 (300%)
 [*][b]Range: [/b]19.50 (300%)
-[*][b]Shot speed: [/b]0.85
+[*][b]Shot speed: [/b]0.6
 [*][b]Luck: [/b]-3.00
 [*][b]Tear flag: [/b]ice[/list]
 Starting with no coin, key or bomb.
@@ -29,7 +29,6 @@ Hexanow has some unique abilities that can be enabled by pressing a key:[list]
 [*]Hexanow can identify effects of pills.
 [*]Hexanow can reveal all rooms in a floor, including Ultra Secret Room.
 [*]Hexanow can clear all curses, except for curse of labyrinth.
-[*]Hexanow convert all trinkets into their golden version.
 [*]Hexanow's thick hooves can help her stab on spikes or red poops without taking damage.
 [*]Hexanow is immune to damage from players.
 [*]Several effects that consume heart container that Hexanow has will add broken hearts instead.[/list]
@@ -70,7 +69,7 @@ Hexanow is fully implemented for multiplayer and supports controller.
 With more than one Hexanow in same game, they share eternal charges, and have different beam colors and portal colors too. 
 [hr][/hr]Hexanow is currently not completely finished, glitches and malfunctions can occurred. Feel free to send feedback to us!
 Thanks to all supporters and developers of Hexanow!</description>
-    <version>1.49</version>
+    <version>1.54</version>
     <visibility>Public</visibility>
     <tag id="Lua"/>
     <tag id="Player Characters"/>

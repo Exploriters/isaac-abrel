@@ -67,6 +67,14 @@ APIOverride.OverrideClassFunction(EntityPlayer, "DropTrinket", function(interval
 		print("DROP!")
 	end
 end)
+local baseEntityPlayerGetMaxTrinkets = APIOverride.GetCurrentClassFunction(EntityPlayer, "GetMaxTrinkets")
+APIOverride.OverrideClassFunction(EntityPlayer, "GetMaxTrinkets", function(interval)
+	local result = baseEntityPlayerGetMaxTrinkets(interval)
+	if IsHexanow(interval) then
+		return result + 1
+	end
+	return result
+end)
 ]]--
 
 --require("hexanowObjectives")
@@ -753,6 +761,11 @@ local function HexanowCollectibleExtraDim(player, ID)
 		if item ~= nil and item:HasTags(ItemConfig.TAG_FOOD) then
 			num = num + 1e1000
 		end
+	end
+
+	if ID == CollectibleType.COLLECTIBLE_BOOK_OF_VIRTUES
+	and player:GetActiveItem(ActiveSlot.SLOT_PRIMARY) == CollectibleType.COLLECTIBLE_BOOK_OF_VIRTUES then
+		num = num + 1
 	end
 
 	return num
@@ -1487,6 +1500,7 @@ local function ExecuteHexanowLaserIntersectionEffect(player, position, color, da
 
 			local bomb = entity:ToBomb()
 			if bomb ~= nil
+			and bomb.SpawnerEntity ~= nil
 			and GetPtrHash(bomb.SpawnerEntity) == GetPtrHash(player)
 			then
 				bomb.Position = position
@@ -2273,6 +2287,7 @@ local function InitPlayerHexanow(player)
 		player:AddMaxHearts(-player:GetMaxHearts())
 		player:AddMaxHearts(12)
 		player:AddHearts(11)
+		EternalBroken(player, 1)
 
 		--player:AddGoldenKey()
 		--player:AddGoldenBomb()
@@ -3197,7 +3212,7 @@ HexanowMod:AddCallback(ModCallbacks.MC_POST_ENTITY_REMOVE , HexanowMod.Main.Post
 
 -- 干涉掉落物生成
 function HexanowMod.Main:PostPickupSelection(Pickup, Variant, SubType)
-	if PlayerTypeExistInGame(playerTypeHexanow) then
+	--if PlayerTypeExistInGame(playerTypeHexanow) then
 		--[[
 		if Variant == PickupVariant.PICKUP_HEART and
 		(
@@ -3212,10 +3227,12 @@ function HexanowMod.Main:PostPickupSelection(Pickup, Variant, SubType)
 			return {Variant, HeartSubType.HEART_BLENDED}
 		end
 		]]
+		--[[
 		if Variant == PickupVariant.PICKUP_TRINKET then
 			return {Variant, SubType | TrinketType.TRINKET_GOLDEN_FLAG}
 		end
-	end
+		]]
+	--end
 end
 HexanowMod:AddCallback(ModCallbacks.MC_POST_PICKUP_SELECTION , HexanowMod.Main.PostPickupSelection)
 
@@ -3449,10 +3466,9 @@ function HexanowMod.Main:EvaluateCache(player, cacheFlag, tear)
 	]]
 	if IsHexanow(player) then
 		if cacheFlag == CacheFlag.CACHE_SPEED then
+			player.MoveSpeed = player.MoveSpeed - 0.15
 			if roomClearBounsEnabled then
-				player.MoveSpeed = player.MoveSpeed + 0.15 --  * (1.0 + 0.15 * player:GetMaxHearts() / 24.0)
-			else
-				player.MoveSpeed = player.MoveSpeed - 0.15
+				player.MoveSpeed = player.MoveSpeed + 0.3 --  * (1.0 + 0.15 * player:GetMaxHearts() / 24.0)
 			end
 		elseif cacheFlag == CacheFlag.CACHE_DAMAGE then
 			--[[if player:IsCoopGhost() then
@@ -3466,7 +3482,7 @@ function HexanowMod.Main:EvaluateCache(player, cacheFlag, tear)
 		elseif cacheFlag == CacheFlag.CACHE_LUCK then
 			player.Luck = player.Luck - 3
 		elseif cacheFlag == CacheFlag.CACHE_SHOTSPEED then
-			player.ShotSpeed = player.ShotSpeed - 0.15 -- * (1.0 - 0.3 * player:GetMaxHearts() / 24.0 + 0.15)
+			player.ShotSpeed = player.ShotSpeed - 0.4 -- * (1.0 - 0.3 * player:GetMaxHearts() / 24.0 + 0.15)
 		elseif cacheFlag == CacheFlag.CACHE_FIREDELAY then
 			--player.MaxFireDelay = math.ceil(
 			--		(player.MaxFireDelay + (player:HasCollectible(CollectibleType.COLLECTIBLE_ANALOG_STICK) and {2} or {0})[1]
