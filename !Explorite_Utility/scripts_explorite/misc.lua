@@ -348,3 +348,11 @@ function ListIndex2GridIndex(listIndex)
 	if room == nil then return nil end
 	return Room2GridIndex(room)
 end
+
+function AngleDegreeByTwoDegree(a, b)
+	local result = math.abs(a - b)
+	if result > 180 then
+		return 360 - result
+	end
+	return result
+end

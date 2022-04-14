@@ -10,7 +10,7 @@ Reqiures [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2780875807]
 [hr][/hr][h1]Stats:[/h1]
 Initially, Hexanow has the following stats :[list]
 [*][b]Hearts: [/b]12 max hearts, 11 hearts, 1 eternal heart, 1 broken heart.
-[*][b]Speed: [/b]0.85, +0.3 when room is cleared
+[*][b]Speed: [/b]0.85, up to +0.3 when room is cleared
 [*][b]Tears: [/b]1.43 (-0.66 Tears down)
 [*][b]Damage: [/b]10.5 (300%)
 [*][b]Range: [/b]19.50 (300%)
@@ -69,7 +69,7 @@ Hexanow is fully implemented for multiplayer and supports controller.
 With more than one Hexanow in same game, they share eternal charges, and have different beam colors and portal colors too. 
 [hr][/hr]Hexanow is currently not completely finished, glitches and malfunctions can occurred. Feel free to send feedback to us!
 Thanks to all supporters and developers of Hexanow!</description>
-    <version>1.54</version>
+    <version>1.55</version>
     <visibility>Public</visibility>
     <tag id="Lua"/>
     <tag id="Player Characters"/>

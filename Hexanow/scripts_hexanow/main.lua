@@ -133,7 +133,7 @@ end
 local SuperPower = false
 
 local EternalChargeForFree = true
-local roomClearBounsEnabled = false
+--local roomClearBounsEnabled = false
 
 local EternalCharges = 0
 
@@ -253,12 +253,6 @@ local function HexanowPlayerData()
 	cted.WhiteItem[3] = 0
 	cted.SelectedWhiteItem = 1
 	cted.portalToolColor = 2
-	cted.PhaseBeamCooldown = {}
-	cted.PhaseBeamCooldown[1] = 0
-	cted.PhaseBeamCooldown[2] = 0
-	cted.PhaseBeamCooldownPercentage = {}
-	cted.PhaseBeamCooldownPercentage[1] = 1
-	cted.PhaseBeamCooldownPercentage[2] = 1
 	cted.CreatedPortals = {}
 	cted.CreatedPortals[0] = {}
 	cted.CreatedPortals[0][1] = nil
@@ -278,6 +272,14 @@ local function HexanowPlayerData()
 	cted.onceHoldingItem = 0
 	cted.WhiteItemSelectPressed = -1
 	cted.WhiteItemSelectTriggered = true
+	cted.PhaseBeamCooldown = {}
+	cted.PhaseBeamCooldown[1] = 0
+	cted.PhaseBeamCooldown[2] = 0
+	cted.PhaseBeamCooldownPercentage = {}
+	cted.PhaseBeamCooldownPercentage[1] = 1
+	cted.PhaseBeamCooldownPercentage[2] = 1
+	cted.speedUpStep = 0
+	cted.lastMovingDegree = nil
 
 	cted:GenSpriteCaches()
 	return cted
@@ -343,7 +345,7 @@ function HexanowMod.Main.WipeTempVar()
 	ItemIDLowlimit = 0
 	EternalCharges = 0
 	EternalChargesLastRoom = 0
-	roomClearBounsEnabled = false
+	--roomClearBounsEnabled = false
 	EternalChargeForFree = true
 	SuperPower = false
 	queuedNextRoomGrid = nil
@@ -1804,6 +1806,7 @@ local function TickEventHexanow(player)
 		-- player:GetEffects():RemoveCollectibleEffect(CollectibleType.COLLECTIBLE_TRANSCENDENCE)
 	end
 	]]
+	--[[
 	if Game():GetRoom():IsClear() then
 		if not roomClearBounsEnabled then
 			roomClearBounsEnabled = true
@@ -1814,6 +1817,24 @@ local function TickEventHexanow(player)
 			roomClearBounsEnabled = false
 			CallForEveryPlayer(function(player)if IsHexanow(player) then UpdateCache(player, CacheFlag.CACHE_SPEED) end end)
 		end
+	end
+	]]
+	local diffLimit = 30
+	local oldSpeedUp = data.speedUpStep
+	local movement = player:GetMovementInput()
+	if not EternalChargeForFree or movement:Length() <= 0 or player.ControlsCooldown > 0 then
+		data.speedUpStep = 0
+		data.lastMovingDegree = nil
+	elseif player.ControlsEnabled then
+		data.speedUpStep = math.min(180, data.speedUpStep + 1 * math.min(1, movement:Length()))
+		if data.lastMovingDegree ~= nil then
+			local diff = AngleDegreeByTwoDegree(data.lastMovingDegree, movement:GetAngleDegrees())
+			data.speedUpStep = data.speedUpStep * (math.max(0, (diffLimit-diff)/diffLimit))
+		end
+		data.lastMovingDegree = movement:GetAngleDegrees()
+	end
+	if oldSpeedUp ~= data.speedUpStep then
+		UpdateCache(player, CacheFlag.CACHE_SPEED)
 	end
 
 	--[[
@@ -2268,6 +2289,11 @@ local function TryCastFireHexanow(player)
 			CastHexanowLaser(player, player.Position, aimDirection:GetAngleDegrees(), data.portalToolColor)
 			if data.portalToolColor ~= 1 and data.portalToolColor ~= 2 then
 				TryCastFireHexanow(player)
+			end
+			if data.speedUpStep ~= 0 or data.lastMovingDegree ~= nil then
+				data.speedUpStep = 0
+				data.lastMovingDegree = nil
+				UpdateCache(player, CacheFlag.CACHE_SPEED)
 			end
 		end
 	end
@@ -2940,6 +2966,7 @@ HexanowMod:AddCallback(ModCallbacks.MC_POST_NEW_LEVEL, HexanowMod.Main.PostNewLe
 function HexanowMod.Main:PostNewRoom()
 	local level = Game():GetLevel()
 	local room = Game():GetRoom()
+	--roomClearBounsEnabled = room:IsClear()
 	for playerID=1,4 do
 		HexanowPlayerDatas[playerID].InRoomCreatedPortals[1] = nil
 		HexanowPlayerDatas[playerID].InRoomCreatedPortals[2] = nil
@@ -2992,18 +3019,20 @@ function HexanowMod.Main:PostNewRoom()
 		HexanowFlags:RemoveFlag("TREASURE_ROOM_NOT_ENTERED")
 	end
 
+	--[[
 	if room:GetAliveEnemiesCount() <= 0 then
 		EternalChargeForFree = true
 	else
 		EternalChargeForFree = false
 	end
+	]]
+	EternalChargeForFree = room:GetAliveEnemiesCount() <= 0
 
 	CallForEveryPlayer(
 		function(player)
 			UpdateCostumes(player)
 			if IsHexanow(player) then
 				ApplyEternalHearts(player)
-				roomClearBounsEnabled = Game():GetRoom():IsClear()
 				UpdateCache(player)
 				UpdateCostumes(player)
 			end
@@ -3465,11 +3494,14 @@ function HexanowMod.Main:EvaluateCache(player, cacheFlag, tear)
 		luck: -3
 	]]
 	if IsHexanow(player) then
+		local playerID = GetGamePlayerID(player)
+		local data = HexanowPlayerDatas[playerID]
 		if cacheFlag == CacheFlag.CACHE_SPEED then
 			player.MoveSpeed = player.MoveSpeed - 0.15
-			if roomClearBounsEnabled then
-				player.MoveSpeed = player.MoveSpeed + 0.3 --  * (1.0 + 0.15 * player:GetMaxHearts() / 24.0)
+			if EternalChargeForFree then
+				player.MoveSpeed = player.MoveSpeed + math.max(0,math.min(0.3, data.speedUpStep / 600))
 			end
+			 --  * (1.0 + 0.15 * player:GetMaxHearts() / 24.0)
 		elseif cacheFlag == CacheFlag.CACHE_DAMAGE then
 			--[[if player:IsCoopGhost() then
 				player.Damage = -0.5
@@ -3508,9 +3540,11 @@ function HexanowMod.Main:EvaluateCache(player, cacheFlag, tear)
 			else
 				player.CanFly = false
 			end]]
+			--[[
 			if roomClearBounsEnabled then
 				--player.CanFly = true
 			end
+			]]
 			-- UpdateCostumes(player)
 		elseif cacheFlag == CacheFlag.CACHE_FAMILIARS then
 			--[[
