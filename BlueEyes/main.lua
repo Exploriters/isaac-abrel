@@ -1,5 +1,5 @@
 
-local BlueEyesMod = RegisterMod("Blue Eyes", 1);
+local BlueEyesMod = RegisterMod("blue_eyes", 1);
 local BlueEyesItem = Isaac.GetItemIdByName("Blue Eyes")
 
 function BlueEyesMod:PostPlayerUpdate(player)

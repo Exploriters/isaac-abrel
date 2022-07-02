@@ -548,6 +548,8 @@ local function UpdateCostume(player)
 			player:AddNullCostume(costume_Lairub_Body)
 		end
 		if LairubPlayerDatas[GetGamePlayerID(player)].form ~= 2 then
+			player:TryRemoveNullCostume(costume_Lairub_Head_TakeSoul)
+			player:TryRemoveNullCostume(costume_Lairub_Head_TakeSoulBase)
 			player:TryRemoveNullCostume(costume_Lairub_Head)
 			player:AddNullCostume(costume_Lairub_Head)
 		else
@@ -603,7 +605,9 @@ function LairubMod.Main:EvaluateCache(player, cacheFlag)
 			elseif cacheFlag == CacheFlag.CACHE_FIREDELAY then
 				player.MaxFireDelay = player.MaxFireDelay + 8
 			end
+			UpdateCostume(player)
 		end
+		UpdateCostume(player)
 	end
 end
 LairubMod:AddCallback( ModCallbacks.MC_EVALUATE_CACHE, LairubMod.Main.EvaluateCache)
@@ -735,6 +739,7 @@ LairubAbilityDatas.soul_cross.endingInterval = function (player)
 
 	SFXManager():Play(2, 2, 0, false, 0.7 )
 	LairubCross = Isaac.Spawn(EntityType.ENTITY_EFFECT, LairubSoulCross_Variant, 0, pos, Vector(0,0), player)
+	Isaac.Spawn(EntityType.ENTITY_EFFECT, EffectVariant.POOF01, 0, pos, Vector(0,0), nil)
 	LairubCross:GetData().cross_owner = player
 	LairubCross:BloodExplode()
 	if not LairubPlayerDatas[playerID].crossPlacedOnce then
@@ -1016,7 +1021,7 @@ function LairubMod.Main:LairubSoulCrossUpdate(turretEntity)
 			if NPC ~= nil and NPC:IsVulnerableEnemy() then
 				if (turretEntity.Position - NPC.Position):Length() < Data.NPCdis then
 					local Laser = player:FireTechLaser(turretEntity.Position, 1, (NPC.Position - turretEntity.Position), false, true)
-					Laser.TearFlags = player.TearFlags | TearFlags.TEAR_HOMING
+					Laser.TearFlags = player.TearFlags | TearFlags.TEAR_HOMING | TearFlags.TEAR_SPECTRAL
 					Laser.CollisionDamage = player.Damage * 0.5
 					local LaserSprite = Laser:GetSprite()
 					LaserSprite:ReplaceSpritesheet(0,"gfx/effects/effect_LairubLaserEffects.png")
@@ -1323,6 +1328,25 @@ function LairubMod.Main:PostNewRoom()
 	end
 end
 LairubMod:AddCallback( ModCallbacks.MC_POST_NEW_ROOM, LairubMod.Main.PostNewRoom)
+
+function LairubMod.Main:PostGameEnd()
+	local numPlayers = Game():GetNumPlayers()
+	for i=0,numPlayers-1,1 do
+		local player = Isaac.GetPlayer(i)
+		if player:GetPlayerType() == Isaac.GetPlayerTypeByName("Lairub")
+		or player:GetPlayerType() == Isaac.GetPlayerTypeByName("Tainted Lairub", true)
+		then
+			player:TryRemoveNullCostume(costume_Lairub_Head_TakeSoul)
+			player:TryRemoveNullCostume(costume_Lairub_Head_TakeSoulBase)
+			player:TryRemoveNullCostume(costume_Lairub_Head)
+			player:AddNullCostume(costume_Lairub_Head)
+			player:TryRemoveNullCostume(costume_Lairub_Body)
+			player:AddNullCostume(costume_Lairub_Body)
+		end
+	end
+end
+LairubMod:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, LairubMod.Main.PostGameEnd)
+--???
 
 function LairubMod.Main:ExecuteCmd(cmd, params)
 	if cmd == "soulcount" then
