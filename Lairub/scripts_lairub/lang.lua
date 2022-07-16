@@ -1,6 +1,17 @@
 
 LairubLang = Explorite.SimpleTranslate()
 
+LairubLang.data.en.hunteddown_readout_none = 'none'
+LairubLang.data.zh.hunteddown_readout_none = '无'
+LairubLang.data.en.hunteddown_readout_safe = 'safe'
+LairubLang.data.zh.hunteddown_readout_safe = '安全'
+LairubLang.data.en.hunteddown_readout_vigilant = 'Vigilant'
+LairubLang.data.zh.hunteddown_readout_vigilant = '警戒'
+LairubLang.data.en.hunteddown_readout_danger = 'DANGER'
+LairubLang.data.zh.hunteddown_readout_danger = '危险'
+LairubLang.data.en.hunteddown_readout_boss = 'BOSS'
+LairubLang.data.zh.hunteddown_readout_boss = '头目'
+
 LairubLang.data.en.starting_tip1 = 'Pressing "{1}" to hide lairub ui.'
 LairubLang.data.zh.starting_tip1 = '按下“{1}”来隐藏Lairub技能界面。'
 LairubLang.data.en.starting_tip2 = 'Press "{1}" to show help screen.'

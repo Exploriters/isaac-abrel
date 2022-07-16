@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <pocketitems>
   <card type="rune" pickup="616580" description="Slavery leads to anger." id="81" name="Soul of Lairub" hud="Soul of Lairub" mimiccharge="4" />
-  <card type="rune" pickup="616581" description="奴役带来愤怒" id="81" name="莱鲁布的灵魂石" hud="Soul of Lairub" mimiccharge="4" />
+  <!--<card type="rune" pickup="616581" description="奴役带来愤怒" id="81" name="莱鲁布的灵魂石" hud="Soul of Lairub" mimiccharge="4" />-->
 </pocketitems>
