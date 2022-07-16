@@ -222,7 +222,7 @@ local function HuntedDownInterval()
 
 	-- if room is boss room, stop timer
 	if room:GetType() == RoomType.ROOM_BOSS then
-		HuntedDownReadout = "BOSS"
+		HuntedDownReadout = "boss"
 		HuntedDownReadoutNumber = 0
 		HuntedDownFrame = -1
 		return nil
@@ -234,17 +234,16 @@ local function HuntedDownInterval()
 
 	-- if time below threshold, stop trigger damage
 	if HuntedDownFrame < HuntedDownThreshold then
-		HuntedDownReadout = "Vigilant"
+		HuntedDownReadout = "vigilant"
 		HuntedDownReadoutNumber = math.ceil((HuntedDownThreshold - HuntedDownFrame) / 30)
 		return nil
 	end
 
 	-- execute damage
-	HuntedDownReadout = "DANGER"
+	HuntedDownReadout = "danger"
 	HuntedDownReadoutNumber = math.ceil((HuntedDownDamageRate - (HuntedDownFrame - HuntedDownThreshold) % HuntedDownDamageRate) / 30)
 
 	if (HuntedDownFrame - HuntedDownThreshold) % HuntedDownDamageRate == 0 then
-		
 		CallForEveryPlayer(
 			function(player)
 				if IsLairub(player) then
@@ -977,18 +976,21 @@ local function HuntedDownRendering()
 		-- Vigilant: pink
 		-- DANGER: red
 		local R, G, B, A = 1, 1, 1, 1
-		if HuntedDownReadout == "BOSS" or HuntedDownReadout == "Vigilant" then
+		if HuntedDownReadout == "boss" or HuntedDownReadout == "vigilant" then
 			R, G, B, A = 1, 0.5, 0.5, 0.8
 		end
-		if HuntedDownReadout == "DANGER" then
+		if HuntedDownReadout == "danger" then
 			R, G, B, A = 1, 0, 0, 0.8
 		end
 
 		-- use computed result from game interval function, instead of compute them in render function
 		local displayNumber = Parse00(HuntedDownReadoutNumber)
+		local displayText = LairubLang:_("hunteddown_readout_"..HuntedDownReadout)
 
-		Explorite.RenderScaledText(displayNumber, (Isaac.GetScreenWidth() - Explorite.GetTextWidth(displayNumber)*2) / 2, 60, 2, 2, R, G, B, A)
-		Explorite.RenderScaledText(HuntedDownReadout, (Isaac.GetScreenWidth() - Explorite.GetTextWidth(HuntedDownReadout)) / 2, 80, 1, 1, R, G, B, A)
+		--Explorite.RenderScaledText(displayNumber, (Isaac.GetScreenWidth() - Explorite.GetTextWidth(displayNumber)*2) / 2, 60, 2, 2, R, G, B, A)
+		--Explorite.RenderScaledText(HuntedDownReadout, (Isaac.GetScreenWidth() - Explorite.GetTextWidth(HuntedDownReadout)) / 2, 80, 1, 1, R, G, B, A)
+		Explorite.RenderScaledText(displayText.." ", Isaac.GetScreenWidth() / 2 - Explorite.GetTextWidth(displayText), 12 * Options.HUDOffset, 1, 1, R, G, B, A)
+		Explorite.RenderScaledText(" "..displayNumber, Isaac.GetScreenWidth() / 2, 12 * Options.HUDOffset, 1, 1, R, G, B, A)
 	end
 end
 
