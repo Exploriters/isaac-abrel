@@ -575,7 +575,7 @@ function LairubMod.Main:EvaluateCache(player, cacheFlag)
 		if cacheFlag == CacheFlag.CACHE_SPEED then
 			player.MoveSpeed = player.MoveSpeed - 0.3
 		elseif cacheFlag == CacheFlag.CACHE_DAMAGE then
-			player.Damage = player.Damage + 0.3
+			player.Damage = player.Damage * 1.09
 		elseif cacheFlag == CacheFlag.CACHE_FIREDELAY then
 			player.MaxFireDelay = player.MaxFireDelay + 2
 		elseif cacheFlag == CacheFlag.CACHE_TEARFLAG then
@@ -601,7 +601,7 @@ function LairubMod.Main:EvaluateCache(player, cacheFlag)
 			if cacheFlag == CacheFlag.CACHE_SPEED and not LairubPlayerDatas[GetGamePlayerID(player)].noEnemiesBouns then
 				player.MoveSpeed = player.MoveSpeed - 0.2
 			elseif cacheFlag == CacheFlag.CACHE_DAMAGE then
-				player.Damage = player.Damage + 1.3
+				player.Damage = player.Damage * 1.31
 			elseif cacheFlag == CacheFlag.CACHE_FIREDELAY then
 				player.MaxFireDelay = player.MaxFireDelay + 8
 			end
