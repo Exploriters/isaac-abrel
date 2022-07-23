@@ -82,6 +82,16 @@ function GetGamePlayerID(player)
 	end
 end
 
+function GetGamePlayerID(player)
+	local numPlayers = Game():GetNumPlayers()
+	for i=0,numPlayers-1,1 do
+		if Isaac.GetPlayer(i).Index == player.Index then
+			return i + 1
+		end
+	end
+	return nil
+end
+
 function GetPlayerSameTryeID(player)
 	local numPlayers = Game():GetNumPlayers()
 	local sameType = 1
