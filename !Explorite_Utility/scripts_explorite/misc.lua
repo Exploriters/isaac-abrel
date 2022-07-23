@@ -305,7 +305,6 @@ function UpdateCache(player, flags)
 	player:EvaluateItems()
 end
 
-<<<<<<< Updated upstream
 function ShouldDisplayHUD()
 	return Game():GetHUD():IsVisible() and not Game():GetSeeds():HasSeedEffect(SeedEffect.SEED_NO_HUD)
 end
@@ -345,8 +344,6 @@ function ExecutePickup(player, pickup, func)
 	return true --pickup:IsShopItem()
 end
 
-=======
->>>>>>> Stashed changes
 function Room2GridIndex(room)
 	if room == nil then return nil end
 	if room.GridIndex < 0 then
@@ -360,7 +357,6 @@ function ListIndex2GridIndex(listIndex)
 	local room = Game():GetLevel():GetRooms():Get(listIndex)
 	if room == nil then return nil end
 	return Room2GridIndex(room)
-<<<<<<< Updated upstream
 end
 
 function AngleDegreeByTwoDegree(a, b)
@@ -369,6 +365,4 @@ function AngleDegreeByTwoDegree(a, b)
 		return 360 - result
 	end
 	return result
-=======
->>>>>>> Stashed changes
 end
