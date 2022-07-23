@@ -253,6 +253,12 @@ local function HexanowPlayerData()
 	cted.WhiteItem[3] = 0
 	cted.SelectedWhiteItem = 1
 	cted.portalToolColor = 2
+	cted.PhaseBeamCooldown = {}
+	cted.PhaseBeamCooldown[1] = 0
+	cted.PhaseBeamCooldown[2] = 0
+	cted.PhaseBeamCooldownPercentage = {}
+	cted.PhaseBeamCooldownPercentage[1] = 1
+	cted.PhaseBeamCooldownPercentage[2] = 1
 	cted.CreatedPortals = {}
 	cted.CreatedPortals[0] = {}
 	cted.CreatedPortals[0][1] = nil
@@ -289,7 +295,7 @@ local HexanowPlayerDatas = {}
 
 local function GenHexanowPlayerData()
 	HexanowPlayerDatas = {}
-	for i=1,4 do
+	for i=1,99 do
 		HexanowPlayerDatas[i] = HexanowPlayerData()
 	end
 end
@@ -407,6 +413,14 @@ end
 ------------------------------------------------------------
 ---------- 游戏功能
 ----------
+
+local function GetHexanowPortalColor(playerID, num)
+	local p = portalColor[GetPlayerSameTryeID(Game():GetPlayer(playerID-1))]
+	if p ~= nil then
+		return p[num]
+	end
+	return portalColor[1][num]
+end
 
 -- 更新玩家外观，按需执行
 local function UpdateCostumes(player)
@@ -1238,6 +1252,8 @@ function HexanowMod.Main:PortalDoorRender(entity)
 	local overlay = GetPortalOverlaySprite(entity.SubType)
 	if not overlay:IsLoaded() then
 		overlay:Load(sprite:GetFilename(), true)
+		overlay.Color = GetHexanowPortalColor(math.ceil(entity.SubType/2), (entity.SubType+1)%2+1)
+		portalOverlaySprites[entity.SubType] = overlay
 	end
 	overlay.Rotation = sprite.Rotation
 	overlay:SetFrame("Glow", sprite:GetFrame())
