@@ -1,0 +1,5 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<costumes anm2root="gfx/characters/">
+  <costume anm2path="EasterHead.anm2" type="none" />
+  <costume anm2path="EasterBody.anm2" type="none" />
+</costumes>

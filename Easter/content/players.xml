@@ -1,0 +1,4 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<players root="gfx/characters/costumes/" portraitroot="gfx/ui/boss/" nameimageroot="gfx/ui/boss/" bigportraitroot="gfx/ui/stage/">
+  <player name="Easter" skin="character_Easter.png" hp="2" keys="1" coins="3" nameimage="playername_Easter.png" portrait="playerportrait_Easter.png" bigportrait="playerportraitbig_Easter.png" skinColor="5" canShoot="true" card="57"/>
+</players>
