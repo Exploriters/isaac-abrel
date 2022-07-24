@@ -31,6 +31,8 @@ local playerType_Easter = Isaac.GetPlayerTypeByName("Easter")
 local costume_Easter_Body = Isaac.GetCostumeIdByPath("gfx/characters/EasterBody.anm2")
 local costume_Easter_Head = Isaac.GetCostumeIdByPath("gfx/characters/EasterHead.anm2")
 
+EasterMod.gameInited = false
+
 local function IsEaster(player)
 	return player ~= nil and player:GetPlayerType() == playerType_Easter
 end
@@ -77,18 +79,68 @@ function EasterMod:EvaluateCache(player, cacheFlag)
 end
 EasterMod:AddCallback( ModCallbacks.MC_EVALUATE_CACHE, EasterMod.EvaluateCache)
 
-function EasterMod:PostGameStarted()
-	CallForEveryPlayer(
-		function(player)
-			if IsEaster(player) then
-				UpdateCostume(player)
-				--====BASE HEARTS====--
-				player:addBlackHearts(2)
-				player:addSoulHearts(2)
-				player:AddMaxHearts(-2, true)
-			end
+local function InitPlayerEaster(player)
+	if IsEaster(player) then
+		UpdateCostume(player)
+		if not loadedFromSaves then
+			--====BASE HEARTS====--
+			player:AddBlackHearts(2)
+			player:AddSoulHearts(2)
+			player:AddMaxHearts(-2, true)
 		end
-	)
+	end
 end
-EasterMod:AddCallback( ModCallbacks.MC_POST_GAME_STARTED, EasterMod.PostGameStarted)
-	
+
+function EasterMod:PostGameStarted(loadedFromSaves)
+	EasterMod.gameInited = true
+	if not loadedFromSaves then
+		CallForEveryPlayer(InitPlayerEaster)
+	end
+end
+EasterMod:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, EasterMod.PostGameStarted)
+
+function EasterMod:PreGameExit(shouldSave)
+	EasterMod.gameInited = false
+end
+EasterMod:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, EasterMod.PreGameExit)
+
+function EasterMod:PostPlayerInit(player)
+	if EasterMod.gameInited then
+		InitPlayerEaster(player)
+	end
+end
+EasterMod:AddCallback(ModCallbacks.MC_POST_PLAYER_INIT, EasterMod.PostPlayerInit)
+
+local function TickEventEaster(player)
+	if IsEaster(player) then
+		CallForEveryEntity(function(entity)
+			local tear = entity:ToTear()
+			if tear ~= nil and tear.Parent ~= nil then
+				if tear.Parent.Type == EntityType.ENTITY_PLAYER then
+					local player = tear.Parent:ToPlayer()
+					if IsEaster(player)
+					then
+						local data = tear:GetData()
+						if not data.tearInitedForEaster then
+							data.tearInitedForEaster = true
+							local tearSprite = tear:GetSprite()
+							if tear.Variant == TearVariant.BLUE or tear.Variant == TearVariant.BLOOD then
+								tearSprite:ReplaceSpritesheet(0,"gfx/tears/easter_tears.png")
+								tearSprite:LoadGraphics("gfx/tears/easter_tears.png")
+							end
+							tearSprite:LoadGraphics()
+							tearSprite.Rotation = tear.Velocity:GetAngleDegrees()
+						end
+					end
+				end
+			end
+		end)
+	end
+end
+
+function EasterMod:PostPlayerUpdate(player)
+	TickEventEaster(player)
+end
+EasterMod:AddCallback(ModCallbacks.MC_POST_PLAYER_UPDATE, EasterMod.PostPlayerUpdate)
+
+

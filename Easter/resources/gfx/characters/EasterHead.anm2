@@ -1,11 +1,11 @@
 <AnimatedActor>
-	<Info CreatedBy="Unknown" CreatedOn="2022/7/24 5:01:49" Version="9" Fps="30"/>
+	<Info CreatedBy="Unknown" CreatedOn="2022/7/24 10:57:22" Version="10" Fps="30"/>
 	<Content>
 		<Spritesheets>
 			<Spritesheet Path="costumes\character_easter_head.png" Id="0"/>
 		</Spritesheets>
 		<Layers>
-			<Layer Name="head0" Id="0" SpritesheetId="0"/>
+			<Layer Name="head4" Id="0" SpritesheetId="0"/>
 		</Layers>
 		<Nulls/>
 		<Events>
