@@ -113,6 +113,11 @@ EasterMod:AddCallback(ModCallbacks.MC_POST_PLAYER_INIT, EasterMod.PostPlayerInit
 
 local function TickEventEaster(player)
 	if IsEaster(player) then
+		local room = Game():GetRoom()
+		if room:GetFrameCount() == 1 then
+			UpdateCostume(player)
+		end
+		
 		CallForEveryEntity(function(entity)
 			local tear = entity:ToTear()
 			if tear ~= nil and tear.Parent ~= nil then
