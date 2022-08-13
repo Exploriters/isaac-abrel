@@ -1,5 +1,9 @@
 EasterMod = RegisterMod("Easter", 1);
 --====CHECK!====--
+if not REPENTANCE then
+	return
+end
+
 if Explorite == nil then
 	function EasterMod:checkMissingExploriteStart(loadedFromSaves)
 		local numPlayers = Game():GetNumPlayers()
@@ -148,5 +152,5 @@ function EasterMod:PostPlayerUpdate(player)
 end
 EasterMod:AddCallback(ModCallbacks.MC_POST_PLAYER_UPDATE, EasterMod.PostPlayerUpdate)
 
-
-
+require("scripts_easter/main")
+require("scripts_easter/active_items")

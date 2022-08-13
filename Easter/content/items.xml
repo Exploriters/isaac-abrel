@@ -1,0 +1,3 @@
+<items gfxroot="gfx/items/" version="1">
+	<active cache="" description="Trap of empty promise" hidden="true" gfx="collectibles_blandishment.png" name="Blandishment" maxcharges="450" cooldown="30" chargetype="timed" tags="quest" quality="4"/>
+</items>
