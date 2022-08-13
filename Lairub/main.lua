@@ -1,5 +1,9 @@
 LairubMod = RegisterMod("Lairub", 1);
 
+if not REPENTANCE then
+	return
+end
+
 if Explorite == nil then
 	function LairubMod:checkMissingExploriteStart(loadedFromSaves)
 		local numPlayers = Game():GetNumPlayers()

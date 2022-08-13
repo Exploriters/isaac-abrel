@@ -16,6 +16,7 @@ require("scripts_explorite/sidebarbox")
 require("scripts_explorite/isaacTranslate")
 require("scripts_explorite/exploriteLang")
 require("scripts_explorite/debugwriter")
+require("scripts_explorite/player_anmi_override")
 
 --Isaac.ConsoleOutput("Init mod Explorite end\n")
 

@@ -165,6 +165,8 @@ Explorite.RegistSideBar("EternalCharge", function()
 	return EternalChargeSprite, Parse00(EternalCharges)--..(EternalChargeForFree and {"+"} or {""})[1]
 end)
 
+Explorite.RegistPlyaerAnmiOverride(playerTypeHexanow, "gfx/characters/HexanowRoot.anm2")
+
 local hexanowPlayerData = {
 }
 hexanowPlayerData.__index = hexanowPlayerData
@@ -429,9 +431,9 @@ local function UpdateCostumes(player)
 		player:RemoveSkinCostume()
 		local sprite = player:GetSprite()
 
-		if player:GetSprite():GetFilename() ~= "gfx/characters/HexanowRoot.anm2" then
-			sprite:Load("gfx/characters/HexanowRoot.anm2", true)
-		end
+		--if player:GetSprite():GetFilename() ~= "gfx/characters/HexanowRoot.anm2" then
+		--	sprite:Load("gfx/characters/HexanowRoot.anm2", true)
+		--end
 		--player:ReplaceCostumeSprite(Isaac.GetItemConfig():GetCollectible(CollectibleType.COLLECTIBLE_MEGA_MUSH), "gfx/characters/costumes/character_Hexanow.png", 0)
 
 		--player:TryRemoveCollectibleCostume(CollectibleType.COLLECTIBLE_ANALOG_STICK, false)
@@ -1779,9 +1781,9 @@ local function TickEventHexanow(player)
 	]]
 	player:GetData().StartedAsHexanow = true
 
-	if player:GetSprite():GetFilename() ~= "gfx/characters/HexanowRoot.anm2" then
-		UpdateCostumes(player)
-	end
+	--if player:GetSprite():GetFilename() ~= "gfx/characters/HexanowRoot.anm2" then
+	--	UpdateCostumes(player)
+	--end
 
 	if player:IsDead() then
 		player:AddBrokenHearts(math.ceil(player:GetHeartLimit() / 2))
@@ -4035,9 +4037,11 @@ local function PostRenderHexanow(player)
 		return
 	end
 	local sprite = player:GetSprite()
+	--[[
 	if player:GetSprite():GetFilename() ~= "gfx/characters/HexanowRoot.anm2" then
 		UpdateCostumes(player)
 	end
+	]]
 	--[[
 	if player:IsFlying() then
 		sprite:SetLayerFrame(1, 0)
