@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <costumes anm2root="gfx/characters/">
-  <costume anm2path="desperabbit_body.anm2" type="none" />
-  <costume anm2path="desperabbit_ears.anm2" type="none" />
-  <costume anm2path="desperabbit_head.anm2" type="none" />
+  <costume anm2path="desperabbit_body.anm2" type="none" priority="99"/>
+  <costume anm2path="desperabbit_ears.anm2" type="none" priority="99"/>
+  <costume anm2path="desperabbit_head.anm2" type="none" priority="99"/>
 </costumes>

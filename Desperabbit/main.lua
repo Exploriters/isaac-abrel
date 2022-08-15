@@ -1,5 +1,11 @@
 DesperabbitMod = RegisterMod("Desperabbit", 1);
+
 --====CHECK!====--
+
+if not REPENTANCE then
+	return
+end
+
 if Explorite == nil then
 	function DesperabbitMod:checkMissingExploriteStart(loadedFromSaves)
 		local numPlayers = Game():GetNumPlayers()
@@ -26,92 +32,100 @@ if Explorite == nil then
 	return
 end
 
---====LOCATE====--
-local playerType_Desperabbit = Isaac.GetPlayerTypeByName("Desperabbit")
-local costume_desperabbit_body = Isaac.GetCostumeIdByPath("gfx/characters/desperabbit_body.anm2")
-local costume_desperabbit_ears = Isaac.GetCostumeIdByPath("gfx/characters/desperabbit_ears.anm2")
-local costume_desperabbit_head = Isaac.GetCostumeIdByPath("gfx/characters/desperabbit_head.anm2")
+DesperabbitFlags = Explorite.NewExploriteFlags()
+DesperabbitObjectives = Explorite.NewExploriteObjectives()
 
-local function IsDesperabbit(player)
-	return player ~= nil and player:GetPlayerType() == playerType_Desperabbit
+require("scripts_Desperabbit/datas")
+require("scripts_Desperabbit/main")
+
+DesperabbitMod.Core = {}
+
+local gameInited = false
+
+--==== Store mod Data ====--
+
+local function UpdateLastRoomVar()
+	DesperabbitMod.Main.UpdateLastRoomVar()
 end
 
-local function UpdateCostume(player)
-	if IsDesperabbit(player) then
-		player:TryRemoveNullCostume(costume_desperabbit_body)
-		if not player:HasCollectible(CollectibleType.COLLECTIBLE_JUPITER) then
-			player:AddNullCostume(costume_desperabbit_body)
-			player:AddNullCostume(costume_desperabbit_ears)
-			player:AddNullCostume(costume_desperabbit_head)
-		end
-	else
-		player:TryRemoveNullCostume(costume_desperabbit_body)
-		player:TryRemoveNullCostume(costume_desperabbit_ears)
-		player:TryRemoveNullCostume(costume_desperabbit_head)
+local function RewindLastRoomVar()
+	DesperabbitMod.Main.RewindLastRoomVar()
+	UpdateLastRoomVar()
+end
+
+local function WipeTempVar()
+	DesperabbitFlags:Wipe()
+	gameInited = false
+	DesperabbitMod.Main.WipeTempVar()
+	UpdateLastRoomVar()
+end
+
+function DesperabbitObjectives:Apply()
+--	DesperabbitFlags:Wipe()
+--	DesperabbitFlags:LoadFromString(self:Read("Flags", ""))
+--	DesperabbitMod.Main.ApplyVar(self)
+end
+
+function DesperabbitObjectives:Recieve()
+--	self:Write("Flags", DesperabbitFlags:ToString())
+--	DesperabbitMod.Main.RecieveVar(self)
+end
+
+--==Read==--
+function LoadDesperabbitModData()
+	local str = ""
+	if Isaac.HasModData(DesperabbitMod) then
+		str = Isaac.LoadModData(DesperabbitMod)
+	end
+	DesperabbitObjectives:Wipe()
+	DesperabbitObjectives:LoadFromString(str)
+	DesperabbitObjectives:Apply()
+end
+--==Write==--
+function SaveDesperabbitModData()
+	DesperabbitObjectives:Recieve()
+	local str = DesperabbitObjectives:ToString()
+	Isaac.SaveModData(DesperabbitMod, str)
+end
+
+--==Post game started==--
+function DesperabbitMod.Core:PostGameStarted(loadedFromSaves)
+	WipeTempVar()
+	LoadDesperabbitModData()
+	if not loadedFromSaves then -- Only new games
+		WipeTempVar()
+		SaveDesperabbitModData()
+	end
+	gameInited = true
+end
+DesperabbitMod:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, DesperabbitMod.Core.PostGameStarted)
+
+--==Pre game exit==--
+function DesperabbitMod.Core:PreGameExit(shouldSave)
+	SaveDesperabbitModData()
+	gameInited = false
+end
+DesperabbitMod:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, DesperabbitMod.Core.PreGameExit)
+
+function DesperabbitMod.Core:PostNewLevel()
+	if gameInited then
+		SaveDesperabbitModData()
 	end
 end
+DesperabbitMod:AddCallback( ModCallbacks.MC_POST_NEW_LEVEL, DesperabbitMod.Core.PostNewLevel)
 
---====FUNCTION====--
-function DesperabbitMod:EvaluateCache(player, cacheFlag)
-	if IsDesperabbit(player) then
-		if cacheFlag == CacheFlag.CACHE_SPEED then
-			player.MoveSpeed = player.MoveSpeed * 0.9
-		elseif cacheFlag == CacheFlag.CACHE_DAMAGE then
-			player.Damage = player.Damage * 1.08
-		elseif cacheFlag == CacheFlag.CACHE_FIREDELAY then
-			player.MaxFireDelay = player.MaxFireDelay * 0.9
---		elseif cacheFlag == CacheFlag.CACHE_TEARFLAG then
---			player.TearFlags = player.TearFlags
-		elseif cacheFlag == CacheFlag.CACHE_LUCK then
-			player.Luck = player.Luck - 4
-		elseif cacheFlag == CacheFlag.CACHE_FLYING then
-			UpdateCostume(player)
-		elseif cacheFlag == CacheFlag.CACHE_FAMILIARS then
-			local maybeFamiliars = Isaac.GetRoomEntities()
-			for m = 1, #maybeFamiliars do
-				local variant = maybeFamiliars[m].Variant
-				if variant == (FamiliarVariant.GUILLOTINE) or variant == (FamiliarVariant.ISAACS_BODY) or variant == (FamiliarVariant.SCISSORS) then
-					UpdateCostume(player)
-				end
-			end
-		end
-		UpdateCostume(player)
+function DesperabbitMod.Core:PostNewRoom()
+	if gameInited then
+		SaveDesperabbitModData()
 	end
 end
-DesperabbitMod:AddCallback( ModCallbacks.MC_EVALUATE_CACHE, DesperabbitMod.EvaluateCache)
+DesperabbitMod:AddCallback( ModCallbacks.MC_POST_NEW_ROOM, DesperabbitMod.Core.PostNewRoom)
 
-local function TickEventDesperabbit(player)
-	if IsDesperabbit(player) then
-		local room = Game():GetRoom()
-		if room:GetFrameCount() == 1 then
-			UpdateCostume(player)
-		end
-		
-		CallForEveryEntity(function(entity)
-			local tear = entity:ToTear()
-			if tear ~= nil and tear.Parent ~= nil then
-				if tear.Parent.Type == EntityType.ENTITY_PLAYER then
-					local player = tear.Parent:ToPlayer()
-					if IsDesperabbit(player)
-					then
-						local data = tear:GetData()
-						if not data.tearInitedForDesperabbit then
-							data.tearInitedForDesperabbit = true
-							local tearSprite = tear:GetSprite()
-							if tear.Variant == TearVariant.BLUE then
-								tear:ChangeVariant(TearVariant.BLOOD)
-							end
-							tearSprite:LoadGraphics()
-							tearSprite.Rotation = tear.Velocity:GetAngleDegrees()
-						end
-					end
-				end
-			end
-		end)
+-- 时间回溯
+function DesperabbitMod.Core:UseGlowingHourGlass(itemId, itemRng, player, useFlags, activeSlot, customVarData)
+	if itemId == CollectibleType.COLLECTIBLE_GLOWING_HOUR_GLASS
+	then
+		RewindLastRoomVar()
 	end
 end
-
-function DesperabbitMod:PostPlayerUpdate(player)
-	TickEventDesperabbit(player)
-end
-DesperabbitMod:AddCallback(ModCallbacks.MC_POST_PLAYER_UPDATE, DesperabbitMod.PostPlayerUpdate)
+DesperabbitMod:AddCallback(ModCallbacks.MC_USE_ITEM, DesperabbitMod.Core.UseGlowingHourGlass)
