@@ -99,10 +99,23 @@ end
 function DesperabbitMod.Main.WipeTempVar()
 	DesperabbitFlags:Wipe()
 	DesperabbitPlayerDatas = {}
+
 	DesperabbitPlayerDatas[1] = DesperabbitPlayerData()
 	DesperabbitPlayerDatas[2] = DesperabbitPlayerData()
 	DesperabbitPlayerDatas[3] = DesperabbitPlayerData()
 	DesperabbitPlayerDatas[4] = DesperabbitPlayerData()
+end
+
+function DesperabbitMod.Main.ApplyVar(objective)
+	for playerID=1,4 do
+		DesperabbitPlayerDatas[playerID].HPlimit = tonumber(objective:Read("Player"..playerID.."-HPlimit", "6"))
+	end
+end
+
+function DesperabbitMod.Main.RecieveVar(objective)
+	for playerID=1,4 do
+		objective:Write("Player"..playerID.."-HPlimit", tostring(DesperabbitPlayerDatas[playerID].HPlimit))
+	end
 end
 
 --==== OVERLAY CLAIM ====--
@@ -252,27 +265,26 @@ local function TickEventDesperabbit(player)
 				player:AddMaxHearts(-player:GetMaxHearts(), true)
 			end
 		end
---[[		while player:GetBlackHearts() > 0 do
-			player:AddBlackHearts(-1, true)
-		end]]--
+		--while player:GetBlackHearts() > 0 do
+		--	player:AddBlackHearts(-1, true)
+		--end
 		while player:GetEternalHearts() > 0 do
 			player:AddEternalHearts(-player:GetEternalHearts(), true)
 		end
+		while player:GetBoneHearts() > 0 do
+			player:AddEternalHearts(-player:GetBoneHearts(), true)
+		end
 		while player:GetSoulHearts() > DesperabbitPlayerDatas[playerID].HPlimit do
-			if player:GetBlackHearts() > 0 then
-				player:AddBlackHearts(-1, true)
-			else
-				player:AddSoulHearts(-1, true)
-			end
+			player:AddSoulHearts(-1, true)
 		end
 	end
 end
 
 function DesperabbitMod.Main:RabbitHurt(TookDamage, DamageAmount, DamageFlags, DamageSource, DamageCountdownFrames)
 	local player = TookDamage:ToPlayer()
-	local playerID = GetGamePlayerID(player)
 	
 	if player ~= nil and IsDesperabbit(player) then
+		local playerID = GetGamePlayerID(player)
 		DesperabbitPlayerDatas[playerID].HPlimit = DesperabbitPlayerDatas[playerID].HPlimit - 2
 	end
 end
@@ -283,14 +295,22 @@ function DesperabbitMod.Main:NPCbleed(TookDamage, DamageAmount, DamageFlags, Dam
 	if NPC ~= nil and DamageSource.Entity ~= nil and DamageSource.Entity.Parent ~= nil and DamageSource.Entity.Parent:ToPlayer() ~= nil then
 		local player = DamageSource.Entity.Parent:ToPlayer()
 		local playerID = GetGamePlayerID(player)
-		if IsDesperabbit(Source_player) then
-		--[[
-			预期效果：
-			*兔兔的幸运越低，造成流血的概率反而越高。当大等于0时，兔兔造成流血的概率则固定为5%(每发)。
-			*在幸运小于0的情况下，兔兔每降低一点幸运，他能够造成流血的概率就+5%(每发)。也就是说他应该初始具有25%(每发)的概率对敌人造成流血效果。
-			*如果这个数值是不合理的，就修改它直到平衡>w<
-		]]--
-			NPC:AddEntityFlags(EntityFlag.FLAG_BLEED_OUT)
+		if IsDesperabbit(player) then
+		--	预期效果：
+		--	*兔兔的幸运越低，造成流血的概率反而越高。当大等于0时，兔兔造成流血的概率则固定为5%(每发)。
+		--	*在幸运小于0的情况下，兔兔每降低一点幸运，他能够造成流血的概率就+5%(每发)。也就是说他应该初始具有25%(每发)的概率对敌人造成流血效果。
+		--	*如果这个数值是不合理的，就修改它直到平衡>w<
+			if player.Luck >= 0 then
+				local Chance = math.random(100)
+				if Chance <= 5 then
+					NPC:AddEntityFlags(EntityFlag.FLAG_BLEED_OUT)
+				end
+			else
+				local Chance = math.random(100)
+				if Chance <= (-5 * player.Luck + 5) then
+					NPC:AddEntityFlags(EntityFlag.FLAG_BLEED_OUT)
+				end
+			end
 		end
 	end
 end

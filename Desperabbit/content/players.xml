@@ -1,4 +1,4 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <players root="gfx/characters/costumes/" portraitroot="gfx/ui/boss/" nameimageroot="gfx/ui/boss/" bigportraitroot="gfx/ui/stage/">
-  <player name="Desperabbit" skin="character_desperabbit.png" armor="6" coins="1" nameimage="playername_Desperabbit.png" portrait="playerportrait_Desperabbit.png" bigportrait="playerportrait_Desperabbit.png" skinColor="0" canShoot="true"/>
+  <player name="Desperabbit" skin="character_desperabbit.png" armor="6" coins="1" nameimage="playername_Desperabbit.png" portrait="playerportrait_Desperabbit.png" bigportrait="playerportrait_Desperabbit.png" skinColor="0" canShoot="true" costumeSuffix="Desperabbit"/>
 </players>

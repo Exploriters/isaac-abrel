@@ -61,14 +61,14 @@ local function WipeTempVar()
 end
 
 function DesperabbitObjectives:Apply()
---	DesperabbitFlags:Wipe()
---	DesperabbitFlags:LoadFromString(self:Read("Flags", ""))
---	DesperabbitMod.Main.ApplyVar(self)
+	DesperabbitFlags:Wipe()
+	DesperabbitFlags:LoadFromString(self:Read("Flags", ""))
+	DesperabbitMod.Main.ApplyVar(self)
 end
 
 function DesperabbitObjectives:Recieve()
---	self:Write("Flags", DesperabbitFlags:ToString())
---	DesperabbitMod.Main.RecieveVar(self)
+	self:Write("Flags", DesperabbitFlags:ToString())
+	DesperabbitMod.Main.RecieveVar(self)
 end
 
 --==Read==--
