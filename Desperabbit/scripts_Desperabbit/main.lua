@@ -257,25 +257,28 @@ local function TickEventDesperabbit(player)
 		--end
 		
 		--HP limit
-		while player:GetMaxHearts() > 0 do
+		--Thanks for Cuerzor's help <3
+		if player:GetMaxHearts() > 0 then
 			if player:GetHearts() > 0 then
-				player:AddHearts(-player:GetHearts(), true)
-				player:AddMaxHearts(-player:GetMaxHearts(), true)
+				player:AddHearts(-player:GetHearts())
+				player:AddMaxHearts(-player:GetMaxHearts())
 			else
-				player:AddMaxHearts(-player:GetMaxHearts(), true)
+				player:AddMaxHearts(-player:GetMaxHearts())
 			end
 		end
 		--while player:GetBlackHearts() > 0 do
 		--	player:AddBlackHearts(-1, true)
 		--end
-		while player:GetEternalHearts() > 0 do
-			player:AddEternalHearts(-player:GetEternalHearts(), true)
+		if player:GetEternalHearts() > 0 then
+			player:AddEternalHearts(-player:GetEternalHearts())
 		end
-		while player:GetBoneHearts() > 0 do
-			player:AddEternalHearts(-player:GetBoneHearts(), true)
+		if player:GetBoneHearts() > 0 then
+			player:AddBoneHearts(-player:GetBoneHearts())
 		end
-		while player:GetSoulHearts() > DesperabbitPlayerDatas[playerID].HPlimit do
-			player:AddSoulHearts(-1, true)
+		
+		local soulHearts = player:GetSoulHearts()
+		if (soulHearts > DesperabbitPlayerDatas[playerID].HPlimit) then
+			player:AddSoulHearts(DesperabbitPlayerDatas[playerID].HPlimit - soulHearts)
 		end
 	end
 end
