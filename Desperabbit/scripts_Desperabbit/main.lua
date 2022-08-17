@@ -454,3 +454,16 @@ function DesperabbitMod.Main:PreSpawnCleanAward(Rng, SpawnPos)
 	)
 end
 DesperabbitMod:AddCallback(ModCallbacks.MC_PRE_SPAWN_CLEAN_AWARD, DesperabbitMod.Main.PreSpawnCleanAward)
+
+-- 自定义命令行
+function DesperabbitMod.Main:ExecuteCmd(cmd, params)
+	if cmd == "cotton" then
+		if tonumber(params) ~= nil then
+			BloodCotton = tonumber(params)
+			Isaac.ConsoleOutput("Cottons updated.")
+		else
+			Isaac.ConsoleOutput("Invalid args")
+		end
+	end
+end
+DesperabbitMod:AddCallback(ModCallbacks.MC_EXECUTE_CMD, DesperabbitMod.Main.ExecuteCmd);
