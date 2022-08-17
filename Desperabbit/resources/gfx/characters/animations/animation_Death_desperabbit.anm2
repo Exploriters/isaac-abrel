@@ -1,5 +1,5 @@
 <AnimatedActor>
-	<Info CreatedBy="robot" CreatedOn="2022/8/15 21:39:05" Version="182" Fps="30"/>
+	<Info CreatedBy="robot" CreatedOn="2022/8/17 22:40:50" Version="184" Fps="30"/>
 	<Content>
 		<Spritesheets>
 			<Spritesheet Path="animations_desperabbit.png" Id="0"/>
@@ -38,7 +38,7 @@
 			<Null Name="ItemWalk" Id="7" ShowRect="false"/>
 		</Nulls>
 		<Events>
-			<Event Name="DeathSound" Id="0"/>
+			<Event Name="RabbitDeathSound" Id="0"/>
 		</Events>
 	</Content>
 	<Animations DefaultAnimation="DeathAnimation">
@@ -150,7 +150,7 @@
 				<NullAnimation NullId="7" Visible="true"/>
 			</NullAnimations>
 			<Triggers>
-				<Trigger EventId="0" AtFrame="16"/>
+				<Trigger EventId="0" AtFrame="18"/>
 			</Triggers>
 		</Animation>
 	</Animations>

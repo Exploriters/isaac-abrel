@@ -72,7 +72,8 @@ local function DesperabbitPlayerData()
 	cted.isDead = false
 	cted.canRevive = false
 	cted.HPlimit = 6
-
+	cted.getHurt = false
+	
 	return cted
 end
 
@@ -247,10 +248,20 @@ local function TickEventDesperabbit(player)
 		
 		MaintainOverlay(player)
 		
-		if player:IsDead() and DesperabbitPlayerDatas[playerID].overlayName ~= "DeathAnimation" then
-		--	DesperabbitPlayerDatas[playerID].isDead = true
-			DesperabbitPlayerDatas[playerID].HPlimit = 6
-			SetDesperabbitOverlay(player, "DeathAnimation")
+		if DesperabbitPlayerDatas[playerID].getHurt == true and SFXManager():IsPlaying(55) then
+			SFXManager():Stop(55)
+			DesperabbitPlayerDatas[playerID].getHurt = false
+		end
+		if player:IsDead() then
+			if DesperabbitPlayerDatas[playerID].overlayName ~= "DeathAnimation" then
+				DesperabbitPlayerDatas[playerID].HPlimit = 6
+				SetDesperabbitOverlay(player, "DeathAnimation")
+			end
+			SFXManager():Stop(55)
+			SFXManager():Stop(217)
+			if player:GetSprite():IsEventTriggered("RabbitDeathSound") then
+				SFXManager():Play(30, 0.7, 0, false, 1 )
+			end
 		end
 		--if DesperabbitPlayerDatas[playerID].isDead == true and DesperabbitPlayerDatas[playerID].canRevive == false then
 		--	SetDesperabbitOverlay(player, "DeathAnimation")
@@ -288,6 +299,7 @@ function DesperabbitMod.Main:RabbitHurt(TookDamage, DamageAmount, DamageFlags, D
 	
 	if player ~= nil and IsDesperabbit(player) then
 		local playerID = GetGamePlayerID(player)
+		DesperabbitPlayerDatas[playerID].getHurt = true
 		DesperabbitPlayerDatas[playerID].HPlimit = DesperabbitPlayerDatas[playerID].HPlimit - 2
 	end
 end
