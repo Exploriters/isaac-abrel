@@ -165,7 +165,9 @@ Explorite.RegistSideBar("EternalCharge", function()
 	return EternalChargeSprite, Parse00(EternalCharges)--..(EternalChargeForFree and {"+"} or {""})[1]
 end)
 
-Explorite.RegistPlyaerAnmiOverride(playerTypeHexanow, "gfx/characters/HexanowRoot.anm2")
+Explorite.RegistPlyaerAnmiOverride(playerTypeHexanow, function (player)
+	return "gfx/characters/HexanowRoot.anm2"
+end)
 
 local hexanowPlayerData = {
 }

@@ -1,8 +1,8 @@
 
 local RegistedPlyaerAnmiOverride = {}
 
-function Explorite.RegistPlyaerAnmiOverride(playerType, anmiPath)
-	RegistedPlyaerAnmiOverride[playerType] = anmiPath
+function Explorite.RegistPlyaerAnmiOverride(playerType, anmiGiver)
+	RegistedPlyaerAnmiOverride[playerType] = anmiGiver
 end
 
 --[[
@@ -10,7 +10,11 @@ Explorite.RegistPlyaerAnmiOverride(playerTypeHexanow, "gfx/characters/HexanowRoo
 ]]
 
 local function ExecuteOverrides(player)
-	local path = RegistedPlyaerAnmiOverride[player:GetPlayerType()]
+	local anmiGiver = RegistedPlyaerAnmiOverride[player:GetPlayerType()]
+	if type(anmiGiver) ~= "function" then
+		return
+	end
+	local path = anmiGiver(player)
 	if type(path) ~= "string" then
 		return
 	end

@@ -25,7 +25,30 @@ local function UpdateCostume(player)
 	end
 end
 
-Explorite.RegistPlyaerAnmiOverride(playerType_Desperabbit, "gfx/characters/anmiOverride/anmiOverride_desperabbitPlayer.anm2")
+local LastRoom = {}
+
+local BloodCotton = 0
+local BloodCottonLives = 0
+
+local BloodCottonSprite = Sprite()
+BloodCottonSprite:Load("gfx/ui/EternalCharge.anm2", true)
+BloodCottonSprite:SetFrame("Base", 0)
+local BloodCottonLivesSprite = Sprite()
+BloodCottonLivesSprite:Load("gfx/ui/EternalCharge.anm2", true)
+BloodCottonLivesSprite:SetFrame("Base", 0)
+
+Explorite.RegistSideBar("BloodCotton", function()
+	if not PlayerTypeExistInGame(playerType_Desperabbit) then return nil end
+	return BloodCottonSprite, "BloodCotton: "..Parse00(BloodCotton)
+end)
+Explorite.RegistSideBar("BloodCottonLives", function()
+	if not PlayerTypeExistInGame(playerType_Desperabbit) then return nil end
+	return BloodCottonLivesSprite, "BloodCottonLives: "..Parse00(BloodCottonLives)
+end)
+
+Explorite.RegistPlyaerAnmiOverride(playerType_Desperabbit, function (player)
+	return "gfx/characters/anmiOverride/anmiOverride_desperabbitPlayer.anm2"
+end)
 
 
 
@@ -85,18 +108,25 @@ DesperabbitPlayerDatas[4] = DesperabbitPlayerData()
 
 function DesperabbitMod.Main.UpdateLastRoomVar()
 	LastRoom = {}
+	LastRoom.BloodCotton = BloodCotton
+	LastRoom.BloodCottonLives = BloodCottonLives
 	for playerID=1,4 do
 		DesperabbitPlayerDatas[playerID]:UpdateLastRoomVar()
 	end
 end
 
 function DesperabbitMod.Main.RewindLastRoomVar()
+	BloodCotton = LastRoom.BloodCotton
+	BloodCottonLives = LastRoom.BloodCottonLives
 	for playerID=1,4 do
 		DesperabbitPlayerDatas[playerID]:RewindLastRoomVar()
 	end
 end
 
 function DesperabbitMod.Main.WipeTempVar()
+	BloodCotton = 0
+	BloodCottonLives = 0
+
 	DesperabbitFlags:Wipe()
 	DesperabbitPlayerDatas = {}
 
@@ -107,12 +137,16 @@ function DesperabbitMod.Main.WipeTempVar()
 end
 
 function DesperabbitMod.Main.ApplyVar(objective)
+	BloodCotton = tonumber(objective:Read("BloodCotton", "0"))
+	BloodCottonLives = tonumber(objective:Read("BloodCottonLives", "0"))
 	for playerID=1,4 do
 		DesperabbitPlayerDatas[playerID].HPlimit = tonumber(objective:Read("Player"..playerID.."-HPlimit", "6"))
 	end
 end
 
 function DesperabbitMod.Main.RecieveVar(objective)
+	objective:Write("BloodCotton", tostring(BloodCotton))
+	objective:Write("BloodCottonLives", tostring(BloodCottonLives))
 	for playerID=1,4 do
 		objective:Write("Player"..playerID.."-HPlimit", tostring(DesperabbitPlayerDatas[playerID].HPlimit))
 	end
@@ -216,6 +250,10 @@ local function TickEventDesperabbit(player)
 		if room:GetFrameCount() == 1 then
 			UpdateCostume(player)
 		end
+
+		local extraLives = math.floor(BloodCotton / 10)
+		BloodCotton = BloodCotton - extraLives * 10
+		BloodCottonLives = BloodCottonLives + extraLives
 		
 		--Change tear variant
 		CallForEveryEntity(function(entity)
@@ -275,6 +313,11 @@ local function TickEventDesperabbit(player)
 		if player:GetBoneHearts() > 0 then
 			player:AddBoneHearts(-player:GetBoneHearts())
 		end
+
+		local num1,num2=math.modf( math.max(player:GetSoulHearts(), 0)*0.5 )
+		if num2 ~= 0 then
+			player:AddSoulHearts(-1)
+		end
 		
 		local soulHearts = player:GetSoulHearts()
 		if (soulHearts > DesperabbitPlayerDatas[playerID].HPlimit) then
@@ -283,12 +326,39 @@ local function TickEventDesperabbit(player)
 	end
 end
 
+local function DesperabbitCriticalHit(player)
+	if BloodCottonLives <= 0 then
+		return false
+	end
+	local playerID = GetGamePlayerID(player)
+	BloodCottonLives = BloodCottonLives - 1
+	DesperabbitPlayerDatas[playerID].HPlimit = 6
+	player:AddSoulHearts(6 - player:GetSoulHearts())
+	SFXManager():Play(SoundEffect.SOUND_FREEZE, 1, 0, false, 1 )
+	SFXManager():Play(SoundEffect.SOUND_FREEZE_SHATTER, 1, 0, false, 1 )
+	return true
+end
+
 function DesperabbitMod.Main:RabbitHurt(TookDamage, DamageAmount, DamageFlags, DamageSource, DamageCountdownFrames)
 	local player = TookDamage:ToPlayer()
 	
 	if player ~= nil and IsDesperabbit(player) then
 		local playerID = GetGamePlayerID(player)
 		DesperabbitPlayerDatas[playerID].HPlimit = DesperabbitPlayerDatas[playerID].HPlimit - 2
+
+		local num1,num2=math.modf( math.max(player:GetSoulHearts() - DamageAmount, 0)*0.5 )
+		if num2 ~= 0 then
+			player:AddSoulHearts(-1)
+		end
+
+		if DamageAmount >= player:GetHearts() - player:GetRottenHearts() + player:GetSoulHearts() + ((DamageFlags & DamageFlag.DAMAGE_RED_HEARTS ~= 0) and {0} or {player:GetEternalHearts()})[1]
+		and player:GetHeartLimit() > 0
+		then
+			if DesperabbitCriticalHit(player) then
+				TookDamage:TakeDamage(0, ~ ( ~DamageFlags | DamageFlag.DAMAGE_RED_HEARTS) | DamageFlag.DAMAGE_FAKE, DamageSource, DamageCountdownFrames)
+				return false
+			end
+		end
 	end
 end
 DesperabbitMod:AddCallback(ModCallbacks.MC_ENTITY_TAKE_DMG , DesperabbitMod.Main.RabbitHurt)
@@ -359,3 +429,16 @@ function DesperabbitMod.Main:PostPlayerRender(player, pos)
 	DesperabbitRendering(player, pos)
 end
 DesperabbitMod:AddCallback(ModCallbacks.MC_POST_PLAYER_RENDER, DesperabbitMod.Main.PostPlayerRender, 0)
+
+-- 在房间被清理后运行
+function DesperabbitMod.Main:PreSpawnCleanAward(Rng, SpawnPos)
+	local room = Game():GetRoom()
+	CallForEveryPlayer(
+		function(player)
+			if IsDesperabbit(player) then
+				BloodCotton = BloodCotton + RoomShapeCellCounts(room:GetRoomShape())
+			end
+		end
+	)
+end
+DesperabbitMod:AddCallback(ModCallbacks.MC_PRE_SPAWN_CLEAN_AWARD, DesperabbitMod.Main.PreSpawnCleanAward)

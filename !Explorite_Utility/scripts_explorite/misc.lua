@@ -366,3 +366,29 @@ function AngleDegreeByTwoDegree(a, b)
 	end
 	return result
 end
+
+function RoomShapeCellCounts(roomShape)
+	if roomShape == RoomShape.ROOMSHAPE_1x1
+	or roomShape == RoomShape.ROOMSHAPE_IH
+	or roomShape == RoomShape.ROOMSHAPE_IV
+	then
+		return 1
+	elseif roomShape == RoomShape.ROOMSHAPE_1x2
+	or roomShape == RoomShape.ROOMSHAPE_IIV
+	or roomShape == RoomShape.ROOMSHAPE_2x1
+	or roomShape == RoomShape.ROOMSHAPE_IIH
+	then
+		return 2
+	elseif roomShape == RoomShape.ROOMSHAPE_2x2
+	then
+		return 4
+	elseif roomShape == RoomShape.ROOMSHAPE_LTL
+	or roomShape == RoomShape.ROOMSHAPE_LTR
+	or roomShape == RoomShape.ROOMSHAPE_LBL
+	or roomShape == RoomShape.ROOMSHAPE_LBR
+	then
+		return 3
+	else
+		return 0
+	end
+end
