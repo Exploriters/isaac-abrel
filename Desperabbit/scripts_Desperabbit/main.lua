@@ -32,18 +32,18 @@ local BloodCottonLives = 0
 
 local BloodCottonSprite = Sprite()
 BloodCottonSprite:Load("gfx/ui/hudpickups_Desperabbit.anm2", true)
-BloodCottonSprite:SetFrame("Base", 0)
+BloodCottonSprite:SetFrame("Idle", 0)
 local BloodCottonLivesSprite = Sprite()
 BloodCottonLivesSprite:Load("gfx/ui/hudpickups_Desperabbit.anm2", true)
-BloodCottonLivesSprite:SetFrame("Base", 1)
+BloodCottonLivesSprite:SetFrame("Idle", 1)
 
-Explorite.RegistSideBar("BloodCotton", function()
-	if not PlayerTypeExistInGame(playerType_Desperabbit) then return nil end
-	return BloodCottonSprite, Parse00(BloodCotton)
-end)
 Explorite.RegistSideBar("BloodCottonLives", function()
 	if not PlayerTypeExistInGame(playerType_Desperabbit) then return nil end
 	return BloodCottonLivesSprite, Parse00(BloodCottonLives)
+end)
+Explorite.RegistSideBar("BloodCotton", function()
+	if not PlayerTypeExistInGame(playerType_Desperabbit) then return nil end
+	return BloodCottonSprite, Parse00(BloodCotton)
 end)
 
 Explorite.RegistPlyaerAnmiOverride(playerType_Desperabbit, function (player)
