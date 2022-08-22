@@ -206,6 +206,21 @@ function DesperabbitMod.Main.RecieveVar(objective)
 	end
 end
 
+--==== UTILITIES ====--
+
+local function DesperabbitCriticalHit(player)
+	if BloodCottonLives <= 0 then
+		return false
+	end
+	local playerID = GetGamePlayerID(player)
+	BloodCottonLives = BloodCottonLives - 1
+	DesperabbitPlayerDatas[playerID].HPlimit = 6
+	player:AddSoulHearts(6 - player:GetSoulHearts())
+	SFXManager():Play(SoundEffect.SOUND_FREEZE, 1, 0, false, 1 )
+	SFXManager():Play(SoundEffect.SOUND_FREEZE_SHATTER, 1, 0, false, 1 )
+	return true
+end
+
 --==== OVERLAY CLAIM ====--
 
 local function MaintainOverlay(player)
@@ -308,7 +323,11 @@ local function TickEventDesperabbit(player)
 		local extraLives = math.floor(BloodCotton / 10)
 		BloodCotton = BloodCotton - extraLives * 10
 		BloodCottonLives = BloodCottonLives + extraLives
-		
+
+		if BloodCottonLives > 0 and player:GetSoulHearts() <= 0 and not player:IsDead() then
+			DesperabbitCriticalHit(player)
+		end
+
 		--Change tear variant
 		CallForEveryEntity(function(entity)
 			local tear = entity:ToTear()
@@ -390,22 +409,8 @@ local function TickEventDesperabbit(player)
 	end
 end
 
-local function DesperabbitCriticalHit(player)
-	if BloodCottonLives <= 0 then
-		return false
-	end
-	local playerID = GetGamePlayerID(player)
-	BloodCottonLives = BloodCottonLives - 1
-	DesperabbitPlayerDatas[playerID].HPlimit = 6
-	player:AddSoulHearts(6 - player:GetSoulHearts())
-	SFXManager():Play(SoundEffect.SOUND_FREEZE, 1, 0, false, 1 )
-	SFXManager():Play(SoundEffect.SOUND_FREEZE_SHATTER, 1, 0, false, 1 )
-	return true
-end
-
 function DesperabbitMod.Main:RabbitHurt(TookDamage, DamageAmount, DamageFlags, DamageSource, DamageCountdownFrames)
 	local player = TookDamage:ToPlayer()
-	
 	if player ~= nil and IsDesperabbit(player) then
 		local playerID = GetGamePlayerID(player)
 		DesperabbitPlayerDatas[playerID].getHurt = true
