@@ -2,27 +2,9 @@ DesperabbitMod.Main = {}
 
 --====LOCATE====--
 local playerType_Desperabbit = Isaac.GetPlayerTypeByName("Desperabbit")
-local costume_desperabbit_body = Isaac.GetCostumeIdByPath("gfx/characters/desperabbit_body.anm2")
-local costume_desperabbit_ears = Isaac.GetCostumeIdByPath("gfx/characters/desperabbit_ears.anm2")
-local costume_desperabbit_head = Isaac.GetCostumeIdByPath("gfx/characters/desperabbit_head.anm2")
 
 local function IsDesperabbit(player)
 	return player ~= nil and player:GetPlayerType() == playerType_Desperabbit
-end
-
-local function UpdateCostume(player)
-	if IsDesperabbit(player) then
-		player:TryRemoveNullCostume(costume_desperabbit_body)
-		if not player:HasCollectible(CollectibleType.COLLECTIBLE_JUPITER) then
-			player:AddNullCostume(costume_desperabbit_body)
-			player:AddNullCostume(costume_desperabbit_ears)
-			player:AddNullCostume(costume_desperabbit_head)
-		end
-	else
-		player:TryRemoveNullCostume(costume_desperabbit_body)
-		player:TryRemoveNullCostume(costume_desperabbit_ears)
-		player:TryRemoveNullCostume(costume_desperabbit_head)
-	end
 end
 
 local LastRoom = {}
@@ -49,8 +31,6 @@ end)
 Explorite.RegistPlyaerAnmiOverride(playerType_Desperabbit, function (player)
 	return "gfx/characters/anmiOverride/anmiOverride_desperabbitPlayer.anm2"
 end)
-
-
 
 --==== CLASSES AND CONSTRUCTORS ====--
 local DesperabbitAbilityData = {}
@@ -106,6 +86,79 @@ DesperabbitPlayerDatas[1] = DesperabbitPlayerData()
 DesperabbitPlayerDatas[2] = DesperabbitPlayerData()
 DesperabbitPlayerDatas[3] = DesperabbitPlayerData()
 DesperabbitPlayerDatas[4] = DesperabbitPlayerData()
+
+--P1
+local costume_desperabbit_body = Isaac.GetCostumeIdByPath("gfx/characters/desperabbit_body.anm2")
+local costume_desperabbit_ears = Isaac.GetCostumeIdByPath("gfx/characters/desperabbit_ears.anm2")
+local costume_desperabbit_head = Isaac.GetCostumeIdByPath("gfx/characters/desperabbit_head.anm2")
+--P2
+local costume_desperabbit_body_P2 = Isaac.GetCostumeIdByPath("gfx/characters/desperabbit_body_P2.anm2")
+local costume_desperabbit_ears_P2 = Isaac.GetCostumeIdByPath("gfx/characters/desperabbit_ears_P2.anm2")
+local costume_desperabbit_head_P2 = Isaac.GetCostumeIdByPath("gfx/characters/desperabbit_head_P2.anm2")
+--P3
+local costume_desperabbit_body_P3 = Isaac.GetCostumeIdByPath("gfx/characters/desperabbit_body_P3.anm2")
+local costume_desperabbit_ears_P3 = Isaac.GetCostumeIdByPath("gfx/characters/desperabbit_ears_P3.anm2")
+local costume_desperabbit_head_P3 = Isaac.GetCostumeIdByPath("gfx/characters/desperabbit_head_P3.anm2")
+--P4
+local costume_desperabbit_body_P4 = Isaac.GetCostumeIdByPath("gfx/characters/desperabbit_body_P4.anm2")
+local costume_desperabbit_ears_P4 = Isaac.GetCostumeIdByPath("gfx/characters/desperabbit_ears_P4.anm2")
+local costume_desperabbit_head_P4 = Isaac.GetCostumeIdByPath("gfx/characters/desperabbit_head_P4.anm2")
+
+--==== UpdateCostume ====--
+local function UpdateCostume(player)
+	local playerID = GetGamePlayerID(player)
+	if IsDesperabbit(player) then
+		if playerID == 1 then
+			player:TryRemoveNullCostume(costume_desperabbit_body)
+			if not player:HasCollectible(CollectibleType.COLLECTIBLE_JUPITER) then
+				player:AddNullCostume(costume_desperabbit_body)
+				player:AddNullCostume(costume_desperabbit_ears)
+				player:AddNullCostume(costume_desperabbit_head)
+			end
+		elseif playerID == 2 then
+			player:TryRemoveNullCostume(costume_desperabbit_body_P2)
+			if not player:HasCollectible(CollectibleType.COLLECTIBLE_JUPITER) then
+				player:AddNullCostume(costume_desperabbit_body_P2)
+				player:AddNullCostume(costume_desperabbit_ears_P2)
+				player:AddNullCostume(costume_desperabbit_head_P2)
+			end
+		elseif playerID == 3 then
+			player:TryRemoveNullCostume(costume_desperabbit_body_P3)
+			if not player:HasCollectible(CollectibleType.COLLECTIBLE_JUPITER) then
+				player:AddNullCostume(costume_desperabbit_body_P3)
+				player:AddNullCostume(costume_desperabbit_ears_P3)
+				player:AddNullCostume(costume_desperabbit_head_P3)
+			end
+		elseif playerID == 4 then
+			player:TryRemoveNullCostume(costume_desperabbit_body_P4)
+			if not player:HasCollectible(CollectibleType.COLLECTIBLE_JUPITER) then
+				player:AddNullCostume(costume_desperabbit_body_P4)
+				player:AddNullCostume(costume_desperabbit_ears_P4)
+				player:AddNullCostume(costume_desperabbit_head_P4)
+			end
+		else
+			player:TryRemoveNullCostume(costume_desperabbit_body)
+			if not player:HasCollectible(CollectibleType.COLLECTIBLE_JUPITER) then
+				player:AddNullCostume(costume_desperabbit_body)
+				player:AddNullCostume(costume_desperabbit_ears)
+				player:AddNullCostume(costume_desperabbit_head)
+			end
+		end
+	else
+		player:TryRemoveNullCostume(costume_desperabbit_body)
+		player:TryRemoveNullCostume(costume_desperabbit_ears)
+		player:TryRemoveNullCostume(costume_desperabbit_head)
+		player:TryRemoveNullCostume(costume_desperabbit_body_P2)
+		player:TryRemoveNullCostume(costume_desperabbit_ears_P2)
+		player:TryRemoveNullCostume(costume_desperabbit_head_P2)
+		player:TryRemoveNullCostume(costume_desperabbit_body_P3)
+		player:TryRemoveNullCostume(costume_desperabbit_ears_P3)
+		player:TryRemoveNullCostume(costume_desperabbit_head_P3)
+		player:TryRemoveNullCostume(costume_desperabbit_body_P4)
+		player:TryRemoveNullCostume(costume_desperabbit_ears_P4)
+		player:TryRemoveNullCostume(costume_desperabbit_head_P4)
+	end
+end
 
 function DesperabbitMod.Main.UpdateLastRoomVar()
 	LastRoom = {}
@@ -356,7 +409,7 @@ function DesperabbitMod.Main:RabbitHurt(TookDamage, DamageAmount, DamageFlags, D
 	if player ~= nil and IsDesperabbit(player) then
 		local playerID = GetGamePlayerID(player)
 		DesperabbitPlayerDatas[playerID].getHurt = true
-		DesperabbitPlayerDatas[playerID].HPlimit = DesperabbitPlayerDatas[playerID].HPlimit - 2
+		DesperabbitPlayerDatas[playerID].HPlimit = DesperabbitPlayerDatas[playerID].HPlimit - math.ceil(DamageAmount/2)*2
 
 		local num1,num2=math.modf( math.max(player:GetSoulHearts() - DamageAmount, 0)*0.5 )
 		if num2 ~= 0 then
@@ -368,6 +421,7 @@ function DesperabbitMod.Main:RabbitHurt(TookDamage, DamageAmount, DamageFlags, D
 		then
 			if DesperabbitCriticalHit(player) then
 				TookDamage:TakeDamage(0, ~ ( ~DamageFlags | DamageFlag.DAMAGE_RED_HEARTS) | DamageFlag.DAMAGE_FAKE, DamageSource, DamageCountdownFrames)
+				player:SetMinDamageCooldown(DamageCountdownFrames)
 				return false
 			end
 		end
