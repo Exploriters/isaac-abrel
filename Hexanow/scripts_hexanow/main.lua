@@ -779,7 +779,7 @@ local function HexanowCollectibleExtraDim(player, ID)
 	if player:HasCollectible(CollectibleType.COLLECTIBLE_BINGE_EATER, true) then
 		local item = Isaac.GetItemConfig():GetCollectible(ID)
 		if item ~= nil and item:HasTags(ItemConfig.TAG_FOOD) then
-			num = num + 1e1000
+			num = math.huge
 		end
 	end
 
@@ -1077,7 +1077,7 @@ local function HasValidCreatedPortal(portalOwnerPlayerID, portalColorType)
 	end
 	local portalRoomDesc = level:GetRooms():Get(levelPosition.RoomInLevelListIndex)
 	if portalRoomDesc == nil and not IsPortalInSameRoom(portalOwnerPlayerID, portalColorType) then
-		print(portalRoomDesc == nil)
+		--print(portalRoomDesc == nil)
 		return false
 	end
 	return true
