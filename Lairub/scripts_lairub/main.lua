@@ -147,6 +147,14 @@ LairubPlayerDatas[2] = LairubPlayerData()
 LairubPlayerDatas[3] = LairubPlayerData()
 LairubPlayerDatas[4] = LairubPlayerData()
 
+Explorite.RegistPlyaerAnmiOverride(playerType_Lairub, function (player)
+	if LairubPlayerDatas[GetGamePlayerID(player)].form ~= 2 then
+		return "gfx/characters/LairubRoot_form1.anm2"
+	else
+		return "gfx/characters/LairubRoot_form2.anm2"
+	end
+end)
+
 --==== Data Management ====--
 
 function LairubMod.Main.ApplyVar(objective)
@@ -549,6 +557,7 @@ end
 --================================--
 
 local function UpdateCostume(player)
+	--[[
 	if IsLairub(player) then
 		if not player:HasCollectible(CollectibleType.COLLECTIBLE_JUPITER) then
 			player:AddNullCostume(costume_Lairub_Body)
@@ -570,6 +579,7 @@ local function UpdateCostume(player)
 		player:TryRemoveNullCostume(costume_Lairub_Head_TakeSoul)
 		player:TryRemoveNullCostume(costume_Lairub_Head_TakeSoulBase)
 	end
+	]]
 end
 
 function LairubMod.Main:PostPlayerInit(player)
@@ -1403,6 +1413,7 @@ function LairubMod.Main:PostNewRoom()
 end
 LairubMod:AddCallback( ModCallbacks.MC_POST_NEW_ROOM, LairubMod.Main.PostNewRoom)
 
+--[[
 function LairubMod.Main:PostGameEnd()
 	local numPlayers = Game():GetNumPlayers()
 	for i=0,numPlayers-1,1 do
@@ -1420,6 +1431,7 @@ function LairubMod.Main:PostGameEnd()
 	end
 end
 LairubMod:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, LairubMod.Main.PostGameEnd)
+]]
 --???
 
 function LairubMod.Main:ExecuteCmd(cmd, params)
