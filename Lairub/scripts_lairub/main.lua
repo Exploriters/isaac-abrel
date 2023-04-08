@@ -105,6 +105,12 @@ local function LairubPlayerData()
 	cted.enabledAbility = nil
 	cted.justDisabledAbility = nil
 	cted.enabledAbilityTime = 0
+	
+	cted.coinsNum = 0
+	cted.canTeleportToDevilRoom = false
+	cted.tryingTeleportToDevilRoom = false
+	cted.renderedWarning = false
+	cted.startWarningTick = 0
 
 	cted:UpdateLastRoomVar()
 	cted:GenSpriteCaches()
@@ -767,7 +773,25 @@ end
 LairubAbilityDatas.teleport_to_devil_room = LairubAbilityData()
 LairubAbilityDatas.teleport_to_devil_room.name = "teleport_to_devil_room"
 LairubAbilityDatas.teleport_to_devil_room.displayAllowsEnable = function (player) return true end
-LairubAbilityDatas.teleport_to_devil_room.startingInterval = function (player) if IsLairubButtonPressed(player,"teleport_to_devil_room") then ClaimAbility(player, "teleport_to_devil_room") end end
+
+LairubAbilityDatas.teleport_to_devil_room.startingInterval = function (player)
+	if IsLairubButtonPressed(player,"teleport_to_devil_room") then
+	
+		LairubPlayerDatas[GetGamePlayerID(player)].coinsNum = player:GetNumCoins()
+		LairubPlayerDatas[GetGamePlayerID(player)].tryingTeleportToDevilRoom = true
+		
+		if LairubPlayerDatas[GetGamePlayerID(player)].coinsNum >= 13 then
+			LairubPlayerDatas[GetGamePlayerID(player)].canTeleportToDevilRoom = true
+			ClaimAbility(player, "teleport_to_devil_room")
+		else
+			LairubPlayerDatas[GetGamePlayerID(player)].startWarningTick = Game():GetFrameCount()
+			LairubPlayerDatas[GetGamePlayerID(player)].canTeleportToDevilRoom = false
+		end
+	else
+		LairubPlayerDatas[GetGamePlayerID(player)].tryingTeleportToDevilRoom = false
+	end
+end
+
 LairubAbilityDatas.teleport_to_devil_room.onEnable = function (player)
 	--player.Velocity = Vector(0, 0)
 	SetLairubOverlay(player, "TeleportToDevilRoom")
@@ -775,20 +799,26 @@ end
 LairubAbilityDatas.teleport_to_devil_room.onDisable = function (player)
 	ClearLairubOverlay(player, "TeleportToDevilRoom")
 end
+
 LairubAbilityDatas.teleport_to_devil_room.endingInterval = function (player)
 	if LairubPlayerDatas[GetGamePlayerID(player)].enabledAbilityTime > 360 then
 		player:UseCard(Card.CARD_JOKER, UseFlag.USE_NOANIM | UseFlag.USE_NOCOSTUME | UseFlag.USE_NOANNOUNCER)
+		player:AddCoins(-13)
+		LairubPlayerDatas[GetGamePlayerID(player)].tryingTeleportToDevilRoom = false
 		ReleaseAbility(player, "teleport_to_devil_room")
 		return
 	end
 	if not IsLairubButtonPressed(player,"teleport_to_devil_room") then
+		LairubPlayerDatas[GetGamePlayerID(player)].tryingTeleportToDevilRoom = false
 		ReleaseAbility(player, "teleport_to_devil_room")
 		return
 	end
 end
+
 LairubAbilityDatas.teleport_to_devil_room.enabledInterval = function (player)
 	player.ControlsCooldown = math.max(1, player.ControlsCooldown)
 end
+
 
 LairubAbilityDatas.dialogue = LairubAbilityData()
 LairubAbilityDatas.dialogue.name = "dialogue"
@@ -852,6 +882,31 @@ function StartingTipRendering()
 		Explorite.RenderText(str1, x - Explorite.GetTextWidth(str1)/2, y + 6, 255, 255, 255, 255)
 		Explorite.RenderText(str2, x - Explorite.GetTextWidth(str2)/2, y + 16, 255, 255, 255, 255)
 	end
+end
+
+function TeleportWarning()
+	CallForEveryPlayer(function(player)
+		if not IsLairub(player) then
+			return
+		end
+		
+		local startTick = LairubPlayerDatas[GetGamePlayerID(player)].startWarningTick
+		
+		if LairubPlayerDatas[GetGamePlayerID(player)].canTeleportToDevilRoom == false and LairubPlayerDatas[GetGamePlayerID(player)].tryingTeleportToDevilRoom == true then
+			if LairubPlayerDatas[GetGamePlayerID(player)].renderedWarning == false then
+				LairubPlayerDatas[GetGamePlayerID(player)].renderedWarning = true
+			end
+		end
+		if LairubPlayerDatas[GetGamePlayerID(player)].renderedWarning == true then
+			local screenxy = Isaac.WorldToScreen(player.Position)
+			local x, y = screenxy.X, screenxy.Y
+			local str = LairubLang:_("teleport_warning")
+			Explorite.RenderText(str, x - Explorite.GetTextWidth(str)/2, y - 72, 1, 0.1, 0.1, (1-0.1*(Game():GetFrameCount()-startTick)))
+			if (Game():GetFrameCount() - startTick)/30 >= 2 then
+				LairubPlayerDatas[GetGamePlayerID(player)].renderedWarning = false
+			end
+		end
+	end)
 end
 
 function DialogueRendering()
@@ -1013,6 +1068,7 @@ function LairubMod.Main:PostRender()
 	HuntedDownRendering()
 	DialogueRendering()
 	HelpScreenRending()
+	TeleportWarning()
 end
 LairubMod:AddCallback(ModCallbacks.MC_POST_RENDER, LairubMod.Main.PostRender)
 
