@@ -39,6 +39,7 @@ require("scripts_lairub/datas")
 require("scripts_lairub/main")
 require("scripts_lairub/tainted")
 require("scripts_lairub/soulstone")
+require("scripts_lairub/compat/encyclopedia")
 
 LairubMod.Core = {}
 
