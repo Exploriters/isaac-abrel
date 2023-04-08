@@ -544,18 +544,17 @@ end
 
 local function UpdateCostume(player)
 	if IsLairub(player) then
-		player:TryRemoveNullCostume(costume_Lairub_Body)
 		if not player:HasCollectible(CollectibleType.COLLECTIBLE_JUPITER) then
 			player:AddNullCostume(costume_Lairub_Body)
 		end
 		if LairubPlayerDatas[GetGamePlayerID(player)].form ~= 2 then
 			player:TryRemoveNullCostume(costume_Lairub_Head_TakeSoul)
 			player:TryRemoveNullCostume(costume_Lairub_Head_TakeSoulBase)
-			player:TryRemoveNullCostume(costume_Lairub_Head)
+			--player:TryRemoveNullCostume(costume_Lairub_Head)
 			player:AddNullCostume(costume_Lairub_Head)
 		else
-			player:TryRemoveNullCostume(costume_Lairub_Head_TakeSoul)
-			player:TryRemoveNullCostume(costume_Lairub_Head_TakeSoulBase)
+			--player:TryRemoveNullCostume(costume_Lairub_Head_TakeSoul)
+			--player:TryRemoveNullCostume(costume_Lairub_Head_TakeSoulBase)
 			player:AddNullCostume(costume_Lairub_Head_TakeSoul)
 			player:AddNullCostume(costume_Lairub_Head_TakeSoulBase)
 		end
@@ -568,6 +567,9 @@ local function UpdateCostume(player)
 end
 
 function LairubMod.Main:PostPlayerInit(player)
+	if IsLairub(player) then
+		UpdateCostume(player)
+	end
 end
 LairubMod:AddCallback( ModCallbacks.MC_POST_PLAYER_INIT, LairubMod.Main.PostPlayerInit)
 
@@ -599,8 +601,7 @@ function LairubMod.Main:EvaluateCache(player, cacheFlag)
 			end
 		end
 		if LairubPlayerDatas[GetGamePlayerID(player)].form == 2 then
-			--if cacheFlag == CacheFlag.CACHE_SPEED and not LairubPlayerDatas[GetGamePlayerID(player)].noEnemiesBouns then
-			if cacheFlag == CacheFlag.CACHE_SPEED then
+			if cacheFlag == CacheFlag.CACHE_SPEED and not LairubPlayerDatas[GetGamePlayerID(player)].noEnemiesBouns then
 				player.MoveSpeed = player.MoveSpeed - 0.2
 			elseif cacheFlag == CacheFlag.CACHE_DAMAGE then
 				player.Damage = player.Damage * 1.31
@@ -636,7 +637,7 @@ LairubAbilityDatas.swap_form.onEnable = function (player)
 	end
 	--player.Velocity = Vector(0, 0)
 	player.ControlsCooldown = math.max(30, player.ControlsCooldown)
-	UpdateCostume(player)
+	--UpdateCostume(player)
 	UpdateCache(player)
 end
 LairubAbilityDatas.swap_form.onDisable = function (player)
@@ -1334,6 +1335,15 @@ function LairubMod.Main:PostNewRoom()
 		LairubPlayerDatas[i].crossPlaced = nil
 		LairubPlayerDatas[i].crossPlacedOnce = false
 	end
+	CallForEveryPlayer(
+		function(player)
+			UpdateCostume(player)
+			if IsLairub(player) then
+				UpdateCache(player)
+				UpdateCostume(player)
+			end
+		end
+	)
 end
 LairubMod:AddCallback( ModCallbacks.MC_POST_NEW_ROOM, LairubMod.Main.PostNewRoom)
 
