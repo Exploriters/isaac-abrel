@@ -88,6 +88,8 @@ local function LairubPlayerData()
 	setmetatable(cted, lairubPlayerData)
 	cted.noEnemiesBouns = true
 	cted.form = 1
+	cted.needchangeformcostume=false
+	cted.changedformcostume=false
 	cted.crossPlaced = nil
 	cted.crossPlacedOnce = false
 	cted.pressingKeys = Explorite.NewExploriteFlags()
@@ -597,16 +599,21 @@ function LairubMod.Main:EvaluateCache(player, cacheFlag)
 			end
 		end
 		if LairubPlayerDatas[GetGamePlayerID(player)].form == 2 then
-			if cacheFlag == CacheFlag.CACHE_SPEED and not LairubPlayerDatas[GetGamePlayerID(player)].noEnemiesBouns then
+			--if cacheFlag == CacheFlag.CACHE_SPEED and not LairubPlayerDatas[GetGamePlayerID(player)].noEnemiesBouns then
+			if cacheFlag == CacheFlag.CACHE_SPEED then
 				player.MoveSpeed = player.MoveSpeed - 0.2
 			elseif cacheFlag == CacheFlag.CACHE_DAMAGE then
 				player.Damage = player.Damage * 1.31
 			elseif cacheFlag == CacheFlag.CACHE_FIREDELAY then
 				player.MaxFireDelay = player.MaxFireDelay + 8
 			end
-			UpdateCostume(player)
+			if LairubPlayerDatas[GetGamePlayerID(player)].needchangeformcostume == true then
+				UpdateCostume(player)
+				--LairubPlayerDatas[GetGamePlayerID(player)].changedformcostume = true
+				LairubPlayerDatas[GetGamePlayerID(player)].needchangeformcostume = false
+			end
 		end
-		UpdateCostume(player)
+		--UpdateCostume(player)
 	end
 end
 LairubMod:AddCallback( ModCallbacks.MC_EVALUATE_CACHE, LairubMod.Main.EvaluateCache)
@@ -1065,8 +1072,7 @@ local function TickEventLairub(player)
 				ReleaseAbility(player, LairubPlayerDatas[playerID].enabledAbility)
 			end
 			if LairubPlayerDatas[playerID].form ~= 1 then
-				LairubPlayerDatas[playerID].form = 1
-				UpdateCostume(player)
+				LairubPlayerDatas[GetGamePlayerID(player)].needchangeformcostume = true
 				UpdateCache(player)
 			end
 		end
